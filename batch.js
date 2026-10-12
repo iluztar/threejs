@@ -16,7 +16,7 @@
     const n = selected().length, f = opt('format');
     runBtn.textContent = n ? `Export ${n} scene${n > 1 ? 's' : ''} · ${fmtLabel[f]}` : 'Pick at least one scene';
     runBtn.disabled = running || !n;
-    $('#bDetail').hidden = !(f === 'obj' || f === 'stl');
+    $('#bDetail').hidden = f === 'glb-instanced';                       // detail applies to baked .glb, .obj and .stl
   }
   root.addEventListener('change', sync);
   $('#bAll').onclick = () => { const all = selected().length < scenes.length; scenes.forEach(s => s.input.checked = all); sync(); };

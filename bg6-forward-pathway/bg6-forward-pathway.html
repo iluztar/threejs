@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1A191E">
 <meta name="color-scheme" content="dark">
 <title>BG 6 · Forward pathway — Scene 22</title>
 <!-- BG 6 · Forward pathway — Scene 22 · Sirpeltric BG reference (Three.js). Single file: open by double-click. Background only — no characters. -->
@@ -38,11 +39,13 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:13px/1.45 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased}
 button,select,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--sky);outline-offset:2px}
-#app{display:flex;flex-direction:column;height:100%}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}   /* dvh: the real visible height on phones (address bar) */
+html,body{overscroll-behavior:none}
+button,a,select,input,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 svg{display:block}
 
 /* ── header ── */
-#top{display:flex;align-items:center;gap:10px;padding:0 10px 0 14px;height:56px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+#top{display:flex;align-items:center;gap:10px;padding:0 max(10px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));padding-top:env(safe-area-inset-top);height:56px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--tx);flex:none;border-radius:10px;padding:4px 6px 4px 2px}
 .brand:hover{background:var(--panel2)}
 .duo{display:flex;align-items:flex-end;flex:none}.duo svg{display:block}
@@ -88,7 +91,7 @@ div.tp-dfwv{width:300px;top:64px;right:10px;z-index:30;max-height:calc(100vh - 1
 div.tp-dfwv{display:none}body.settings div.tp-dfwv{display:block}
 
 /* ── dock ── */
-#bottom{border-top:1px solid var(--line);background:var(--panel);padding:10px 14px;flex:none}
+#bottom{border-top:1px solid var(--line);background:var(--panel);padding:10px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));flex:none}
 .tl{display:flex;align-items:center;gap:12px}
 #play{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--pink);color:var(--pink-ink);display:grid;place-items:center;cursor:pointer;box-shadow:inset -3px -3px 0 #0000001a;padding:0;transition:transform .12s,background .12s}
 #play:hover{background:var(--pink-h)}#play:active{transform:scale(.94)}
@@ -156,7 +159,7 @@ body.clean #stageWrap{padding:0;background:#000}
 body.clean #stage{border-radius:0;box-shadow:none}
 body.clean #overlay{display:none}
 
-@media (max-width:1100px){.brand span,.brand small{display:none}.scenes select{max-width:170px}}
+@media (max-width:1100px){.brand div{display:none}.scenes select{max-width:170px}}
 @media (max-width:760px){
   #top{flex-wrap:wrap;height:auto;padding:8px 10px;gap:6px 8px}.sep{display:none}
   .titles{order:5;flex:1 1 100%}#eraChip{order:6;max-width:100%}
@@ -167,6 +170,26 @@ body.clean #overlay{display:none}
   #exportBtn{order:5}
   #exportMenu{left:10px;right:10px;width:auto;bottom:130px}
   #status{bottom:140px}
+}
+/* phones in portrait: the 16:9 picture is small — suggest turning the phone */
+@media (max-width:600px) and (orientation:portrait) and (pointer:coarse){
+  #stageWrap{flex-direction:column;gap:10px}
+  #stageWrap:after{content:"↻  Turn your phone for a bigger view";color:var(--tx3);font-size:12px;font-weight:600}
+}
+/* phones in landscape: little height — compact header and dock, the picture gets the room */
+@media (max-height:520px) and (orientation:landscape){
+  #top{height:auto;min-height:44px;flex-wrap:nowrap;padding-top:max(4px,env(safe-area-inset-top));padding-bottom:4px;gap:6px}
+  .brand div,.titles,#eraChip,.sep{display:none}
+  .scenes{flex:1;min-width:0}.scenes select{flex:1;min-width:0;max-width:none;height:32px}
+  .tools{order:0;margin-left:0}.ib{width:34px;height:34px}
+  #stageWrap{padding:6px}
+  #bottom{padding-top:6px;padding-bottom:max(6px,env(safe-area-inset-bottom))}
+  .tl{flex-wrap:nowrap;gap:8px}.tl select{order:0;flex:0 1 160px;max-width:160px;height:32px}
+  #play{width:36px;height:36px}#tread{display:none}
+  #exportBtn{order:0;height:36px;padding:0 12px}
+  #exportMenu{bottom:56px;max-height:calc(100dvh - 70px);left:auto;right:10px;width:380px}
+  div.tp-dfwv{top:50px;left:auto;right:10px;width:300px;max-height:calc(100dvh - 60px)}
+  #status{bottom:60px}
 }
 @media (prefers-reduced-motion:reduce){.ld .hopper svg,.ld .shadow,#exportMenu,#status.busy:before{animation:none}}
 </style>
@@ -331,6 +354,10 @@ const TRANS = { none: 0, wave: 1, radial: 2, fade: 3, crack: 4 };
 const INK = '#8A6B64';          // ink colour from the team's own city test (convert mp4 to threejs.html)
 const INK_DARK = '#5A3A30';
 const EXPORT_W = 3840, EXPORT_H = 2160, MAX_SIDE = 32000;
+/** phones / tablets: lighter shapes, pixel ratio ≤ 1.5, no MSAA (the look stays the same, the GPU load drops a lot) */
+const MOBILE = (matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches) || Math.min(screen.width, screen.height) < 600;
+const SEG = MOBILE ? { s: [20, 12], lo: [10, 7], cap: [3, 10], rb: 2, rbs: 3, lathe: 18, cone: 14, tor: [8, 32], disc: 32, half: [20, 8] }
+                   : { s: [28, 18], lo: [14, 10], cap: [6, 14], rb: 4, rbs: 5, lathe: 28, cone: 24, tor: [12, 48], disc: 48, half: [28, 14] };
 
 /* ── colour helpers (sRGB, same maths as the shader) ────────────────────── */
 const hexToRgb = h => { const n = parseInt(String(h).replace('#', ''), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
@@ -487,6 +514,12 @@ function startApp(cfg) {
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
   renderer.setClearColor(0x000000, 0); renderer.outputColorSpace = THREE.SRGBColorSpace;
   stage.prepend(renderer.domElement);
+  // phones can drop the GPU context (memory pressure, app switch): say so instead of showing a frozen frame
+  renderer.domElement.addEventListener('webglcontextlost', e => {
+    e.preventDefault(); document.body.classList.remove('ready');
+    const t = document.getElementById('ldText'); if (t) t.innerHTML = 'The browser paused the 3D view<small>Tap here to reload the scene.</small>';
+    const l = document.getElementById('loader'); if (l) { l.style.pointerEvents = 'auto'; l.style.cursor = 'pointer'; l.onclick = () => location.reload(); }
+  });
   const gl = renderer.getContext();
   const MAX_RB = Math.min(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE), gl.getParameter(gl.MAX_TEXTURE_SIZE));
 
@@ -589,11 +622,11 @@ function startApp(cfg) {
   const lathe = (pts, seg = 28) => new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), seg);
   const rcPts = (() => { const p = [[0, 0], [0.92, 0], [0.99, 0.04], [1, 0.12]]; for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI / 2; p.push([0.85 + 0.15 * Math.cos(a), 0.85 + 0.15 * Math.sin(a)]); } p.push([0, 1]); return p; })();
   const geo = {
-    sphere: new THREE.SphereGeometry(1, 28, 18), sphereLo: new THREE.SphereGeometry(1, 14, 10),
-    capsule: new THREE.CapsuleGeometry(0.5, 1, 6, 14), rbox: new RoundedBoxGeometry(1, 1, 1, 4, 0.16), rboxSoft: new RoundedBoxGeometry(1, 1, 1, 5, 0.3),
-    rcyl: lathe(rcPts), cone: lathe([[0, 0], [1, 0], [0.98, 0.08], [0.55, 0.62], [0.18, 0.95], [0, 1]], 24),
-    torus: new THREE.TorusGeometry(1, 0.12, 12, 48), disc: new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2),
-    halfSphere: new THREE.SphereGeometry(1, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+    sphere: new THREE.SphereGeometry(1, ...SEG.s), sphereLo: new THREE.SphereGeometry(1, ...SEG.lo),
+    capsule: new THREE.CapsuleGeometry(0.5, 1, ...SEG.cap), rbox: new RoundedBoxGeometry(1, 1, 1, SEG.rb, 0.16), rboxSoft: new RoundedBoxGeometry(1, 1, 1, SEG.rbs, 0.3),
+    rcyl: lathe(rcPts, SEG.lathe), cone: lathe([[0, 0], [1, 0], [0.98, 0.08], [0.55, 0.62], [0.18, 0.95], [0, 1]], SEG.cone),
+    torus: new THREE.TorusGeometry(1, 0.12, ...SEG.tor), disc: new THREE.CircleGeometry(1, SEG.disc).rotateX(-Math.PI / 2),
+    halfSphere: new THREE.SphereGeometry(1, SEG.half[0], SEG.half[1], 0, Math.PI * 2, 0, Math.PI / 2),
     inkBar: new THREE.BoxGeometry(1, 1, 1),
   };
   geo.lathe = lathe;
@@ -742,7 +775,7 @@ function startApp(cfg) {
   }
   /** exporting = huge 4K / panorama targets: no MSAA there (memory); the live preview gets 4× MSAA so edges don't crawl */
   function sizeTargets(w, h, exporting = false) {
-    const samples = exporting || !renderer.capabilities.isWebGL2 ? 0 : 4;
+    const samples = exporting || MOBILE || !renderer.capabilities.isWebGL2 ? 0 : 4;
     if (rt.samples !== samples) { rt.dispose(); rt.samples = samples; }
     for (const t of [rt, rtN, rtL, rtM]) t.setSize(w, h);
     rtN.depthTexture.image.width = w; rtN.depthTexture.image.height = h;
@@ -795,7 +828,7 @@ function startApp(cfg) {
   const shots = cfg.shots; let acc = 0; for (const s of shots) { s.t0 = acc; acc += s.dur; } const TOTAL = acc;
   const shotAt = T => { for (const s of shots) if (T < s.t0 + s.dur) return s; return shots[shots.length - 1]; };
   const ease = k => k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-  const api = { THREE, scene, camera, groups, renderer, geo, toon, solid, Batch, B, buildBatches, fx, setSky, sun, hemi, ease, state, fxU, mapColour, hexToRgb, rgbToHex, register, mergeGeometries, setEl, inkLines, idMat, INK,
+  const api = { MOBILE, THREE, scene, camera, groups, renderer, geo, toon, solid, Batch, B, buildBatches, fx, setSky, sun, hemi, ease, state, fxU, mapColour, hexToRgb, rgbToHex, register, mergeGeometries, setEl, inkLines, idMat, INK,
     lerp: (a, b, k) => a + (b - a) * k, clamp: (v, a, b) => Math.min(b, Math.max(a, v)), smooth: (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); } };
   let refreshGui = () => {};
   function applyTime(T) {
@@ -825,7 +858,7 @@ function startApp(cfg) {
      (< ~25 fps) and never bounces back up by itself — resolution changes cause a visible hitch. Exports are unaffected. */
   let autoScale = 1;
   const previewDpr = () => {
-    const dev = Math.min(2, window.devicePixelRatio || 1);
+    const dev = Math.min(MOBILE ? 1.5 : 2, window.devicePixelRatio || 1);
     if (state.quality === 'high') return dev;
     if (state.quality === 'low') return Math.max(0.75, dev * 0.6);
     return Math.max(0.75, dev * autoScale);
@@ -1101,19 +1134,8 @@ function startApp(cfg) {
     const root = new THREE.Group(); root.name = cfg.id + '_' + slug(cfg.title);
     const els = new Map(), elGroup = name => { if (!els.has(name)) { const g = new THREE.Group(); g.name = name; root.add(g); els.set(name, { g, geos: [], mat: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, name: name }) }); } return els.get(name); };
     const shown = o => state.elVis[o.userData.el] !== false && o.visible !== false;
-    const m = new THREE.Matrix4(), col = new THREE.Color();
-    let n = 0;
-    for (const mesh of reg.fills) {
-      if (!shown(mesh) || !mesh.parent || !mesh.parent.visible) continue;
-      const e = elGroup(mesh.userData.el);
-      if (mesh.isInstancedMesh) {
-        const parts = [];
-        for (let i = 0; i < mesh.count; i++) { mesh.getMatrixAt(i, m); m.premultiply(mesh.matrixWorld); mesh.getColorAt(i, col); parts.push(bakeGeometry(lowGeo(mesh.geometry), m, col)); }
-        const g = merged(parts); if (g) e.geos.push(g);
-      } else e.geos.push(bakeGeometry(mesh.geometry, mesh.matrixWorld, new THREE.Color(mesh.userData.baseHex)));
-      if (++n % 40 === 0) { say(`3D — baking ${n} objects…`); await tick0(); }
-    }
-    for (const [name, e] of els) { const g = merged(e.geos); if (!g) continue; const mm = new THREE.Mesh(g, e.mat); mm.name = name + '_mesh'; e.g.add(mm); }
+    // solid shapes: one mesh per element × colour, the colour on the material (not on every vertex) → about half the file size
+    for (const { el, hex, geo: g } of await collectSolids(say, { fx: false })) { const mm = new THREE.Mesh(g, stdMat(hex)); mm.name = `${el}_${hex.replace('#', '')}`; elGroup(el).g.add(mm); }
     // flat pieces (ground, roads, river…) with their own colour or texture
     for (const f of reg.fx) {
       const mat = f.userData.fillMat; if (!shown(f) || !(mat && (mat.isMeshToonMaterial || mat.isMeshBasicMaterial || mat.isMeshStandardMaterial)) || !f.geometry) continue;
@@ -1196,7 +1218,7 @@ function startApp(cfg) {
     return g;
   }
   /** → [{ el, hex, geo }] merged per element × colour, only what is visible (elements panel + scene toggles) */
-  async function collectSolids(say) {
+  async function collectSolids(say, { fx = true } = {}) {
     scene.updateMatrixWorld(true);
     const parts = new Map(), put = (el, hex, g) => { const k = el + '|' + hex; if (!parts.has(k)) parts.set(k, { el, hex, list: [] }); parts.get(k).list.push(g); };
     const shown = o => state.elVis[o.userData.el] !== false && visibleDeep(o);
@@ -1208,7 +1230,7 @@ function startApp(cfg) {
       else put(mesh.userData.el, mesh.userData.baseHex, bakePN(lg, mesh.matrixWorld));
       if (++n % 40 === 0) { say(`3D — baking ${n} objects…`); await tick0(); }
     }
-    for (const f of reg.fx) {   // flat pieces: ground, roads, river…
+    if (fx) for (const f of reg.fx) {   // flat pieces: ground, roads, river…
       const mat = f.userData.fillMat;
       if (!f.isMesh || !f.geometry || !shown(f) || !(mat && (mat.isMeshToonMaterial || mat.isMeshBasicMaterial || mat.isMeshStandardMaterial))) continue;
       put(f.userData.el, f.userData.baseHex || '#' + (mat.color ? mat.color.getHexString() : 'ffffff'), bakePN(f.geometry, f.matrixWorld));
@@ -1293,7 +1315,7 @@ function startApp(cfg) {
   fExp.add(state, 'lineWobble', 0, 2, 0.05).name('Hand wobble');
   fExp.add(state, 'whiteBg').name('Lineart on white');
   fExp.add(state, 'glbMode', { 'Instanced · small (Blender 3.6+)': 'instanced', 'Baked · one mesh per element': 'baked' }).name('.glb mode');
-  fExp.add(state, 'meshDetail', { 'Medium (smooth)': 'medium', 'Light (small file)': 'light' }).name('.obj / .stl detail');
+  fExp.add(state, 'meshDetail', { 'Medium (smooth)': 'medium', 'Light (small file)': 'light' }).name('3D detail (baked .glb, .obj, .stl)');
   const fEl = gui.addFolder('Elements (own PNG each)');
   elements.filter(e => e !== 'scene' && hasContent(e)).forEach(e => fEl.add(state.elVis, e));
   const fOv = gui.addFolder('Guides (screen only)');

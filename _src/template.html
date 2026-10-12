@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1A191E">
 <meta name="color-scheme" content="dark">
 <title>{{TITLE}}</title>
 <!-- {{TITLE}} · Sirpeltric BG reference (Three.js). Single file: open by double-click. Background only — no characters. -->
@@ -38,11 +39,13 @@
 html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:13px/1.45 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased}
 button,select,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--sky);outline-offset:2px}
-#app{display:flex;flex-direction:column;height:100%}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh}   /* dvh: the real visible height on phones (address bar) */
+html,body{overscroll-behavior:none}
+button,a,select,input,label{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 svg{display:block}
 
 /* ── header ── */
-#top{display:flex;align-items:center;gap:10px;padding:0 10px 0 14px;height:56px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+#top{display:flex;align-items:center;gap:10px;padding:0 max(10px,env(safe-area-inset-right)) 0 max(14px,env(safe-area-inset-left));padding-top:env(safe-area-inset-top);height:56px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--tx);flex:none;border-radius:10px;padding:4px 6px 4px 2px}
 .brand:hover{background:var(--panel2)}
 .duo{display:flex;align-items:flex-end;flex:none}.duo svg{display:block}
@@ -88,7 +91,7 @@ div.tp-dfwv{width:300px;top:64px;right:10px;z-index:30;max-height:calc(100vh - 1
 div.tp-dfwv{display:none}body.settings div.tp-dfwv{display:block}
 
 /* ── dock ── */
-#bottom{border-top:1px solid var(--line);background:var(--panel);padding:10px 14px;flex:none}
+#bottom{border-top:1px solid var(--line);background:var(--panel);padding:10px max(14px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));flex:none}
 .tl{display:flex;align-items:center;gap:12px}
 #play{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--pink);color:var(--pink-ink);display:grid;place-items:center;cursor:pointer;box-shadow:inset -3px -3px 0 #0000001a;padding:0;transition:transform .12s,background .12s}
 #play:hover{background:var(--pink-h)}#play:active{transform:scale(.94)}
@@ -156,7 +159,7 @@ body.clean #stageWrap{padding:0;background:#000}
 body.clean #stage{border-radius:0;box-shadow:none}
 body.clean #overlay{display:none}
 
-@media (max-width:1100px){.brand span,.brand small{display:none}.scenes select{max-width:170px}}
+@media (max-width:1100px){.brand div{display:none}.scenes select{max-width:170px}}
 @media (max-width:760px){
   #top{flex-wrap:wrap;height:auto;padding:8px 10px;gap:6px 8px}.sep{display:none}
   .titles{order:5;flex:1 1 100%}#eraChip{order:6;max-width:100%}
@@ -167,6 +170,26 @@ body.clean #overlay{display:none}
   #exportBtn{order:5}
   #exportMenu{left:10px;right:10px;width:auto;bottom:130px}
   #status{bottom:140px}
+}
+/* phones in portrait: the 16:9 picture is small — suggest turning the phone */
+@media (max-width:600px) and (orientation:portrait) and (pointer:coarse){
+  #stageWrap{flex-direction:column;gap:10px}
+  #stageWrap:after{content:"↻  Turn your phone for a bigger view";color:var(--tx3);font-size:12px;font-weight:600}
+}
+/* phones in landscape: little height — compact header and dock, the picture gets the room */
+@media (max-height:520px) and (orientation:landscape){
+  #top{height:auto;min-height:44px;flex-wrap:nowrap;padding-top:max(4px,env(safe-area-inset-top));padding-bottom:4px;gap:6px}
+  .brand div,.titles,#eraChip,.sep{display:none}
+  .scenes{flex:1;min-width:0}.scenes select{flex:1;min-width:0;max-width:none;height:32px}
+  .tools{order:0;margin-left:0}.ib{width:34px;height:34px}
+  #stageWrap{padding:6px}
+  #bottom{padding-top:6px;padding-bottom:max(6px,env(safe-area-inset-bottom))}
+  .tl{flex-wrap:nowrap;gap:8px}.tl select{order:0;flex:0 1 160px;max-width:160px;height:32px}
+  #play{width:36px;height:36px}#tread{display:none}
+  #exportBtn{order:0;height:36px;padding:0 12px}
+  #exportMenu{bottom:56px;max-height:calc(100dvh - 70px);left:auto;right:10px;width:380px}
+  div.tp-dfwv{top:50px;left:auto;right:10px;width:300px;max-height:calc(100dvh - 60px)}
+  #status{bottom:60px}
 }
 @media (prefers-reduced-motion:reduce){.ld .hopper svg,.ld .shadow,#exportMenu,#status.busy:before{animation:none}}
 </style>
