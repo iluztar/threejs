@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{TITLE}}</title>
+<!-- {{TITLE}} · Sirpeltric BG reference (Three.js). Single file: open by double-click. Background only — no characters. -->
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<style>
+:root{--bg:#141416;--panel:#1E1E21;--line:#34343A;--tx:#E6E6E9;--tx2:#9A9AA3;--acc:#2F6FEB;--pink:#EC4899}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:13px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100%}
+#top{display:flex;align-items:center;gap:12px;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--panel);min-height:44px}
+#title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#info{color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
+#stageWrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px;position:relative}
+#stage{position:relative;box-shadow:0 0 0 1px var(--line)}
+#stage canvas{display:block}
+#overlay{position:absolute;inset:0;pointer-events:none}
+/* floating config menu, top-right — as in jh3y's pen zxOJdEe (tweakpane, 280px, lowercase) */
+div.tp-dfwv{width:280px;top:8px;right:8px;z-index:20;max-height:calc(100vh - 16px);overflow:auto}
+div.tp-dfwv *{text-transform:lowercase}
+#bottom{border-top:1px solid var(--line);background:var(--panel);padding:8px 14px 10px;display:flex;flex-direction:column;gap:8px}
+.tl{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tl input[type=range]{flex:1;min-width:140px;accent-color:var(--acc)}
+.tl select{height:34px;background:#26262A;color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:0 8px;max-width:260px}
+#tread{color:var(--tx2);font-variant-numeric:tabular-nums;white-space:nowrap}
+button{height:34px;padding:0 14px;border-radius:6px;border:1px solid var(--line);background:#26262A;color:var(--tx);font:600 13px system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+button:hover:not(:disabled){border-color:var(--acc)}
+button:disabled{opacity:.5;cursor:progress}
+button.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+#exportBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+#exportBar .btns{display:flex;gap:8px;flex-wrap:wrap}
+#exportBar .lbl{font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.06em;font-size:11px}
+#status{color:var(--tx2);margin-left:auto;font-size:12px}
+@media (max-width:700px){
+  #exportBar .btns{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  #status{margin-left:0}
+  div.tp-dfwv{width:250px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top"><div id="title"></div><div id="info"></div></div>
+  <div id="stageWrap">
+    <div id="stage"><canvas id="overlay"></canvas></div>
+  </div>
+  <div id="bottom">
+    <div class="tl">
+      <button id="play">Pause</button>
+      <select id="shot" aria-label="Shot"></select>
+      <input id="scrub" type="range" min="0" value="0" aria-label="Timeline">
+      <span id="tread"></span>
+    </div>
+    <div id="exportBar"><span class="lbl">Export</span><div class="btns"></div><span id="status">Background only · guides are never exported</span></div>
+  </div>
+</div>
+<script type="module">
+{{CODE}}
+</script>
+</body>
+</html>
