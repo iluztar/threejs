@@ -17,6 +17,15 @@ Every scene is a single HTML file. Open it from the site or by double-clicking i
 | ![](bg5-hobby/preview.jpg) | [BG 5 · Hobby background](bg5-hobby/bg5-hobby.html) | Sc 19–20 | full colour |
 | ![](bg6-forward-pathway/preview.jpg) | [BG 6 · Forward pathway](bg6-forward-pathway/bg6-forward-pathway.html) | Sc 21–24 | colour → grey warp → black |
 
+### Batch export (main page)
+At the bottom of `index.html`, **Batch export** saves the 3D files of several scenes in one go:
+1. Tick the scenes (all are ticked by default).
+2. Pick the format: **.glb baked** (one mesh per element, best for Meshy.ai and other tools), **.glb instanced** (small, Blender 3.6+), **.obj + .mtl** or **.stl**. For .obj / .stl you can also pick the detail.
+3. Choose **One ZIP** or **Separate files**, then press **Export**.
+
+Each scene opens in the small preview, exports itself (camera = shot 1) and the next one starts; the list shows the size of every file.
+The baked .glb of BG 1 is large (~140 MB). With *Separate files* the browser may ask once to allow multiple downloads.
+
 ---
 
 ## Using a scene
@@ -27,23 +36,31 @@ Every scene is a single HTML file. Open it from the site or by double-clicking i
 | `Space` | Play / pause |
 | `←` `→` | One frame back / forward (`Shift` = 1 second) |
 | `1`–`9` | Jump to a shot |
+| `E` | Export menu |
+| `S` | Settings panel |
+| `[` `]` | Previous / next scene |
 | `G` | Guides: rule of thirds, title/action safe, horizon, staging box |
 | `H` | Clean view (picture only), `Esc` to leave |
 | `F` | Fullscreen |
 | `?` | Shortcut list |
 
-### Config menu (top right)
-- **era**: era look (timeline from the brief, or a fixed era) and the red wave / rotating wave / colour bleed / crack transitions.
-- **look**
-  - *shading*: `flat 2d (chiikawa)` (default), `flat + cel shadow (kirby)`, or `soft 3d toon (old)`
-  - *sky bands* (0 = smooth gradient) and *depth tint steps* (0 = smooth fog)
-  - drawn lines on/off, *line px @1080* (2.4 px, the same width everywhere), extra silhouette
-  - *preview quality*: `auto` keeps the page light, `high` is sharp, `low` is fastest. Exports always render at full 4K.
-- **export**: PNG format (long panorama or a single 4K frame), lineart colour, hand wobble, lineart on white, `.glb` mode, `.obj / .stl` detail.
-- **elements**: show/hide each element (sky, clouds, hills, city…). Hidden elements are left out of every export.
-- **guides** and a per-scene folder (landmark, light preset, props…).
+### Header
+Scene switcher (‹ list ›), title and current shot, the active era, then: guides, clean view, fullscreen, **settings**, shortcuts.
 
-### Export bar
+### Settings panel (gear button or `S`)
+- **Era**: era look (timeline from the brief, or a fixed era) and the red wave / rotating wave / colour bleed / crack transitions.
+- **Look**
+  - *shading*: `flat 2d (chiikawa)` (default), `flat + cel shadow (kirby)`, or `soft 3d toon (old)`
+  - *sky bands* (0 = smooth gradient) and *ground tint steps* (0 = smooth fog on the ground, the default)
+  - drawn lines on/off, *line px @1080* (2.4 px, the same width everywhere), extra silhouette
+  - *preview quality*: `auto` is sharp and lowers the resolution only if frames stay slow, `high` is always sharp, `low` is fastest. Exports always render at full 4K.
+- **Export options**: image format (long panorama or a single 4K frame), lineart colour, hand wobble, lineart on white, `.glb` mode, `.obj / .stl` detail.
+- **Elements**: show/hide each element (sky, clouds, hills, city…). Hidden elements are left out of every export.
+- **Guides** and a per-scene folder (landmark, light preset, props…).
+
+### Export menu (pink **Export** button or `E`)
+One button opens a grouped menu. Pick *Long panorama* or *Single 4K frame* at the top; progress shows in a small toast and the stage shows *Exporting…* until the file downloads.
+
 | Button | Output |
 |---|---|
 | **Export 4K Panorama PNG** | The whole camera move as one long painting, 2160 px tall (or a single 3840×2160 frame). |
@@ -62,8 +79,8 @@ For heavy scenes (BG 1 city), set *.obj / .stl detail* to `light (small file)`: 
 ## Performance
 - Minified Three.js, with all modules fetched in parallel (`modulepreload`). JSZip, `GLTFExporter` and `STLExporter` load only when an export needs them.
 - Frames are drawn only while playing or after something changes, so an idle page costs almost nothing.
-- Preview pixel ratio is capped at 1.5 and steps down automatically when frames get slow.
-- No MSAA or preserved buffer on the canvas, 8-bit helper render targets, and frustum culling per instanced batch.
+- Preview renders at the screen pixel ratio (up to 2) with 4× MSAA; in `auto` it lowers the resolution once if frames stay below ~25 fps.
+- No MSAA or preserved buffer on the canvas itself (it only receives the finished picture), 8-bit helper render targets, and frustum culling per instanced batch.
 
 ---
 

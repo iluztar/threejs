@@ -168,7 +168,8 @@ function water(api) {                                 // colour of the water aro
   const t = api.clamp(-y / 38, 0, 1), mix = (a, b) => api.rgbToHex(api.hexToRgb(a).map((v, i) => v + (api.hexToRgb(b)[i] - v) * t));
   const fogC = mix('#5FCFE0', '#2F6FB0');
   setSky(mix('#BFF3F5', '#7FD3E8'), fogC, fogC, { baseHex: fogC });            // below the horizon = fog colour (no dark band)
-  scene.fog = new THREE.Fog(fogC, 12, api.lerp(170, 120, t));
+  scene.fog = S.fog ||= new THREE.Fog(fogC, 12, 170);   // one Fog object, updated in place (a new one every frame re-checks every material)
+  scene.fog.color.set(fogC); scene.fog.near = 12; scene.fog.far = api.lerp(170, 120, t);
   if (S.floorMat) { S.floorMat.uniforms.uFog.value.set(fogC); S.floorMat.uniforms.uNear.value = 12; S.floorMat.uniforms.uFar.value = api.lerp(170, 120, t); }
   fxU.depthWarm = t * 0.75; hemi.intensity = api.lerp(2.2, 1.6, t); hemi.color.set('#E9FBFF'); hemi.groundColor.set('#3A7FA8'); sun.intensity = 1.1; sun.position.set(0.2, 1, 0.3);
 }

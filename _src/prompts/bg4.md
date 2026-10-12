@@ -2,6 +2,13 @@
 **Era (brief):** Sc 11 red wave → **1970s** · Sc 12–14 mirrored platform, B&W close-up (**1945** values) · Sc 15 the wave **rotates 360°** → **1980s** · Sc 16 wave → **1990s** (wide shot) · Sc 17–18 **4-box mirrored BG, a colour per side** (**full colour**). The era dropdown offers exactly these.
 **Deadline (plan):** week 4 · Fri 30 Oct 2026.
 
+> **Client update (Oct 2026): the setting is now a MOUNTAIN LAKE.** A still lake mirrors everything (real mirrored copy, a little darker/bluer;
+> white clouds reflect light, the water below the horizon is the mirrored blue sky). Pastel lavender mountains with soft snow caps far
+> behind, round green shore hills, round trees and soft pines, shore rocks and reeds, lily pads with small flowers on the water, ink ripple
+> rings around the dock. The characters stand on a small round wooden dock in the middle of the lake (top ≈ 0.8, calm and empty),
+> with a short walkway toward the camera. This replaces the white pillars / arches / mirror ring / cloud islands described below;
+> shots, eras, transitions, the 4-box and the "fold the mirror world" option stay the same.
+
 ## The world
 - A calm, endless mirror: the **horizon is the mirror line**. Above it, a bright, simple cloudscape (Kirby & the Amazing Mirror "Dimension Mirror"); below, its reflection, slightly **darker and softer**, with small ripple rings breaking the symmetry (Salar de Uyuni).
 - The reflection is a real mirrored copy of the world (scale y −1, darker base colours), so it works in colour, lineart, base colour and element exports. A thin semi-transparent water film adds ripples in the colour render only.

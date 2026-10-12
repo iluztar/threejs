@@ -225,7 +225,7 @@ export function startApp(cfg) {
      - big flat fx pieces (ground, roads) keep per-pixel fog, but quantised into a few painted steps
      - light colour / strength of the scene (hemi + sun) becomes one flat tint, so mood presets still work
      - optional single cel shadow (Kirby) on the side away from the sun */
-  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 4 } };
+  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 0 } };
   const FLAT_FS_HEAD = 'uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; varying vec3 vFlatN;\n';
   function flatPatch(mat, perObjectFog) {
     mat.onBeforeCompile = sh => {
@@ -244,7 +244,7 @@ export function startApp(cfg) {
             #endif
             vFogDepth = -(modelViewMatrix * fogO).z;
           #endif` : '#include <fog_vertex>');
-      sh.fragmentShader = FLAT_FS_HEAD + sh.fragmentShader
+      sh.fragmentShader = (perObjectFog ? '' : '#define FLAT_FOG_STEPS\n') + FLAT_FS_HEAD + sh.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
           diffuseColor.rgb *= uTint;
           if (uCel > 0.5) { vec3 n = normalize(vFlatN); n = gl_FrontFacing ? n : -n; diffuseColor.rgb *= mix(uShade, vec3(1.0), step(0.05, dot(n, uSunV))); }`)
@@ -254,7 +254,9 @@ export function startApp(cfg) {
             #else
               float fogF = smoothstep(fogNear, fogFar, vFogDepth);
             #endif
-            if (uFogSteps > 0.5) fogF = floor(fogF * uFogSteps + 0.5) / uFogSteps;
+            #ifdef FLAT_FOG_STEPS
+              if (uFogSteps > 0.5) fogF = floor(fogF * uFogSteps + 0.5) / uFogSteps;
+            #endif
             gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);
           #endif`);
     };
@@ -405,7 +407,7 @@ export function startApp(cfg) {
   const state = {
     playing: true, T: 0, eraMode: 'auto', nextEra: 'e1945', waveType: 'wave', manual: null,
     outlines: false, edges: true, lineW: 2.4, pxScale: 1, lineColour: 'ink', lineWobble: 0.25, glbMode: 'instanced', whiteBg: false,
-    shading: 'flat', skyBands: 4, fogSteps: 4, quality: 'auto', meshDetail: 'medium',
+    shading: 'flat', skyBands: 4, fogSteps: 0, quality: 'auto', meshDetail: 'medium',
     ov: { thirds: false, safe: false, horizon: false, vp: false, staging: false }, exportMode: 'pano', elVis: {}, eraShown: 'base', eraNow: 'base',
   };
   const fxU = { four: 0, quad: [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]], depthWarm: 0, wash: 0, black: 0 };
@@ -446,7 +448,10 @@ export function startApp(cfg) {
     }
     if (p === 'normal') for (const h of reg.hulls) h.visible = false;
   }
-  function sizeTargets(w, h) {
+  /** exporting = huge 4K / panorama targets: no MSAA there (memory); the live preview gets 4× MSAA so edges don't crawl */
+  function sizeTargets(w, h, exporting = false) {
+    const samples = exporting || !renderer.capabilities.isWebGL2 ? 0 : 4;
+    if (rt.samples !== samples) { rt.dispose(); rt.samples = samples; }
     for (const t of [rt, rtN, rtL, rtM]) t.setSize(w, h);
     rtN.depthTexture.image.width = w; rtN.depthTexture.image.height = h;
     frameMat.uniforms.uRes.value.set(w, h); edgeMat.uniforms.uRes.value.set(w, h);
@@ -524,13 +529,14 @@ export function startApp(cfg) {
   }
 
   /* display sizing (16:9 stage) */
-  /* preview resolution: 'auto' caps the pixel ratio at 1.5 and steps down while frames are slow; exports are unaffected */
+  /* preview resolution: sharp by default (pixel ratio up to 2). 'auto' steps down only when frames stay really slow
+     (< ~25 fps) and never bounces back up by itself — resolution changes cause a visible hitch. Exports are unaffected. */
   let autoScale = 1;
   const previewDpr = () => {
-    const dev = window.devicePixelRatio || 1;
-    if (state.quality === 'high') return Math.min(2, dev);
-    if (state.quality === 'low') return Math.max(0.5, Math.min(1, dev) * 0.7);
-    return Math.max(0.5, Math.min(1.5, dev) * autoScale);
+    const dev = Math.min(2, window.devicePixelRatio || 1);
+    if (state.quality === 'high') return dev;
+    if (state.quality === 'low') return Math.max(0.75, dev * 0.6);
+    return Math.max(0.75, dev * autoScale);
   };
   function resize() {
     const wrap = $('#stageWrap'), pad = document.body.classList.contains('clean') ? 0 : 24, W = wrap.clientWidth - pad, H = wrap.clientHeight - pad;
@@ -547,8 +553,8 @@ export function startApp(cfg) {
   /* only render when something changed (playing, scrubbing, GUI, resize, transition) → an idle page costs ~nothing */
   let dirty = true;
   function invalidate() { dirty = true; }
-  let resizeRaf = 0;
-  window.addEventListener('resize', () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(resize); });
+  let needResize = false;   // resized inside the render loop, right before drawing → no blank frame
+  window.addEventListener('resize', () => { needResize = true; dirty = true; });
 
   /* overlays (screen only, never exported) */
   const project = v => { const p = v.clone().project(camera); return [(p.x * 0.5 + 0.5) * overlay.width, (1 - (p.y * 0.5 + 0.5)) * overlay.height, p.z]; };
@@ -589,7 +595,10 @@ export function startApp(cfg) {
   const GUIDE_KEYS = ['thirds', 'safe', 'horizon', 'staging'];
   const guidesOn = () => GUIDE_KEYS.some(k => state.ov[k]);
   const btnGuides = $('#btnGuides'), btnClean = $('#btnClean'), btnFull = $('#btnFull'), btnHelp = $('#btnHelp'), help = $('#help');
-  const syncTools = () => { btnGuides?.classList.toggle('on', guidesOn()); btnClean?.classList.toggle('on', document.body.classList.contains('clean')); };
+  const btnSettings = $('#btnSettings');
+  const syncTools = () => { btnGuides?.classList.toggle('on', guidesOn()); btnClean?.classList.toggle('on', document.body.classList.contains('clean')); btnSettings?.classList.toggle('on', document.body.classList.contains('settings')); };
+  const toggleSettings = force => { document.body.classList.toggle('settings', force); syncTools(); };
+  btnSettings && (btnSettings.onclick = () => toggleSettings());
   const toggleGuides = () => { const on = !guidesOn(); GUIDE_KEYS.forEach(k => state.ov[k] = on && (k !== 'staging' || !!cfg.staging)); refreshGui(); syncTools(); invalidate(); };
   const toggleClean = () => { document.body.classList.toggle('clean'); syncTools(); resize(); };
   const toggleFull = () => { const el = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen?.(); };
@@ -608,21 +617,34 @@ export function startApp(cfg) {
     else if (k === 'h' || k === 'H') toggleClean();
     else if (k === 'f' || k === 'F') toggleFull();
     else if (k === '?' || k === '/') toggleHelp();
-    else if (k === 'Escape') { toggleHelp(false); if (document.body.classList.contains('clean')) toggleClean(); }
+    else if (k === 'e' || k === 'E') toggleMenu();
+    else if (k === 's' || k === 'S') toggleSettings();
+    else if (k === '[') window.__sceneNav?.prev();
+    else if (k === ']') window.__sceneNav?.next();
+    else if (k === 'Escape') { toggleHelp(false); toggleMenu(false); toggleSettings(false); if (document.body.classList.contains('clean')) toggleClean(); }
   });
   document.addEventListener('fullscreenchange', () => { btnFull?.classList.toggle('on', !!document.fullscreenElement); });
 
   /* ── exports ── */
-  const bar = $('#exportBar'), status = $('#status');
+  /* export menu (one button → grouped menu) + a toast for progress */
+  const menu = $('#exportMenu'), exportBtn = $('#exportBtn'), status = $('#status'), note = $('#exportNote'), bar = menu;
+  let toastTimer = 0;
+  const toast = (msg, kind = 'busy', hold = 0) => { status.textContent = msg; status.className = 'show ' + kind; clearTimeout(toastTimer); if (hold) toastTimer = setTimeout(() => { status.className = ''; }, hold); };
+  const toggleMenu = force => { const open = force ?? menu.hidden; if (open && busy) return; menu.hidden = !open; exportBtn.setAttribute('aria-expanded', String(open)); if (open) { lastKey = ''; refreshExportLabels(); } };
+  exportBtn.onclick = () => toggleMenu();
+  menu.querySelector('[data-close]').onclick = () => toggleMenu(false);
+  document.addEventListener('pointerdown', e => { if (!menu.hidden && !menu.contains(e.target) && !exportBtn.contains(e.target)) toggleMenu(false); });
+  menu.querySelectorAll('.seg button').forEach(b => b.onclick = () => { state.exportMode = b.dataset.mode; lastKey = ''; refreshExportLabels(); refreshGui(); });
   const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const tick0 = () => new Promise(r => setTimeout(r, 20));
   const toBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
-  function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
+  let downloadSink = null;   // batch mode (index page): files go to the parent page instead of the browser
+  function download(blob, name) { if (downloadSink) return downloadSink(blob, name); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
   const focalPx = H => (H / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   api.focalPx = focalPx;
   function withExportSize(w, h, fn) {
     const prevPR = renderer.getPixelRatio();
-    renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeTargets(w, h); state.pxScale = EXPORT_H / 1080;
+    renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeTargets(w, h, true); state.pxScale = EXPORT_H / 1080;
     try { fn(); } finally { camera.clearViewOffset(); frameMat.uniforms.uTile.value.set(0, 0, 1, 1); frameMat.uniforms.uNoVig.value = 0; renderer.setPixelRatio(prevPR); resize(); applyTime(state.T); }
   }
   /** Single 4K frame (tiles if the GPU limit is smaller). */
@@ -674,10 +696,13 @@ export function startApp(cfg) {
   let busy = false;
   async function job(btn, label, fn) {
     if (busy) return; busy = true; const was = state.playing; state.playing = false;
-    bar.querySelectorAll('button').forEach(b => b.disabled = true); const old = btn.textContent; btn.textContent = 'Rendering…';
-    try { await fn(msg => status.textContent = msg); status.textContent = label + ' saved ✓'; }
-    catch (e) { console.error(e); status.textContent = 'Export failed: ' + e.message; }
-    btn.textContent = old; bar.querySelectorAll('button').forEach(b => b.disabled = false); state.playing = was; busy = false; invalidate();
+    toggleMenu(false); exportBtn.disabled = true; bar.querySelectorAll('.mi').forEach(b => b.disabled = true);
+    const ld = $('#ldText'), ldWas = ld?.innerHTML; if (ld) ld.innerHTML = `Exporting ${label}…<small>Rendering at full quality — the preview comes back when it is done.</small>`;
+    document.body.classList.add('exporting'); toast(label + ' — starting…');
+    try { await fn(msg => toast(msg)); toast(label + ' saved', 'done', 3500); }
+    catch (e) { console.error(e); toast('Export failed: ' + e.message, 'err', 7000); }
+    document.body.classList.remove('exporting'); if (ld) ld.innerHTML = ldWas;
+    exportBtn.disabled = false; bar.querySelectorAll('.mi').forEach(b => b.disabled = false); state.playing = was; busy = false; invalidate();
   }
   const PASS_NAME = { final: 'colour', lineart: 'lineart', base: 'basecolor' };
   async function single(pass, btn, label) {
@@ -709,17 +734,39 @@ export function startApp(cfg) {
   }
   const exportElements = () => elements.filter(e => e !== 'scene' && state.elVis[e] !== false && hasContent(e));
   const hasContent = e => [...reg.fills, ...reg.ink, ...reg.fx].some(o => o.userData.el === e);
-  const mkBtn = (label, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.className = cls; b.onclick = () => fn(b); bar.querySelector('.btns').appendChild(b); return b; };
-  const mainBtns = [
-    mkBtn('', 'primary', b => single('final', b, 'Colour PNG')), mkBtn('', '', b => single('lineart', b, 'Lineart PNG')),
-    mkBtn('', '', b => single('base', b, 'Base color PNG')), mkBtn('', '', b => zipSet(b)),
+  const ICON = {
+    colour: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 16l4.5-4.5 3.5 3.5 2.5-2.5L20 18"/><circle cx="15.5" cy="8.5" r="1.5"/>',
+    line: '<path d="M4 18c3-6 5-9 8-9s3 5 8 3M4 12c2-3 4-5 6-5"/>',
+    fill: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+    layers: '<path d="M12 4l8 4-8 4-8-4 8-4z"/><path d="M4 12l8 4 8-4M4 16l8 4 8-4"/>',
+    cube: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+    extra: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/>',
+  };
+  /** one row in the export menu: icon · title · one-line description */
+  const mkItem = (sec, icon, title, desc, fn, primary = false) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'mi' + (primary ? ' primary' : '');
+    b.innerHTML = `<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[icon]}</svg></span><span><b></b><small></small></span>`;
+    const set = (t, d) => { b.querySelector('b').textContent = t; b.querySelector('small').textContent = d; };
+    set(title, desc); b.onclick = () => fn(b); $(sec).appendChild(b); $(sec).classList.remove('empty'); return { b, set };
+  };
+  const mainItems = [
+    mkItem('#expImages', 'colour', '', '', b => single('final', b, 'Colour PNG'), true),
+    mkItem('#expImages', 'line', '', '', b => single('lineart', b, 'Lineart PNG')),
+    mkItem('#expImages', 'fill', '', '', b => single('base', b, 'Base colour PNG')),
+    mkItem('#expImages', 'layers', '', '', b => zipSet(b)),
   ];
-  const LABELS = { pano: ['Export 4K Panorama PNG', 'Panorama Lineart', 'Panorama Base color', 'ZIP · each element (panorama)'], frame: ['Export 4K PNG', 'Export 4K Lineart', 'Export 4K Base color', 'ZIP · each element (4K)'] };
+  const ITEM_TEXT = {
+    pano: [['Colour · long panorama', 'The whole camera move as one painting, 2160 px tall'], ['Lineart · long panorama', 'Lines only, transparent background'],
+      ['Base colour · long panorama', 'Flat fills only — clean areas for the magic wand'], ['Every element · ZIP', 'One PNG per element for colour, lineart and base colour']],
+    frame: [['Colour · 4K frame', 'This frame at 3840 × 2160'], ['Lineart · 4K frame', 'Lines only, transparent background'],
+      ['Base colour · 4K frame', 'Flat fills only — clean areas for the magic wand'], ['Every element · ZIP', 'One PNG per element for colour, lineart and base colour'], ],
+  };
   let lastKey = '';
   function refreshExportLabels() {
-    const s = shotAt(state.T), k = curPano() ? 'pano' : 'frame', key = k + shots.indexOf(s); if (key === lastKey || busy) return; lastKey = key;
-    mainBtns.forEach((b, i) => b.textContent = LABELS[k][i]);
-    status.textContent = k === 'pano' ? `One long panorama · 2160 px tall · ${s.pano.label}` : (state.exportMode === 'pano' ? 'No camera travel in this shot → single 4K frame' : 'Single 4K frame · 3840×2160');
+    const s = shotAt(state.T), k = curPano() ? 'pano' : 'frame', key = k + state.exportMode + shots.indexOf(s); if (key === lastKey || busy) return; lastKey = key;
+    mainItems.forEach((it, i) => it.set(...ITEM_TEXT[k][i]));
+    menu.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.exportMode)));
+    note.textContent = k === 'pano' ? `This shot: ${s.pano.label} · width grows with the camera move` : (state.exportMode === 'pano' ? 'This shot has no camera travel, so it exports a single 4K frame' : 'The current frame of this shot · 3840 × 2160');
   }
   /* ── 3D export for Blender (.glb, glTF 2.0) ──
      one object per element (instances baked into plain meshes with vertex colours), ink lines as edges,
@@ -905,11 +952,11 @@ export function startApp(cfg) {
     const data = new STLExporter().parse(root, { binary: true });
     download(new Blob([data], { type: 'model/stl' }), `${fileBase()}.stl`);
   }
-  mkBtn('3D · .glb (Blender)', '', b => job(b, '3D .glb', export3D));
-  mkBtn('3D · .obj', '', b => job(b, '3D .obj', exportOBJ));
-  mkBtn('3D · .stl', '', b => job(b, '3D .stl', exportSTL));
+  mkItem('#exp3d', 'cube', '.glb — Blender', 'Animated shot camera + ink lines · File › Import › glTF 2.0', b => job(b, '3D .glb', export3D));
+  mkItem('#exp3d', 'cube', '.obj + .mtl', 'Flat colours per element, zipped · works in most 3D apps', b => job(b, '3D .obj', exportOBJ));
+  mkItem('#exp3d', 'cube', '.stl', 'Shapes only, no colour · 3D printing or sculpting tools', b => job(b, '3D .stl', exportSTL));
 
-  api.exportExtra = (label, fn) => mkBtn(label, '', b => job(b, label, async say => { await loadZip(); return fn({ say, captureFrame, capturePano, toBlob, download, zip: () => new JSZip(), applyTime, tick: tick0, state }); }));
+  api.exportExtra = (label, fn) => mkItem('#expExtra', 'extra', label, 'Scene-specific export', b => job(b, label, async say => { await loadZip(); return fn({ say, captureFrame, capturePano, toBlob, download, zip: () => new JSZip(), applyTime, tick: tick0, state }); }));
 
   /* ── build scene ── */
   setEl('scene');
@@ -918,59 +965,63 @@ export function startApp(cfg) {
   elements.forEach(e => { if (state.elVis[e] === undefined) state.elVis[e] = true; });
   setShading(state.shading);
 
-  /* ── config panel: Tweakpane 4, the floating top-right config menu from jh3y's pen zxOJdEe (280px, lowercase) ──
+  /* ── settings panel: Tweakpane 4, opens from the gear button (S) so it never covers the picture ──
      a tiny lil-gui-style adapter keeps the scene code simple: f.add(obj, key, options | min, max, step).name().onChange() */
-  const pane = new Pane({ title: 'config', expanded: window.innerWidth >= 1800 });   // floating, top-right (as in the pen); folded so it never covers the picture
+  const pane = new Pane({ title: 'Settings', expanded: true });
+  const pretty = k => String(k).replace(/[-_]+/g, ' ').replace(/^./, c => c.toUpperCase());   // 'night-lights' → 'Night lights'
   const wrap = tp => ({
     add(obj, key, a, b, c) {
       if (typeof obj[key] === 'function') { const btn = tp.addButton({ title: key }); btn.on('click', () => obj[key]()); return { name(n) { btn.title = n; return this; }, onChange() { return this; } }; }
-      const p = {}; if (a && typeof a === 'object') p.options = a; else if (typeof a === 'number') { p.min = a; p.max = b; if (c !== undefined) p.step = c; }
+      const p = { label: pretty(key) }; if (a && typeof a === 'object') p.options = a; else if (typeof a === 'number') { p.min = a; p.max = b; if (c !== undefined) p.step = c; }
       const bind = tp.addBinding(obj, key, p), hs = []; bind.on('change', e => hs.forEach(h => h(e.value)));
-      return { name(n) { bind.label = n; return this; }, onChange(fn) { hs.push(fn); return this; } };
+      return { name(n) { bind.label = pretty(n); return this; }, onChange(fn) { hs.push(fn); return this; } };
     },
-    addFolder(title, expanded = false) { return wrap(tp.addFolder({ title, expanded })); },
+    addFolder(title, expanded = false) { return wrap(tp.addFolder({ title: pretty(title), expanded })); },
     close() { tp.expanded = false; return this; }, open() { tp.expanded = true; return this; },
   });
   const gui = wrap(pane);
-  const fEra = gui.addFolder('era');
+  const fLook = gui.addFolder('Look', true);
+  fLook.add(state, 'shading', { 'Flat 2D (Chiikawa)': 'flat', 'Flat + cel shadow (Kirby)': 'cel', 'Soft 3D toon (old look)': 'toon' }).name('Style').onChange(setShading);
+  fLook.add(state, 'skyBands', 0, 8, 1).name('Sky bands').onChange(v => { if (state.shading !== 'toon') skyMat.uniforms.uBands.value = v; });
+  fLook.add(state, 'fogSteps', 0, 8, 1).name('Ground tint steps').onChange(v => flatU.uFogSteps.value = v);
+  fLook.add(state, 'edges').name('Ink lines'); fLook.add(state, 'lineW', 1, 6, 0.1).name('Line width (px at 1080p)'); fLook.add(state, 'outlines').name('Extra outline');
+  fLook.add(state, 'quality', { 'Auto (sharp, lowers if slow)': 'auto', 'High (always sharp)': 'high', 'Low (fastest)': 'low' }).name('Preview quality').onChange(() => { autoScale = 1; resize(); });
+  const fEra = gui.addFolder('Era');
   const briefEras = cfg.eras || ERA_KEYS;                      // only the eras in this BG's brief
-  const eraOpts = { 'timeline (brief)': 'auto' }; briefEras.forEach(k => eraOpts[ERAS[k].label] = k);
+  const eraOpts = { 'Timeline (brief)': 'auto' }; briefEras.forEach(k => eraOpts[ERAS[k].label] = k);
   const nextOpts = {}; briefEras.forEach(k => nextOpts[ERAS[k].label] = k);
   if (!briefEras.includes(state.nextEra)) state.nextEra = briefEras[0];
-  fEra.add(state, 'eraMode', eraOpts).name('era look');
-  fEra.add(state, 'nextEra', nextOpts).name('wave to');
-  fEra.add(state, 'waveType', { 'red wave (sweep)': 'wave', 'red wave (rotating 360°)': 'radial', 'colour bleed': 'fade', 'crack': 'crack' }).name('transition');
-  fEra.add({ go: () => { state.manual = { from: state.eraMode === 'auto' ? state.eraNow : state.eraMode, to: state.nextEra, type: state.waveType, start: performance.now() }; } }, 'go').name('▶ play transition');
-  const fLook = gui.addFolder('look', true);
-  fLook.add(state, 'shading', { 'flat 2d (chiikawa)': 'flat', 'flat + cel shadow (kirby)': 'cel', 'soft 3d toon (old)': 'toon' }).name('shading').onChange(setShading);
-  fLook.add(state, 'skyBands', 0, 8, 1).name('sky bands').onChange(v => { if (state.shading !== 'toon') skyMat.uniforms.uBands.value = v; });
-  fLook.add(state, 'fogSteps', 0, 8, 1).name('depth tint steps').onChange(v => flatU.uFogSteps.value = v);
-  fLook.add(state, 'edges').name('drawn lines'); fLook.add(state, 'lineW', 1, 6, 0.1).name('line px @1080'); fLook.add(state, 'outlines').name('extra silhouette');
-  fLook.add(state, 'quality', { 'auto (light)': 'auto', 'high (sharp)': 'high', 'low (fast)': 'low' }).name('preview quality').onChange(() => { autoScale = 1; resize(); });
-  const fExp = gui.addFolder('export', true);
-  fExp.add(state, 'exportMode', { 'long panorama (shot)': 'pano', 'single 4k frame': 'frame' }).name('png format').onChange(() => { lastKey = ''; });
-  fExp.add(state, 'lineColour', { 'ink #8a6b64 (team)': 'ink', 'dark brown #5a3a30': 'dark', 'black': 'black' }).name('lineart colour');
-  fExp.add(state, 'lineWobble', 0, 2, 0.05).name('hand wobble');
-  fExp.add(state, 'whiteBg').name('lineart on white');
-  fExp.add(state, 'meshDetail', { 'medium (smooth)': 'medium', 'light (small file)': 'light' }).name('.obj / .stl detail');
-  fExp.add(state, 'glbMode', { 'instanced · small (blender 3.6+)': 'instanced', 'baked · one mesh / element': 'baked' }).name('3d .glb mode');
-  const fEl = gui.addFolder('elements (own png each)');
+  fEra.add(state, 'eraMode', eraOpts).name('Era look');
+  fEra.add(state, 'nextEra', nextOpts).name('Transition to');
+  fEra.add(state, 'waveType', { 'Red wave (sweep)': 'wave', 'Red wave (rotating 360°)': 'radial', 'Colour bleed': 'fade', 'Crack': 'crack' }).name('Transition style');
+  fEra.add({ go: () => { state.manual = { from: state.eraMode === 'auto' ? state.eraNow : state.eraMode, to: state.nextEra, type: state.waveType, start: performance.now() }; } }, 'go').name('▶  Play transition');
+  const fExp = gui.addFolder('Export options');
+  fExp.add(state, 'exportMode', { 'Long panorama': 'pano', 'Single 4K frame': 'frame' }).name('Image format').onChange(() => { lastKey = ''; refreshExportLabels(); });
+  fExp.add(state, 'lineColour', { 'Ink #8A6B64 (team)': 'ink', 'Dark brown #5A3A30': 'dark', 'Black': 'black' }).name('Lineart colour');
+  fExp.add(state, 'lineWobble', 0, 2, 0.05).name('Hand wobble');
+  fExp.add(state, 'whiteBg').name('Lineart on white');
+  fExp.add(state, 'glbMode', { 'Instanced · small (Blender 3.6+)': 'instanced', 'Baked · one mesh per element': 'baked' }).name('.glb mode');
+  fExp.add(state, 'meshDetail', { 'Medium (smooth)': 'medium', 'Light (small file)': 'light' }).name('.obj / .stl detail');
+  const fEl = gui.addFolder('Elements (own PNG each)');
   elements.filter(e => e !== 'scene' && hasContent(e)).forEach(e => fEl.add(state.elVis, e));
-  const fOv = gui.addFolder('guides (screen only)');
-  fOv.add(state.ov, 'thirds').name('rule of thirds'); fOv.add(state.ov, 'safe').name('title / action safe'); fOv.add(state.ov, 'horizon').name('horizon / eye line');
-  if (cfg.vanishingPoint) fOv.add(state.ov, 'vp').name('vanishing point');
-  if (cfg.staging) fOv.add(state.ov, 'staging').name('staging guide');
+  const fOv = gui.addFolder('Guides (screen only)');
+  fOv.add(state.ov, 'thirds').name('Rule of thirds'); fOv.add(state.ov, 'safe').name('Title / action safe'); fOv.add(state.ov, 'horizon').name('Horizon / eye line');
+  if (cfg.vanishingPoint) fOv.add(state.ov, 'vp').name('Vanishing point');
+  if (cfg.staging) fOv.add(state.ov, 'staging').name('Staging guide');
   refreshGui = () => { pane.refresh(); invalidate(); };
-  if (cfg.gui) cfg.gui(gui.addFolder((cfg.guiTitle || 'scene').toLowerCase(), true), api, refreshGui);
+  if (cfg.gui) cfg.gui(gui.addFolder(cfg.guiTitle || 'Scene', true), api, refreshGui);
   pane.on('change', () => { invalidate(); syncTools(); });
   resize(); syncTools();
 
+  const qs = new URLSearchParams(location.search), batch = qs.get('batch') && window.parent !== window ? { format: qs.get('batch'), glb: qs.get('glb'), detail: qs.get('detail'), shot: qs.get('shot') } : null;
+  if (batch) { state.playing = false; parent.postMessage({ source: 'sirpeltric', id: cfg.id, type: 'sp-progress', message: 'scene loaded' }, '*'); }
   /* loop — renders only when playing or when something changed */
-  let last = performance.now(), slowAcc = 0, slowN = 0, firstFrame = true;
+  let last = performance.now(), slowAcc = 0, slowN = 0, slowHits = 0, firstFrame = true;
   function frame(now) {
     const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;   // first rAF stamp can be older than performance.now()
     if (state.playing && !busy) { state.T += dt; if (state.T >= TOTAL) state.T = 0; setScrub(); }
     if (!busy && (state.playing || dirty || state.manual)) {
+      if (needResize) { needResize = false; resize(); slowAcc = slowN = 0; }
       dirty = false;
       const s = applyTime(state.T);
       renderPass('final');
@@ -981,13 +1032,13 @@ export function startApp(cfg) {
       const eraLabel = (ERAS[state.eraNow] || ERAS.base).label;
       info.textContent = s.name; if (eraChip) eraChip.textContent = eraLabel;
       refreshExportLabels();
-      if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); }
+      if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); if (batch) setTimeout(runBatch, 50); }
       // auto quality: while playing, step the preview resolution down if frames are slow, back up when there is headroom
-      if (state.playing && state.quality === 'auto' && dt > 0) {
+      if (state.playing && state.quality === 'auto' && dt > 0 && dt < 0.1 && autoScale > 0.6) {
         slowAcc += dt; slowN++;
-        if (slowN >= 45) { const avg = slowAcc / slowN; slowAcc = slowN = 0;
-          if (avg > 0.03 && autoScale > 0.55) { autoScale = Math.max(0.55, autoScale - 0.15); resize(); }
-          else if (avg < 0.019 && autoScale < 1) { autoScale = Math.min(1, autoScale + 0.1); resize(); } }
+        if (slowN >= 90) { const avg = slowAcc / slowN; slowAcc = slowN = 0;
+          slowHits = avg > 0.04 ? slowHits + 1 : 0;                                  // two slow windows in a row (~3 s)
+          if (slowHits >= 2) { slowHits = 0; autoScale = Math.max(0.6, autoScale - 0.2); resize(); } }
       }
     }
     requestAnimationFrame(frame);
@@ -995,4 +1046,19 @@ export function startApp(cfg) {
   setScrub();
   requestAnimationFrame(frame);
   window.__app = { api, state, applyTime, renderPass, captureFrame, capturePano, shots, elements, reg, export3D, exportOBJ, exportSTL, invalidate, setShading };
+
+  /* ── batch mode: the index page opens this scene in a hidden frame with ?batch=glb|obj|stl and gets the file back.
+     ?glb=baked|instanced · ?detail=medium|light · ?shot=N (camera of shot N, default 1). Messages: sp-progress / sp-file / sp-done / sp-error ── */
+  function runBatch() {
+    const tell = m => parent.postMessage({ source: 'sirpeltric', id: cfg.id, ...m }, '*');
+    if (batch.glb) state.glbMode = batch.glb === 'instanced' ? 'instanced' : 'baked';
+    if (batch.detail) state.meshDetail = batch.detail === 'light' ? 'light' : 'medium';
+    const shot = shots[Math.max(0, Math.min(shots.length - 1, (+batch.shot || 1) - 1))];
+    state.playing = false; state.T = shot.t0 + 0.001; applyTime(state.T);
+    downloadSink = (blob, name) => tell({ type: 'sp-file', name, blob });
+    const fn = { glb: export3D, obj: exportOBJ, stl: exportSTL }[batch.format];
+    if (!fn) return tell({ type: 'sp-error', message: 'unknown format ' + batch.format });
+    Promise.resolve(fn(msg => tell({ type: 'sp-progress', message: msg })))
+      .then(() => tell({ type: 'sp-done' }), e => { console.error(e); tell({ type: 'sp-error', message: e.message || String(e) }); });
+  }
 }

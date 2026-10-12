@@ -13,7 +13,7 @@
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
 } }
 </script>
-<!-- fetch every module in parallel instead of one after another (JSZip + GLTFExporter load only when exporting) -->
+<!-- fetch every module in parallel instead of one after another (JSZip + exporters load only when exporting) -->
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/tweakpane@4.0.4/dist/tweakpane.min.js" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/geometries/RoundedBoxGeometry.js" crossorigin>
@@ -23,92 +23,127 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/lines/LineMaterial.js" crossorigin>
 <style>
 :root{
-  --bg:#141317;--panel:#1C1B20;--panel2:#24232A;--line:#302E36;--line2:#3D3A45;--tx:#F1EEF4;--tx2:#A7A2AF;--tx3:#77727F;
-  --pink:#FF86B4;--pink2:#FF6FA4;--sky:#8CCBF2;--cream:#F6EFD4;--r:12px;
-  /* tweakpane theme (matches the bars) */
-  --tp-base-background-color:#1C1B20F2;--tp-base-shadow-color:#0008;--tp-base-border-radius:12px;--tp-base-font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --bg:#121115;--panel:#1A191E;--panel2:#222127;--panel3:#2A2930;--line:#2C2A32;--line2:#3A3842;--tx:#F3F0F5;--tx2:#ABA6B3;--tx3:#7A7582;
+  --pink:#FF86B4;--pink-h:#FF9DC2;--pink-ink:#2A1420;--sky:#8CCBF2;--ok:#7FD39B;--cream:#F6EFD4;--r:14px;
+  --font:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  /* settings panel (tweakpane) themed like the app */
+  --tp-base-background-color:#1A191EF7;--tp-base-shadow-color:#000a;--tp-base-border-radius:14px;--tp-base-font-family:var(--font);
   --tp-button-background-color:#FF86B4;--tp-button-background-color-hover:#FF9DC2;--tp-button-background-color-focus:#FF9DC2;--tp-button-background-color-active:#FF6FA4;--tp-button-foreground-color:#2A1420;
-  --tp-container-background-color:#ffffff0d;--tp-container-background-color-hover:#ffffff17;--tp-container-background-color-focus:#ffffff1f;--tp-container-background-color-active:#ffffff26;--tp-container-foreground-color:#F1EEF4;
-  --tp-input-background-color:#ffffff0f;--tp-input-background-color-hover:#ffffff1a;--tp-input-background-color-focus:#ffffff21;--tp-input-background-color-active:#ffffff26;--tp-input-foreground-color:#F1EEF4;
-  --tp-label-foreground-color:#A7A2AF;--tp-monitor-background-color:#0000002e;--tp-monitor-foreground-color:#A7A2AF;--tp-groove-foreground-color:#ffffff14;
+  --tp-container-background-color:#ffffff0b;--tp-container-background-color-hover:#ffffff14;--tp-container-background-color-focus:#ffffff1c;--tp-container-background-color-active:#ffffff22;--tp-container-foreground-color:#F3F0F5;
+  --tp-input-background-color:#ffffff0d;--tp-input-background-color-hover:#ffffff17;--tp-input-background-color-focus:#ffffff1f;--tp-input-background-color-active:#ffffff24;--tp-input-foreground-color:#F3F0F5;
+  --tp-label-foreground-color:#ABA6B3;--tp-monitor-background-color:#0000002e;--tp-monitor-foreground-color:#ABA6B3;--tp-groove-foreground-color:#ffffff14;
+  --tp-blade-unit-size:26px;
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:13px/1.45 var(--font);overflow:hidden;-webkit-font-smoothing:antialiased}
 button,select,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--sky);outline-offset:2px}
 #app{display:flex;flex-direction:column;height:100%}
+svg{display:block}
 
-/* top bar */
-#top{display:flex;align-items:center;gap:10px;padding:8px 12px 8px 14px;border-bottom:1px solid var(--line);background:var(--panel);min-height:52px}
-.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--tx);flex:none}
-.blob{width:26px;height:24px;border-radius:50% 50% 46% 46%/56% 56% 44% 44%;background:var(--pink);box-shadow:inset -4px -4px 0 #0000001f, 0 0 0 2px #2A1420;position:relative;flex:none}
-.blob:before,.blob:after{content:"";position:absolute;top:8px;width:3px;height:7px;border-radius:2px;background:#2A1420}.blob:before{left:9px}.blob:after{left:14px}
-.brand span{font-weight:800;letter-spacing:.01em;font-size:13px;color:var(--tx2)}
-.sep{width:1px;height:22px;background:var(--line2);flex:none}
+/* ── header ── */
+#top{display:flex;align-items:center;gap:10px;padding:0 10px 0 14px;height:56px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
+.brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--tx);flex:none;border-radius:10px;padding:4px 6px 4px 2px}
+.brand:hover{background:var(--panel2)}
+.duo{display:flex;align-items:flex-end;flex:none}.duo svg{display:block}
+.brand .duo svg{width:26px;height:25px}.brand .duo svg+svg{margin-left:-5px}
+.brand span{font-weight:800;letter-spacing:.01em;font-size:13px;color:var(--tx)}
+.brand small{display:block;font-weight:600;font-size:10.5px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-top:-1px}
+.sep{width:1px;height:24px;background:var(--line2);flex:none}
+.scenes{display:flex;align-items:center;gap:2px;flex:none}
+.scenes select{height:34px;max-width:230px;background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:0 28px 0 10px;appearance:none;cursor:pointer;font-weight:600;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23ABA6B3' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
 .titles{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25}
 #title{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #info{color:var(--tx2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#eraChip{flex:none;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px 0 8px;border-radius:99px;background:#FF86B41f;color:#FFB5D1;font-weight:700;font-size:12px;white-space:nowrap;max-width:34vw;overflow:hidden;text-overflow:ellipsis}
+#eraChip{flex:none;display:inline-flex;align-items:center;gap:7px;height:28px;padding:0 12px 0 10px;border-radius:99px;background:#FF86B41a;border:1px solid #FF86B433;color:#FFC0D8;font-weight:700;font-size:12px;white-space:nowrap;max-width:30vw;overflow:hidden;text-overflow:ellipsis}
 #eraChip:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--pink);flex:none}
-.tools{display:flex;gap:4px;flex:none;margin-right:290px}
-.ib{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--tx2);cursor:pointer;padding:0}
+.tools{display:flex;gap:2px;flex:none}
+.ib{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;border:1px solid transparent;background:transparent;color:var(--tx2);cursor:pointer;padding:0;text-decoration:none;flex:none}
 .ib:hover{background:var(--panel2);color:var(--tx)}
-.ib.on{background:#8CCBF21f;color:var(--sky);border-color:#8CCBF240}
+.ib.on{background:#8CCBF21a;color:var(--sky);border-color:#8CCBF238}
+.ib:disabled,.ib[aria-disabled=true]{opacity:.35;pointer-events:none}
 .ib svg{width:18px;height:18px}
-a.ib{text-decoration:none}
 
-/* stage */
-#stageWrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:12px;position:relative;background:radial-gradient(ellipse at 50% 40%,#1E1D23 0%,var(--bg) 70%)}
-#stage{position:relative;border-radius:var(--r);overflow:hidden;box-shadow:0 0 0 1px var(--line2),0 18px 50px -18px #000c;background:var(--cream)}
+/* ── stage ── */
+#stageWrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:12px;position:relative;background:radial-gradient(ellipse at 50% 40%,#1C1B21 0%,var(--bg) 72%)}
+#stage{position:relative;border-radius:var(--r);overflow:hidden;box-shadow:0 0 0 1px var(--line2),0 24px 60px -24px #000d;background:var(--cream)}
 #stage canvas{display:block}
 #overlay{position:absolute;inset:0;pointer-events:none}
-
-/* loader (until the first frame is drawn) */
-#loader{position:absolute;inset:0;display:grid;place-items:center;z-index:5;transition:opacity .35s ease;pointer-events:none}
+#loader{position:absolute;inset:0;display:grid;place-items:center;z-index:5;transition:opacity .4s ease;pointer-events:none}
 body.ready #loader{opacity:0}
+body.exporting #loader{opacity:1;background:#121115e6;backdrop-filter:blur(6px)}   /* the canvas is resized to 4K while exporting: cover it */
 .ld{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--tx2);font-weight:600;text-align:center;padding:0 16px}
-.ld .blob{width:46px;height:42px;animation:hop .9s cubic-bezier(.3,.7,.4,1) infinite;box-shadow:inset -6px -6px 0 #0000001f,0 0 0 3px #2A1420}
-.ld .blob:before,.ld .blob:after{top:13px;width:5px;height:12px}.ld .blob:before{left:15px}.ld .blob:after{left:25px}
-.ld .shadow{width:40px;height:7px;border-radius:50%;background:#0006;margin-top:-10px;animation:sh .9s cubic-bezier(.3,.7,.4,1) infinite}
+.ld .pair{display:flex;gap:10px;align-items:flex-end}
+.ld .hopper{display:flex;flex-direction:column;align-items:center}
+.ld .hopper svg{width:64px;height:62px;animation:hop .9s cubic-bezier(.3,.7,.4,1) infinite;transform-origin:50% 100%}
+.ld .hopper:nth-child(2) svg,.ld .hopper:nth-child(2) .shadow{animation-delay:.45s}
+.ld .shadow{width:44px;height:7px;border-radius:50%;background:#0006;margin-top:2px;animation:sh .9s cubic-bezier(.3,.7,.4,1) infinite}
 .ld small{display:block;color:var(--tx3);font-weight:500;margin-top:4px;max-width:320px}
 @keyframes hop{0%,100%{transform:translateY(0) scale(1.08,.92)}45%{transform:translateY(-22px) scale(.95,1.05)}}
 @keyframes sh{0%,100%{transform:scale(1);opacity:.6}45%{transform:scale(.6);opacity:.25}}
 
-/* floating config menu (tweakpane), top-right */
-div.tp-dfwv{width:280px;top:8px;right:8px;z-index:20;max-height:calc(100vh - 16px);overflow:auto;border-radius:12px;box-shadow:0 12px 36px -8px #000a;scrollbar-width:thin}
-div.tp-dfwv *{text-transform:lowercase}
+/* ── settings panel (opens from the gear) ── */
+div.tp-dfwv{width:300px;top:64px;right:10px;z-index:30;max-height:calc(100vh - 150px);overflow:auto;border-radius:14px;box-shadow:0 18px 50px -12px #000c;scrollbar-width:thin}
+div.tp-dfwv{display:none}body.settings div.tp-dfwv{display:block}
 
-/* bottom dock */
-#bottom{border-top:1px solid var(--line);background:var(--panel);padding:10px 14px 12px;display:flex;flex-direction:column;gap:10px}
+/* ── dock ── */
+#bottom{border-top:1px solid var(--line);background:var(--panel);padding:10px 14px;flex:none}
 .tl{display:flex;align-items:center;gap:12px}
-#play{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--pink);color:#2A1420;display:grid;place-items:center;cursor:pointer;box-shadow:inset -3px -3px 0 #0000001a;padding:0;transition:transform .12s}
-#play:hover{background:#FF9DC2}#play:active{transform:scale(.94)}
+#play{flex:none;width:42px;height:42px;border-radius:50%;border:0;background:var(--pink);color:var(--pink-ink);display:grid;place-items:center;cursor:pointer;box-shadow:inset -3px -3px 0 #0000001a;padding:0;transition:transform .12s,background .12s}
+#play:hover{background:var(--pink-h)}#play:active{transform:scale(.94)}
 #play svg{width:18px;height:18px}#play .i-pause{display:none}#play.on .i-play{display:none}#play.on .i-pause{display:block}
-.tl select{flex:none;height:34px;background:var(--panel2);color:var(--tx);border:1px solid var(--line2);border-radius:10px;padding:0 28px 0 10px;max-width:240px;appearance:none;cursor:pointer;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A7A2AF' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
-.track{position:relative;flex:1;min-width:120px;height:34px;display:flex;align-items:center}
+.tl select{flex:none;height:36px;background:var(--panel2);border:1px solid var(--line2);border-radius:10px;padding:0 28px 0 10px;max-width:250px;appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23ABA6B3' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.track{position:relative;flex:1;min-width:120px;height:36px;display:flex;align-items:center}
 #marks{position:absolute;left:9px;right:9px;top:50%;height:16px;transform:translateY(-50%);pointer-events:none}
 #marks i{position:absolute;top:0;width:2px;height:16px;margin-left:-1px;border-radius:2px;background:var(--line2)}
-#scrub{--p:0%;width:100%;margin:0;height:34px;background:transparent;appearance:none;-webkit-appearance:none;cursor:pointer;position:relative}
-#scrub::-webkit-slider-runnable-track{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--pink) var(--p),#ffffff1a var(--p))}
-#scrub::-moz-range-track{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--pink) var(--p),#ffffff1a var(--p))}
+#scrub{--p:0%;width:100%;margin:0;height:36px;background:transparent;appearance:none;-webkit-appearance:none;cursor:pointer;position:relative}
+#scrub::-webkit-slider-runnable-track{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--pink) var(--p),#ffffff17 var(--p))}
+#scrub::-moz-range-track{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--pink) var(--p),#ffffff17 var(--p))}
 #scrub::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-5px;border-radius:50%;background:#fff;border:3px solid var(--pink);box-shadow:0 2px 6px #0007}
 #scrub::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:#fff;border:3px solid var(--pink)}
-#tread{color:var(--tx2);font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12px;flex:none}
-#exportBar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-#exportBar .btns{display:flex;gap:6px;flex-wrap:wrap}
-#exportBar .lbl{font-weight:800;color:var(--tx3);text-transform:uppercase;letter-spacing:.1em;font-size:10.5px}
-#exportBar button{height:34px;padding:0 14px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);color:var(--tx);font-weight:600;cursor:pointer;white-space:nowrap;transition:border-color .12s,background .12s}
-#exportBar button:hover:not(:disabled){border-color:var(--sky);background:#2B2A32}
-#exportBar button:disabled{opacity:.45;cursor:progress}
-#exportBar button.primary{background:var(--pink);border-color:var(--pink);color:#2A1420}
-#exportBar button.primary:hover:not(:disabled){background:#FF9DC2;border-color:#FF9DC2}
-#status{color:var(--tx2);margin-left:auto;font-size:12px;text-align:right}
+#tread{color:var(--tx2);font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12px;flex:none;min-width:150px;text-align:right}
+#exportBtn{flex:none;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px 0 14px;border-radius:12px;border:0;background:var(--pink);color:var(--pink-ink);font-weight:800;cursor:pointer;box-shadow:inset -3px -3px 0 #0000001a;transition:background .12s}
+#exportBtn:hover{background:var(--pink-h)}#exportBtn svg{width:18px;height:18px}
+#exportBtn[aria-expanded=true]{background:var(--pink-h)}
 
-/* help */
-#help{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#0009;backdrop-filter:blur(3px);padding:16px}
-#help[hidden]{display:none}
-.card{background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:18px 20px;max-width:420px;width:100%;box-shadow:0 30px 80px -20px #000}
+/* ── export menu ── */
+#exportMenu{position:fixed;right:14px;bottom:76px;width:380px;max-width:calc(100vw - 28px);max-height:calc(100vh - 150px);overflow:auto;z-index:40;background:var(--panel);border:1px solid var(--line2);border-radius:16px;box-shadow:0 24px 70px -16px #000;padding:14px;scrollbar-width:thin;transform-origin:bottom right;animation:pop .14s ease-out}
+#exportMenu[hidden]{display:none}
+@keyframes pop{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+.em-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 10px}
+.em-head h2{margin:0;font-size:15px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--panel2);border:1px solid var(--line)}
+.seg button{height:32px;border-radius:9px;border:0;background:transparent;color:var(--tx2);font-weight:700;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--panel3);color:var(--tx);box-shadow:0 1px 0 #ffffff10 inset,0 2px 6px #0005}
+#exportNote{color:var(--tx3);font-size:12px;margin:8px 2px 4px}
+.em-sec{margin-top:12px}
+.em-sec>h3{margin:0 2px 6px;font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3)}
+.em-sec:empty,.em-sec.empty{display:none}
+.mi{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;width:100%;text-align:left;padding:9px 10px;border-radius:12px;border:1px solid transparent;background:transparent;cursor:pointer;color:var(--tx)}
+.mi:hover:not(:disabled){background:var(--panel2);border-color:var(--line2)}
+.mi:disabled{opacity:.45;cursor:progress}
+.mi .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--panel3);color:var(--tx2)}
+.mi .ic svg{width:18px;height:18px}
+.mi.primary .ic{background:var(--pink);color:var(--pink-ink)}
+.mi b{display:block;font-weight:700;font-size:13px}
+.mi small{display:block;color:var(--tx3);font-size:11.5px;line-height:1.35;margin-top:1px}
+.mi .kbd{color:var(--tx3);font-size:11px}
+.em-foot{margin:12px 2px 0;padding-top:10px;border-top:1px solid var(--line);color:var(--tx3);font-size:11.5px}
+
+/* ── toast ── */
+#status{position:fixed;left:50%;bottom:80px;transform:translate(-50%,10px);z-index:45;max-width:calc(100vw - 32px);display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;background:#26252CF2;border:1px solid var(--line2);box-shadow:0 14px 40px -10px #000;color:var(--tx);font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#status.show{opacity:1;transform:translate(-50%,0)}
+#status.busy:before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid #ffffff33;border-top-color:var(--pink);animation:spin .8s linear infinite;flex:none}
+#status.done:before{content:"✓";color:var(--ok);font-weight:900}
+#status.err{border-color:#E2574C88}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── dialogs ── */
+.modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#0009;backdrop-filter:blur(3px);padding:16px}
+.modal[hidden]{display:none}
+.card{background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:18px 20px;max-width:440px;width:100%;box-shadow:0 30px 80px -20px #000}
 .card h2{font-size:15px;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
 .card dl{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;margin:0}
 .card dt{white-space:nowrap}.card dd{margin:0;color:var(--tx2)}
@@ -116,30 +151,77 @@ kbd{display:inline-block;min-width:22px;padding:1px 6px;border-radius:6px;border
 .card p{color:var(--tx3);font-size:12px;margin:14px 0 0}
 
 /* clean view (H): picture only */
-body.clean #top,body.clean #bottom,body.clean div.tp-dfwv{display:none}
+body.clean #top,body.clean #bottom,body.clean div.tp-dfwv,body.clean #exportMenu{display:none!important}
 body.clean #stageWrap{padding:0;background:#000}
 body.clean #stage{border-radius:0;box-shadow:none}
 body.clean #overlay{display:none}
 
-@media (max-width:900px){.tools{margin-right:0}}
-@media (max-width:700px){
-  #top{flex-wrap:wrap;gap:6px 8px;padding:8px 10px}.brand span,.sep{display:none}
-  .titles{flex:1 1 calc(100% - 44px)}
-  #eraChip{order:3;max-width:calc(100% - 160px)}.tools{order:4;margin-left:auto}
-  #stageWrap{padding-top:52px}
-  div.tp-dfwv{width:auto;left:10px;right:10px;top:110px;max-height:calc(100vh - 130px)}
-  .tl{flex-wrap:wrap;gap:10px}.tl select{order:3;flex:1 1 100%;max-width:none}
-  #exportBar .btns{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:100%}
-  #exportBar button{min-width:0;padding:0 8px;overflow:hidden;text-overflow:ellipsis;font-size:12.5px}
-  #status{margin-left:0;text-align:left}
+@media (max-width:1100px){.brand span,.brand small{display:none}.scenes select{max-width:170px}}
+@media (max-width:760px){
+  #top{flex-wrap:wrap;height:auto;padding:8px 10px;gap:6px 8px}.sep{display:none}
+  .titles{order:5;flex:1 1 100%}#eraChip{order:6;max-width:100%}
+  .scenes{flex:1;min-width:0}.scenes select{flex:1;min-width:0;max-width:none}
+  .tools{order:7;margin-left:auto}
+  div.tp-dfwv{width:auto;left:10px;right:10px;top:12px;max-height:calc(100vh - 24px)}
+  .tl{flex-wrap:wrap;gap:10px}.tl select{order:4;flex:1 1 auto;max-width:none}#tread{min-width:0}
+  #exportBtn{order:5}
+  #exportMenu{left:10px;right:10px;width:auto;bottom:130px}
+  #status{bottom:140px}
 }
-@media (prefers-reduced-motion:reduce){.ld .blob,.ld .shadow{animation:none}}
+@media (prefers-reduced-motion:reduce){.ld .hopper svg,.ld .shadow,#exportMenu,#status.busy:before{animation:none}}
 </style>
 </head>
 <body>
+<!-- The two Sirpeltric characters (front view), traced from the team's character sheet. Injected by build.php as {{MASCOTS}};
+     use them with <svg class="…"><use href="#sp-boy"/></svg> or #sp-girl. -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="sp-mouth"><ellipse cx="758" cy="572" rx="5" ry="3.2" fill="#000"/><path d="M738 576q-7 9 4 10q9 1 15-6q6 7 15 6q11-1 4-10" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <symbol id="sp-boy" viewBox="545 325 455 440">
+      <g stroke="#000" stroke-width="5" stroke-linejoin="round">
+        <ellipse cx="657" cy="428" rx="105" ry="89" fill="#E8F6FE"/>
+        <ellipse cx="874" cy="427" rx="96" ry="90" fill="#E8F6FE"/>
+        <ellipse cx="620" cy="608" rx="40" ry="33" fill="#E8F6FE"/>
+        <ellipse cx="917" cy="608" rx="39" ry="33" fill="#E8F6FE"/>
+        <ellipse cx="627" cy="705" rx="65" ry="33" transform="rotate(-8 627 705)" fill="#FF0000"/>
+        <ellipse cx="910" cy="700" rx="73" ry="32" transform="rotate(10 910 700)" fill="#FF0000"/>
+        <ellipse cx="765" cy="620" rx="145" ry="130" fill="#E8F6FE"/>
+        <ellipse cx="653" cy="597" rx="9" ry="7.5" fill="#FF0000" stroke-width="4"/>
+        <ellipse cx="875" cy="594" rx="9" ry="7.5" fill="#FF0000" stroke-width="4"/>
+      </g>
+      <ellipse cx="687" cy="567" rx="14" ry="12" fill="#000"/><ellipse cx="844" cy="565" rx="16" ry="12" fill="#000"/>
+      <use href="#sp-mouth"/>
+    </symbol>
+    <symbol id="sp-girl" viewBox="545 325 455 440">
+      <g stroke="#000" stroke-width="5" stroke-linejoin="round">
+        <ellipse cx="657" cy="428" rx="105" ry="89" fill="#F7E3E6"/>
+        <ellipse cx="874" cy="427" rx="96" ry="90" fill="#F7E3E6"/>
+        <ellipse cx="620" cy="608" rx="40" ry="33" fill="#F7E3E6"/>
+        <ellipse cx="917" cy="608" rx="39" ry="33" fill="#F7E3E6"/>
+        <ellipse cx="627" cy="705" rx="65" ry="33" transform="rotate(-8 627 705)" fill="#FF8CC6"/>
+        <ellipse cx="910" cy="700" rx="73" ry="32" transform="rotate(10 910 700)" fill="#FF8CC6"/>
+        <ellipse cx="765" cy="620" rx="145" ry="130" fill="#F7E3E6"/>
+        <ellipse cx="655" cy="590" rx="14" ry="4.5" fill="#FF8CC6" stroke-width="3.5"/>
+        <ellipse cx="881" cy="592" rx="12" ry="4.5" fill="#FF8CC6" stroke-width="3.5"/>
+        <ellipse cx="763" cy="478" rx="24" ry="45" transform="rotate(12 763 478)" fill="#FF8CC6"/>
+        <ellipse cx="855" cy="497" rx="25" ry="50" transform="rotate(18 855 497)" fill="#FF8CC6"/>
+        <circle cx="808" cy="494" r="24" fill="#FF8CC6"/>
+      </g>
+      <ellipse cx="687" cy="567" rx="14" ry="12" fill="#000"/><ellipse cx="844" cy="565" rx="16" ry="12" fill="#000"/>
+      <use href="#sp-mouth"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div id="app">
   <header id="top">
-    <a class="brand" href="../index.html" title="All backgrounds"><i class="blob" aria-hidden="true"></i><span>Sirpeltric BG</span></a>
+    <a class="brand" href="../index.html" title="All backgrounds"><span class="duo" aria-hidden="true"><svg><use href="#sp-boy"/></svg><svg><use href="#sp-girl"/></svg></span><div><span>Sirpeltric</span><small>BG references</small></div></a>
+    <i class="sep" aria-hidden="true"></i>
+    <nav class="scenes" aria-label="Scenes">
+      <a class="ib" id="scPrev" title="Previous scene" aria-label="Previous scene"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
+      <select id="scSel" aria-label="Scene"></select>
+      <a class="ib" id="scNext" title="Next scene" aria-label="Next scene"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+    </nav>
     <i class="sep" aria-hidden="true"></i>
     <div class="titles"><div id="title"></div><div id="info"></div></div>
     <span id="eraChip" title="Active era look">…</span>
@@ -147,12 +229,13 @@ body.clean #overlay{display:none}
       <button class="ib" id="btnGuides" title="Guides (G)" aria-label="Toggle guides"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M9 5v14M15 5v14M3 10h18M3 14h18" opacity=".7"/></svg></button>
       <button class="ib" id="btnClean" title="Clean view (H)" aria-label="Clean view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button>
       <button class="ib" id="btnFull" title="Fullscreen (F)" aria-label="Fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      <button class="ib" id="btnSettings" title="Settings (S)" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg></button>
       <button class="ib" id="btnHelp" title="Shortcuts (?)" aria-label="Keyboard shortcuts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.3"/><circle cx="12" cy="16.9" r=".6" fill="currentColor"/></svg></button>
     </nav>
   </header>
   <main id="stageWrap">
     <div id="stage"><canvas id="overlay"></canvas></div>
-    <div id="loader" aria-live="polite"><div class="ld"><i class="blob" aria-hidden="true"></i><i class="shadow" aria-hidden="true"></i><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
+    <div id="loader" aria-live="polite"><div class="ld"><div class="pair" aria-hidden="true"><div class="hopper"><svg><use href="#sp-boy"/></svg><i class="shadow"></i></div><div class="hopper"><svg><use href="#sp-girl"/></svg><i class="shadow"></i></div></div><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
   </main>
   <footer id="bottom">
     <div class="tl">
@@ -160,23 +243,49 @@ body.clean #overlay{display:none}
       <select id="shot" aria-label="Shot"></select>
       <div class="track"><div id="marks" aria-hidden="true"></div><input id="scrub" type="range" min="0" value="0" aria-label="Timeline"></div>
       <span id="tread"></span>
+      <button id="exportBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="exportMenu" title="Export (E)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 19h14"/></svg>Export</button>
     </div>
-    <div id="exportBar"><span class="lbl">Export</span><div class="btns"></div><span id="status">Background only · guides are never exported</span></div>
   </footer>
 </div>
-<div id="help" hidden role="dialog" aria-label="Keyboard shortcuts"><div class="card">
+
+<section id="exportMenu" hidden aria-label="Export">
+  <div class="em-head"><h2>Export</h2><button class="ib" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="seg" role="group" aria-label="Image format"><button type="button" data-mode="pano" aria-pressed="true">Long panorama</button><button type="button" data-mode="frame" aria-pressed="false">Single 4K frame</button></div>
+  <div id="exportNote"></div>
+  <div class="em-sec" id="expImages"><h3>Images · PNG</h3></div>
+  <div class="em-sec" id="exp3d"><h3>3D · for Blender and other tools</h3></div>
+  <div class="em-sec empty" id="expExtra"><h3>Extras</h3></div>
+  <div class="em-foot">Background only — guides, safe frames and the staging box are never exported. Exports always render at full quality, whatever the window size.</div>
+</section>
+<div id="status" role="status" aria-live="polite"></div>
+
+<div id="help" class="modal" hidden role="dialog" aria-label="Keyboard shortcuts"><div class="card">
   <h2>Shortcuts <button class="ib" data-close aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></h2>
   <dl>
     <dt><kbd>Space</kbd></dt><dd>Play / pause</dd>
     <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>One frame back / forward (<kbd>Shift</kbd> = 1 s)</dd>
     <dt><kbd>1</kbd>–<kbd>9</kbd></dt><dd>Jump to shot</dd>
+    <dt><kbd>E</kbd></dt><dd>Export menu</dd>
+    <dt><kbd>S</kbd></dt><dd>Settings (look, era, elements, export options)</dd>
     <dt><kbd>G</kbd></dt><dd>Guides (thirds, safe frames, horizon, staging)</dd>
     <dt><kbd>H</kbd></dt><dd>Clean view — picture only (<kbd>Esc</kbd> to leave)</dd>
     <dt><kbd>F</kbd></dt><dd>Fullscreen</dd>
+    <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next scene</dd>
   </dl>
-  <p>The look (flat 2D / cel shadow / old 3D toon), sky bands and preview quality are in the config menu, top right. Exports always render at full 4K quality.</p>
+  <p>Background only — no characters. Every export renders at full 4K quality.</p>
 </div></div>
 <script>
+  // scene switcher (list written by build.php)
+  (() => {
+    const NAV = [{"href":"../bg1-world-reveal/bg1-world-reveal.html","title":"BG 1 · World reveal — 360° turn"},{"href":"../bg2-earth-zoom-globe/bg2-earth-zoom-globe.html","title":"BG 2 · Earth zoom out + Globe 360°"},{"href":"../bg3-underwater/bg3-underwater.html","title":"BG 3 · Underwater"},{"href":"../bg4-mirrored/bg4-mirrored.html","title":"BG 4 · Mirrored background — mountain lake"},{"href":"../bg5-hobby/bg5-hobby.html","title":"BG 5 · Hobby background"},{"href":"../bg6-forward-pathway/bg6-forward-pathway.html","title":"BG 6 · Forward pathway — Scene 22"}], sel = document.getElementById('scSel'), prev = document.getElementById('scPrev'), next = document.getElementById('scNext');
+    const here = NAV.findIndex(s => location.pathname.endsWith('/' + s.href.split('/').pop()));
+    NAV.forEach((s, i) => { const o = document.createElement('option'); o.value = s.href; o.textContent = s.title; if (i === here) o.selected = true; sel.appendChild(o); });
+    const go = i => { if (NAV[i]) location.href = NAV[i].href; };
+    const link = (a, i) => { if (NAV[i]) { a.href = NAV[i].href; a.title = NAV[i].title; } else a.setAttribute('aria-disabled', 'true'); };
+    link(prev, here - 1); link(next, here + 1);
+    sel.onchange = () => { location.href = sel.value; };
+    window.__sceneNav = { prev: () => go(here - 1), next: () => go(here + 1) };
+  })();
   // friendly message if the CDN cannot be reached (offline / blocked)
   setTimeout(() => { if (!document.body.classList.contains('ready')) { const t = document.getElementById('ldText'); if (t) t.innerHTML = 'Still loading…<small>Three.js is fetched from cdn.jsdelivr.net — check the internet connection, then reload.</small>'; } }, 15000);
 </script>
@@ -408,7 +517,7 @@ function startApp(cfg) {
      - big flat fx pieces (ground, roads) keep per-pixel fog, but quantised into a few painted steps
      - light colour / strength of the scene (hemi + sun) becomes one flat tint, so mood presets still work
      - optional single cel shadow (Kirby) on the side away from the sun */
-  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 4 } };
+  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 0 } };
   const FLAT_FS_HEAD = 'uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; varying vec3 vFlatN;\n';
   function flatPatch(mat, perObjectFog) {
     mat.onBeforeCompile = sh => {
@@ -427,7 +536,7 @@ function startApp(cfg) {
             #endif
             vFogDepth = -(modelViewMatrix * fogO).z;
           #endif` : '#include <fog_vertex>');
-      sh.fragmentShader = FLAT_FS_HEAD + sh.fragmentShader
+      sh.fragmentShader = (perObjectFog ? '' : '#define FLAT_FOG_STEPS\n') + FLAT_FS_HEAD + sh.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
           diffuseColor.rgb *= uTint;
           if (uCel > 0.5) { vec3 n = normalize(vFlatN); n = gl_FrontFacing ? n : -n; diffuseColor.rgb *= mix(uShade, vec3(1.0), step(0.05, dot(n, uSunV))); }`)
@@ -437,7 +546,9 @@ function startApp(cfg) {
             #else
               float fogF = smoothstep(fogNear, fogFar, vFogDepth);
             #endif
-            if (uFogSteps > 0.5) fogF = floor(fogF * uFogSteps + 0.5) / uFogSteps;
+            #ifdef FLAT_FOG_STEPS
+              if (uFogSteps > 0.5) fogF = floor(fogF * uFogSteps + 0.5) / uFogSteps;
+            #endif
             gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);
           #endif`);
     };
@@ -588,7 +699,7 @@ function startApp(cfg) {
   const state = {
     playing: true, T: 0, eraMode: 'auto', nextEra: 'e1945', waveType: 'wave', manual: null,
     outlines: false, edges: true, lineW: 2.4, pxScale: 1, lineColour: 'ink', lineWobble: 0.25, glbMode: 'instanced', whiteBg: false,
-    shading: 'flat', skyBands: 4, fogSteps: 4, quality: 'auto', meshDetail: 'medium',
+    shading: 'flat', skyBands: 4, fogSteps: 0, quality: 'auto', meshDetail: 'medium',
     ov: { thirds: false, safe: false, horizon: false, vp: false, staging: false }, exportMode: 'pano', elVis: {}, eraShown: 'base', eraNow: 'base',
   };
   const fxU = { four: 0, quad: [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]], depthWarm: 0, wash: 0, black: 0 };
@@ -629,7 +740,10 @@ function startApp(cfg) {
     }
     if (p === 'normal') for (const h of reg.hulls) h.visible = false;
   }
-  function sizeTargets(w, h) {
+  /** exporting = huge 4K / panorama targets: no MSAA there (memory); the live preview gets 4× MSAA so edges don't crawl */
+  function sizeTargets(w, h, exporting = false) {
+    const samples = exporting || !renderer.capabilities.isWebGL2 ? 0 : 4;
+    if (rt.samples !== samples) { rt.dispose(); rt.samples = samples; }
     for (const t of [rt, rtN, rtL, rtM]) t.setSize(w, h);
     rtN.depthTexture.image.width = w; rtN.depthTexture.image.height = h;
     frameMat.uniforms.uRes.value.set(w, h); edgeMat.uniforms.uRes.value.set(w, h);
@@ -707,13 +821,14 @@ function startApp(cfg) {
   }
 
   /* display sizing (16:9 stage) */
-  /* preview resolution: 'auto' caps the pixel ratio at 1.5 and steps down while frames are slow; exports are unaffected */
+  /* preview resolution: sharp by default (pixel ratio up to 2). 'auto' steps down only when frames stay really slow
+     (< ~25 fps) and never bounces back up by itself — resolution changes cause a visible hitch. Exports are unaffected. */
   let autoScale = 1;
   const previewDpr = () => {
-    const dev = window.devicePixelRatio || 1;
-    if (state.quality === 'high') return Math.min(2, dev);
-    if (state.quality === 'low') return Math.max(0.5, Math.min(1, dev) * 0.7);
-    return Math.max(0.5, Math.min(1.5, dev) * autoScale);
+    const dev = Math.min(2, window.devicePixelRatio || 1);
+    if (state.quality === 'high') return dev;
+    if (state.quality === 'low') return Math.max(0.75, dev * 0.6);
+    return Math.max(0.75, dev * autoScale);
   };
   function resize() {
     const wrap = $('#stageWrap'), pad = document.body.classList.contains('clean') ? 0 : 24, W = wrap.clientWidth - pad, H = wrap.clientHeight - pad;
@@ -730,8 +845,8 @@ function startApp(cfg) {
   /* only render when something changed (playing, scrubbing, GUI, resize, transition) → an idle page costs ~nothing */
   let dirty = true;
   function invalidate() { dirty = true; }
-  let resizeRaf = 0;
-  window.addEventListener('resize', () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(resize); });
+  let needResize = false;   // resized inside the render loop, right before drawing → no blank frame
+  window.addEventListener('resize', () => { needResize = true; dirty = true; });
 
   /* overlays (screen only, never exported) */
   const project = v => { const p = v.clone().project(camera); return [(p.x * 0.5 + 0.5) * overlay.width, (1 - (p.y * 0.5 + 0.5)) * overlay.height, p.z]; };
@@ -772,7 +887,10 @@ function startApp(cfg) {
   const GUIDE_KEYS = ['thirds', 'safe', 'horizon', 'staging'];
   const guidesOn = () => GUIDE_KEYS.some(k => state.ov[k]);
   const btnGuides = $('#btnGuides'), btnClean = $('#btnClean'), btnFull = $('#btnFull'), btnHelp = $('#btnHelp'), help = $('#help');
-  const syncTools = () => { btnGuides?.classList.toggle('on', guidesOn()); btnClean?.classList.toggle('on', document.body.classList.contains('clean')); };
+  const btnSettings = $('#btnSettings');
+  const syncTools = () => { btnGuides?.classList.toggle('on', guidesOn()); btnClean?.classList.toggle('on', document.body.classList.contains('clean')); btnSettings?.classList.toggle('on', document.body.classList.contains('settings')); };
+  const toggleSettings = force => { document.body.classList.toggle('settings', force); syncTools(); };
+  btnSettings && (btnSettings.onclick = () => toggleSettings());
   const toggleGuides = () => { const on = !guidesOn(); GUIDE_KEYS.forEach(k => state.ov[k] = on && (k !== 'staging' || !!cfg.staging)); refreshGui(); syncTools(); invalidate(); };
   const toggleClean = () => { document.body.classList.toggle('clean'); syncTools(); resize(); };
   const toggleFull = () => { const el = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen?.(); };
@@ -791,21 +909,34 @@ function startApp(cfg) {
     else if (k === 'h' || k === 'H') toggleClean();
     else if (k === 'f' || k === 'F') toggleFull();
     else if (k === '?' || k === '/') toggleHelp();
-    else if (k === 'Escape') { toggleHelp(false); if (document.body.classList.contains('clean')) toggleClean(); }
+    else if (k === 'e' || k === 'E') toggleMenu();
+    else if (k === 's' || k === 'S') toggleSettings();
+    else if (k === '[') window.__sceneNav?.prev();
+    else if (k === ']') window.__sceneNav?.next();
+    else if (k === 'Escape') { toggleHelp(false); toggleMenu(false); toggleSettings(false); if (document.body.classList.contains('clean')) toggleClean(); }
   });
   document.addEventListener('fullscreenchange', () => { btnFull?.classList.toggle('on', !!document.fullscreenElement); });
 
   /* ── exports ── */
-  const bar = $('#exportBar'), status = $('#status');
+  /* export menu (one button → grouped menu) + a toast for progress */
+  const menu = $('#exportMenu'), exportBtn = $('#exportBtn'), status = $('#status'), note = $('#exportNote'), bar = menu;
+  let toastTimer = 0;
+  const toast = (msg, kind = 'busy', hold = 0) => { status.textContent = msg; status.className = 'show ' + kind; clearTimeout(toastTimer); if (hold) toastTimer = setTimeout(() => { status.className = ''; }, hold); };
+  const toggleMenu = force => { const open = force ?? menu.hidden; if (open && busy) return; menu.hidden = !open; exportBtn.setAttribute('aria-expanded', String(open)); if (open) { lastKey = ''; refreshExportLabels(); } };
+  exportBtn.onclick = () => toggleMenu();
+  menu.querySelector('[data-close]').onclick = () => toggleMenu(false);
+  document.addEventListener('pointerdown', e => { if (!menu.hidden && !menu.contains(e.target) && !exportBtn.contains(e.target)) toggleMenu(false); });
+  menu.querySelectorAll('.seg button').forEach(b => b.onclick = () => { state.exportMode = b.dataset.mode; lastKey = ''; refreshExportLabels(); refreshGui(); });
   const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const tick0 = () => new Promise(r => setTimeout(r, 20));
   const toBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
-  function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
+  let downloadSink = null;   // batch mode (index page): files go to the parent page instead of the browser
+  function download(blob, name) { if (downloadSink) return downloadSink(blob, name); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
   const focalPx = H => (H / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   api.focalPx = focalPx;
   function withExportSize(w, h, fn) {
     const prevPR = renderer.getPixelRatio();
-    renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeTargets(w, h); state.pxScale = EXPORT_H / 1080;
+    renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeTargets(w, h, true); state.pxScale = EXPORT_H / 1080;
     try { fn(); } finally { camera.clearViewOffset(); frameMat.uniforms.uTile.value.set(0, 0, 1, 1); frameMat.uniforms.uNoVig.value = 0; renderer.setPixelRatio(prevPR); resize(); applyTime(state.T); }
   }
   /** Single 4K frame (tiles if the GPU limit is smaller). */
@@ -857,10 +988,13 @@ function startApp(cfg) {
   let busy = false;
   async function job(btn, label, fn) {
     if (busy) return; busy = true; const was = state.playing; state.playing = false;
-    bar.querySelectorAll('button').forEach(b => b.disabled = true); const old = btn.textContent; btn.textContent = 'Rendering…';
-    try { await fn(msg => status.textContent = msg); status.textContent = label + ' saved ✓'; }
-    catch (e) { console.error(e); status.textContent = 'Export failed: ' + e.message; }
-    btn.textContent = old; bar.querySelectorAll('button').forEach(b => b.disabled = false); state.playing = was; busy = false; invalidate();
+    toggleMenu(false); exportBtn.disabled = true; bar.querySelectorAll('.mi').forEach(b => b.disabled = true);
+    const ld = $('#ldText'), ldWas = ld?.innerHTML; if (ld) ld.innerHTML = `Exporting ${label}…<small>Rendering at full quality — the preview comes back when it is done.</small>`;
+    document.body.classList.add('exporting'); toast(label + ' — starting…');
+    try { await fn(msg => toast(msg)); toast(label + ' saved', 'done', 3500); }
+    catch (e) { console.error(e); toast('Export failed: ' + e.message, 'err', 7000); }
+    document.body.classList.remove('exporting'); if (ld) ld.innerHTML = ldWas;
+    exportBtn.disabled = false; bar.querySelectorAll('.mi').forEach(b => b.disabled = false); state.playing = was; busy = false; invalidate();
   }
   const PASS_NAME = { final: 'colour', lineart: 'lineart', base: 'basecolor' };
   async function single(pass, btn, label) {
@@ -892,17 +1026,39 @@ function startApp(cfg) {
   }
   const exportElements = () => elements.filter(e => e !== 'scene' && state.elVis[e] !== false && hasContent(e));
   const hasContent = e => [...reg.fills, ...reg.ink, ...reg.fx].some(o => o.userData.el === e);
-  const mkBtn = (label, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.className = cls; b.onclick = () => fn(b); bar.querySelector('.btns').appendChild(b); return b; };
-  const mainBtns = [
-    mkBtn('', 'primary', b => single('final', b, 'Colour PNG')), mkBtn('', '', b => single('lineart', b, 'Lineart PNG')),
-    mkBtn('', '', b => single('base', b, 'Base color PNG')), mkBtn('', '', b => zipSet(b)),
+  const ICON = {
+    colour: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 16l4.5-4.5 3.5 3.5 2.5-2.5L20 18"/><circle cx="15.5" cy="8.5" r="1.5"/>',
+    line: '<path d="M4 18c3-6 5-9 8-9s3 5 8 3M4 12c2-3 4-5 6-5"/>',
+    fill: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+    layers: '<path d="M12 4l8 4-8 4-8-4 8-4z"/><path d="M4 12l8 4 8-4M4 16l8 4 8-4"/>',
+    cube: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+    extra: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8"/>',
+  };
+  /** one row in the export menu: icon · title · one-line description */
+  const mkItem = (sec, icon, title, desc, fn, primary = false) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'mi' + (primary ? ' primary' : '');
+    b.innerHTML = `<span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICON[icon]}</svg></span><span><b></b><small></small></span>`;
+    const set = (t, d) => { b.querySelector('b').textContent = t; b.querySelector('small').textContent = d; };
+    set(title, desc); b.onclick = () => fn(b); $(sec).appendChild(b); $(sec).classList.remove('empty'); return { b, set };
+  };
+  const mainItems = [
+    mkItem('#expImages', 'colour', '', '', b => single('final', b, 'Colour PNG'), true),
+    mkItem('#expImages', 'line', '', '', b => single('lineart', b, 'Lineart PNG')),
+    mkItem('#expImages', 'fill', '', '', b => single('base', b, 'Base colour PNG')),
+    mkItem('#expImages', 'layers', '', '', b => zipSet(b)),
   ];
-  const LABELS = { pano: ['Export 4K Panorama PNG', 'Panorama Lineart', 'Panorama Base color', 'ZIP · each element (panorama)'], frame: ['Export 4K PNG', 'Export 4K Lineart', 'Export 4K Base color', 'ZIP · each element (4K)'] };
+  const ITEM_TEXT = {
+    pano: [['Colour · long panorama', 'The whole camera move as one painting, 2160 px tall'], ['Lineart · long panorama', 'Lines only, transparent background'],
+      ['Base colour · long panorama', 'Flat fills only — clean areas for the magic wand'], ['Every element · ZIP', 'One PNG per element for colour, lineart and base colour']],
+    frame: [['Colour · 4K frame', 'This frame at 3840 × 2160'], ['Lineart · 4K frame', 'Lines only, transparent background'],
+      ['Base colour · 4K frame', 'Flat fills only — clean areas for the magic wand'], ['Every element · ZIP', 'One PNG per element for colour, lineart and base colour'], ],
+  };
   let lastKey = '';
   function refreshExportLabels() {
-    const s = shotAt(state.T), k = curPano() ? 'pano' : 'frame', key = k + shots.indexOf(s); if (key === lastKey || busy) return; lastKey = key;
-    mainBtns.forEach((b, i) => b.textContent = LABELS[k][i]);
-    status.textContent = k === 'pano' ? `One long panorama · 2160 px tall · ${s.pano.label}` : (state.exportMode === 'pano' ? 'No camera travel in this shot → single 4K frame' : 'Single 4K frame · 3840×2160');
+    const s = shotAt(state.T), k = curPano() ? 'pano' : 'frame', key = k + state.exportMode + shots.indexOf(s); if (key === lastKey || busy) return; lastKey = key;
+    mainItems.forEach((it, i) => it.set(...ITEM_TEXT[k][i]));
+    menu.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === state.exportMode)));
+    note.textContent = k === 'pano' ? `This shot: ${s.pano.label} · width grows with the camera move` : (state.exportMode === 'pano' ? 'This shot has no camera travel, so it exports a single 4K frame' : 'The current frame of this shot · 3840 × 2160');
   }
   /* ── 3D export for Blender (.glb, glTF 2.0) ──
      one object per element (instances baked into plain meshes with vertex colours), ink lines as edges,
@@ -1088,11 +1244,11 @@ function startApp(cfg) {
     const data = new STLExporter().parse(root, { binary: true });
     download(new Blob([data], { type: 'model/stl' }), `${fileBase()}.stl`);
   }
-  mkBtn('3D · .glb (Blender)', '', b => job(b, '3D .glb', export3D));
-  mkBtn('3D · .obj', '', b => job(b, '3D .obj', exportOBJ));
-  mkBtn('3D · .stl', '', b => job(b, '3D .stl', exportSTL));
+  mkItem('#exp3d', 'cube', '.glb — Blender', 'Animated shot camera + ink lines · File › Import › glTF 2.0', b => job(b, '3D .glb', export3D));
+  mkItem('#exp3d', 'cube', '.obj + .mtl', 'Flat colours per element, zipped · works in most 3D apps', b => job(b, '3D .obj', exportOBJ));
+  mkItem('#exp3d', 'cube', '.stl', 'Shapes only, no colour · 3D printing or sculpting tools', b => job(b, '3D .stl', exportSTL));
 
-  api.exportExtra = (label, fn) => mkBtn(label, '', b => job(b, label, async say => { await loadZip(); return fn({ say, captureFrame, capturePano, toBlob, download, zip: () => new JSZip(), applyTime, tick: tick0, state }); }));
+  api.exportExtra = (label, fn) => mkItem('#expExtra', 'extra', label, 'Scene-specific export', b => job(b, label, async say => { await loadZip(); return fn({ say, captureFrame, capturePano, toBlob, download, zip: () => new JSZip(), applyTime, tick: tick0, state }); }));
 
   /* ── build scene ── */
   setEl('scene');
@@ -1101,59 +1257,63 @@ function startApp(cfg) {
   elements.forEach(e => { if (state.elVis[e] === undefined) state.elVis[e] = true; });
   setShading(state.shading);
 
-  /* ── config panel: Tweakpane 4, the floating top-right config menu from jh3y's pen zxOJdEe (280px, lowercase) ──
+  /* ── settings panel: Tweakpane 4, opens from the gear button (S) so it never covers the picture ──
      a tiny lil-gui-style adapter keeps the scene code simple: f.add(obj, key, options | min, max, step).name().onChange() */
-  const pane = new Pane({ title: 'config', expanded: window.innerWidth >= 1800 });   // floating, top-right (as in the pen); folded so it never covers the picture
+  const pane = new Pane({ title: 'Settings', expanded: true });
+  const pretty = k => String(k).replace(/[-_]+/g, ' ').replace(/^./, c => c.toUpperCase());   // 'night-lights' → 'Night lights'
   const wrap = tp => ({
     add(obj, key, a, b, c) {
       if (typeof obj[key] === 'function') { const btn = tp.addButton({ title: key }); btn.on('click', () => obj[key]()); return { name(n) { btn.title = n; return this; }, onChange() { return this; } }; }
-      const p = {}; if (a && typeof a === 'object') p.options = a; else if (typeof a === 'number') { p.min = a; p.max = b; if (c !== undefined) p.step = c; }
+      const p = { label: pretty(key) }; if (a && typeof a === 'object') p.options = a; else if (typeof a === 'number') { p.min = a; p.max = b; if (c !== undefined) p.step = c; }
       const bind = tp.addBinding(obj, key, p), hs = []; bind.on('change', e => hs.forEach(h => h(e.value)));
-      return { name(n) { bind.label = n; return this; }, onChange(fn) { hs.push(fn); return this; } };
+      return { name(n) { bind.label = pretty(n); return this; }, onChange(fn) { hs.push(fn); return this; } };
     },
-    addFolder(title, expanded = false) { return wrap(tp.addFolder({ title, expanded })); },
+    addFolder(title, expanded = false) { return wrap(tp.addFolder({ title: pretty(title), expanded })); },
     close() { tp.expanded = false; return this; }, open() { tp.expanded = true; return this; },
   });
   const gui = wrap(pane);
-  const fEra = gui.addFolder('era');
+  const fLook = gui.addFolder('Look', true);
+  fLook.add(state, 'shading', { 'Flat 2D (Chiikawa)': 'flat', 'Flat + cel shadow (Kirby)': 'cel', 'Soft 3D toon (old look)': 'toon' }).name('Style').onChange(setShading);
+  fLook.add(state, 'skyBands', 0, 8, 1).name('Sky bands').onChange(v => { if (state.shading !== 'toon') skyMat.uniforms.uBands.value = v; });
+  fLook.add(state, 'fogSteps', 0, 8, 1).name('Ground tint steps').onChange(v => flatU.uFogSteps.value = v);
+  fLook.add(state, 'edges').name('Ink lines'); fLook.add(state, 'lineW', 1, 6, 0.1).name('Line width (px at 1080p)'); fLook.add(state, 'outlines').name('Extra outline');
+  fLook.add(state, 'quality', { 'Auto (sharp, lowers if slow)': 'auto', 'High (always sharp)': 'high', 'Low (fastest)': 'low' }).name('Preview quality').onChange(() => { autoScale = 1; resize(); });
+  const fEra = gui.addFolder('Era');
   const briefEras = cfg.eras || ERA_KEYS;                      // only the eras in this BG's brief
-  const eraOpts = { 'timeline (brief)': 'auto' }; briefEras.forEach(k => eraOpts[ERAS[k].label] = k);
+  const eraOpts = { 'Timeline (brief)': 'auto' }; briefEras.forEach(k => eraOpts[ERAS[k].label] = k);
   const nextOpts = {}; briefEras.forEach(k => nextOpts[ERAS[k].label] = k);
   if (!briefEras.includes(state.nextEra)) state.nextEra = briefEras[0];
-  fEra.add(state, 'eraMode', eraOpts).name('era look');
-  fEra.add(state, 'nextEra', nextOpts).name('wave to');
-  fEra.add(state, 'waveType', { 'red wave (sweep)': 'wave', 'red wave (rotating 360°)': 'radial', 'colour bleed': 'fade', 'crack': 'crack' }).name('transition');
-  fEra.add({ go: () => { state.manual = { from: state.eraMode === 'auto' ? state.eraNow : state.eraMode, to: state.nextEra, type: state.waveType, start: performance.now() }; } }, 'go').name('▶ play transition');
-  const fLook = gui.addFolder('look', true);
-  fLook.add(state, 'shading', { 'flat 2d (chiikawa)': 'flat', 'flat + cel shadow (kirby)': 'cel', 'soft 3d toon (old)': 'toon' }).name('shading').onChange(setShading);
-  fLook.add(state, 'skyBands', 0, 8, 1).name('sky bands').onChange(v => { if (state.shading !== 'toon') skyMat.uniforms.uBands.value = v; });
-  fLook.add(state, 'fogSteps', 0, 8, 1).name('depth tint steps').onChange(v => flatU.uFogSteps.value = v);
-  fLook.add(state, 'edges').name('drawn lines'); fLook.add(state, 'lineW', 1, 6, 0.1).name('line px @1080'); fLook.add(state, 'outlines').name('extra silhouette');
-  fLook.add(state, 'quality', { 'auto (light)': 'auto', 'high (sharp)': 'high', 'low (fast)': 'low' }).name('preview quality').onChange(() => { autoScale = 1; resize(); });
-  const fExp = gui.addFolder('export', true);
-  fExp.add(state, 'exportMode', { 'long panorama (shot)': 'pano', 'single 4k frame': 'frame' }).name('png format').onChange(() => { lastKey = ''; });
-  fExp.add(state, 'lineColour', { 'ink #8a6b64 (team)': 'ink', 'dark brown #5a3a30': 'dark', 'black': 'black' }).name('lineart colour');
-  fExp.add(state, 'lineWobble', 0, 2, 0.05).name('hand wobble');
-  fExp.add(state, 'whiteBg').name('lineart on white');
-  fExp.add(state, 'meshDetail', { 'medium (smooth)': 'medium', 'light (small file)': 'light' }).name('.obj / .stl detail');
-  fExp.add(state, 'glbMode', { 'instanced · small (blender 3.6+)': 'instanced', 'baked · one mesh / element': 'baked' }).name('3d .glb mode');
-  const fEl = gui.addFolder('elements (own png each)');
+  fEra.add(state, 'eraMode', eraOpts).name('Era look');
+  fEra.add(state, 'nextEra', nextOpts).name('Transition to');
+  fEra.add(state, 'waveType', { 'Red wave (sweep)': 'wave', 'Red wave (rotating 360°)': 'radial', 'Colour bleed': 'fade', 'Crack': 'crack' }).name('Transition style');
+  fEra.add({ go: () => { state.manual = { from: state.eraMode === 'auto' ? state.eraNow : state.eraMode, to: state.nextEra, type: state.waveType, start: performance.now() }; } }, 'go').name('▶  Play transition');
+  const fExp = gui.addFolder('Export options');
+  fExp.add(state, 'exportMode', { 'Long panorama': 'pano', 'Single 4K frame': 'frame' }).name('Image format').onChange(() => { lastKey = ''; refreshExportLabels(); });
+  fExp.add(state, 'lineColour', { 'Ink #8A6B64 (team)': 'ink', 'Dark brown #5A3A30': 'dark', 'Black': 'black' }).name('Lineart colour');
+  fExp.add(state, 'lineWobble', 0, 2, 0.05).name('Hand wobble');
+  fExp.add(state, 'whiteBg').name('Lineart on white');
+  fExp.add(state, 'glbMode', { 'Instanced · small (Blender 3.6+)': 'instanced', 'Baked · one mesh per element': 'baked' }).name('.glb mode');
+  fExp.add(state, 'meshDetail', { 'Medium (smooth)': 'medium', 'Light (small file)': 'light' }).name('.obj / .stl detail');
+  const fEl = gui.addFolder('Elements (own PNG each)');
   elements.filter(e => e !== 'scene' && hasContent(e)).forEach(e => fEl.add(state.elVis, e));
-  const fOv = gui.addFolder('guides (screen only)');
-  fOv.add(state.ov, 'thirds').name('rule of thirds'); fOv.add(state.ov, 'safe').name('title / action safe'); fOv.add(state.ov, 'horizon').name('horizon / eye line');
-  if (cfg.vanishingPoint) fOv.add(state.ov, 'vp').name('vanishing point');
-  if (cfg.staging) fOv.add(state.ov, 'staging').name('staging guide');
+  const fOv = gui.addFolder('Guides (screen only)');
+  fOv.add(state.ov, 'thirds').name('Rule of thirds'); fOv.add(state.ov, 'safe').name('Title / action safe'); fOv.add(state.ov, 'horizon').name('Horizon / eye line');
+  if (cfg.vanishingPoint) fOv.add(state.ov, 'vp').name('Vanishing point');
+  if (cfg.staging) fOv.add(state.ov, 'staging').name('Staging guide');
   refreshGui = () => { pane.refresh(); invalidate(); };
-  if (cfg.gui) cfg.gui(gui.addFolder((cfg.guiTitle || 'scene').toLowerCase(), true), api, refreshGui);
+  if (cfg.gui) cfg.gui(gui.addFolder(cfg.guiTitle || 'Scene', true), api, refreshGui);
   pane.on('change', () => { invalidate(); syncTools(); });
   resize(); syncTools();
 
+  const qs = new URLSearchParams(location.search), batch = qs.get('batch') && window.parent !== window ? { format: qs.get('batch'), glb: qs.get('glb'), detail: qs.get('detail'), shot: qs.get('shot') } : null;
+  if (batch) { state.playing = false; parent.postMessage({ source: 'sirpeltric', id: cfg.id, type: 'sp-progress', message: 'scene loaded' }, '*'); }
   /* loop — renders only when playing or when something changed */
-  let last = performance.now(), slowAcc = 0, slowN = 0, firstFrame = true;
+  let last = performance.now(), slowAcc = 0, slowN = 0, slowHits = 0, firstFrame = true;
   function frame(now) {
     const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;   // first rAF stamp can be older than performance.now()
     if (state.playing && !busy) { state.T += dt; if (state.T >= TOTAL) state.T = 0; setScrub(); }
     if (!busy && (state.playing || dirty || state.manual)) {
+      if (needResize) { needResize = false; resize(); slowAcc = slowN = 0; }
       dirty = false;
       const s = applyTime(state.T);
       renderPass('final');
@@ -1164,13 +1324,13 @@ function startApp(cfg) {
       const eraLabel = (ERAS[state.eraNow] || ERAS.base).label;
       info.textContent = s.name; if (eraChip) eraChip.textContent = eraLabel;
       refreshExportLabels();
-      if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); }
+      if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); if (batch) setTimeout(runBatch, 50); }
       // auto quality: while playing, step the preview resolution down if frames are slow, back up when there is headroom
-      if (state.playing && state.quality === 'auto' && dt > 0) {
+      if (state.playing && state.quality === 'auto' && dt > 0 && dt < 0.1 && autoScale > 0.6) {
         slowAcc += dt; slowN++;
-        if (slowN >= 45) { const avg = slowAcc / slowN; slowAcc = slowN = 0;
-          if (avg > 0.03 && autoScale > 0.55) { autoScale = Math.max(0.55, autoScale - 0.15); resize(); }
-          else if (avg < 0.019 && autoScale < 1) { autoScale = Math.min(1, autoScale + 0.1); resize(); } }
+        if (slowN >= 90) { const avg = slowAcc / slowN; slowAcc = slowN = 0;
+          slowHits = avg > 0.04 ? slowHits + 1 : 0;                                  // two slow windows in a row (~3 s)
+          if (slowHits >= 2) { slowHits = 0; autoScale = Math.max(0.6, autoScale - 0.2); resize(); } }
       }
     }
     requestAnimationFrame(frame);
@@ -1178,6 +1338,21 @@ function startApp(cfg) {
   setScrub();
   requestAnimationFrame(frame);
   window.__app = { api, state, applyTime, renderPass, captureFrame, capturePano, shots, elements, reg, export3D, exportOBJ, exportSTL, invalidate, setShading };
+
+  /* ── batch mode: the index page opens this scene in a hidden frame with ?batch=glb|obj|stl and gets the file back.
+     ?glb=baked|instanced · ?detail=medium|light · ?shot=N (camera of shot N, default 1). Messages: sp-progress / sp-file / sp-done / sp-error ── */
+  function runBatch() {
+    const tell = m => parent.postMessage({ source: 'sirpeltric', id: cfg.id, ...m }, '*');
+    if (batch.glb) state.glbMode = batch.glb === 'instanced' ? 'instanced' : 'baked';
+    if (batch.detail) state.meshDetail = batch.detail === 'light' ? 'light' : 'medium';
+    const shot = shots[Math.max(0, Math.min(shots.length - 1, (+batch.shot || 1) - 1))];
+    state.playing = false; state.T = shot.t0 + 0.001; applyTime(state.T);
+    downloadSink = (blob, name) => tell({ type: 'sp-file', name, blob });
+    const fn = { glb: export3D, obj: exportOBJ, stl: exportSTL }[batch.format];
+    if (!fn) return tell({ type: 'sp-error', message: 'unknown format ' + batch.format });
+    Promise.resolve(fn(msg => tell({ type: 'sp-progress', message: msg })))
+      .then(() => tell({ type: 'sp-done' }), e => { console.error(e); tell({ type: 'sp-error', message: e.message || String(e) }); });
+  }
 }
 
 
@@ -1202,7 +1377,6 @@ const DOWNTOWN = [-34, 116];                // skyline faces the middle of the l
 const LANDMARK = [-52, 134];                // hero tower on the right third of that view
 const RINGS = [78, 150];
 const AVENUES = [0.35, 1.9, 3.5, 5.0];
-const PANELS = [{ a: -72, c: '#E0362C' }, { a: -36, c: '#5B9BE0' }, { a: 0, c: '#5B9BE0' }, { a: 36, c: '#5B9BE0' }, { a: 72, c: '#E0362C' }];
 
 const C = {
   brick: ['#E7A99A', '#D99A86', '#E9B8A2', '#DFA48F'], stone: ['#EBD9B4', '#F1E4CC', '#E6DCC6', '#EFE3D3'], greyc: ['#DDE1E4', '#E3E7D9', '#E6DCEB', '#D8E2E6'],
@@ -1501,15 +1675,6 @@ startApp({
   eras: ['e1960', 'e1945', 'base'],                // brief: Sc 3–4 1960s → Sc 5 1945 B&W → Sc 6 colour
   update(T, api) { if (landmarks._clouds) landmarks._clouds.rotation.y = T * 0.004; },
   staging: () => ({ center: [0, 0, 0], size: [2.6, 1.3, 1.4] }),
-  drawOverlay(ctx, W, H, d, api, shot) {
-    const cx = 74 * d, cy = H - 30 * d, R = 50 * d;
-    ctx.fillStyle = 'rgba(20,20,24,.72)'; ctx.fillRect(cx - 66 * d, cy - 66 * d, 132 * d, 86 * d); ctx.lineCap = 'round';
-    PANELS.forEach(p => { const a0 = (p.a - 16) * Math.PI / 180, a1 = (p.a + 16) * Math.PI / 180; ctx.strokeStyle = p.c; ctx.lineWidth = 5 * d;
-      ctx.beginPath(); ctx.moveTo(cx + Math.sin(a0) * R, cy - Math.cos(a0) * R); ctx.lineTo(cx + Math.sin(a1) * R, cy - Math.cos(a1) * R); ctx.stroke(); });
-    const rel = (shot.theta || 0) - Math.PI;
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 * d; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(rel) * R * 0.9, cy - Math.cos(rel) * R * 0.9); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = `${10 * d}px system-ui`; ctx.fillText('blue = draw · red = smear (by hand)', cx - 62 * d, cy + 14 * d);
-  },
   guiTitle: 'BG 1 · City',
   gui(f, api) {
     f.add(opts, 'landmark', { 'Art Deco spire tower': 'deco', 'Observation needle (1962)': 'needle' }).name('Landmark').onChange(setLandmark);
