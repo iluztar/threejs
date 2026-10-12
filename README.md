@@ -24,7 +24,7 @@ At the bottom of `index.html`, **Batch export** saves the 3D files of several sc
 3. Choose **One ZIP** or **Separate files**, then press **Export**.
 
 Each scene opens in the small preview, exports itself (camera = shot 1) and the next one starts; the list shows the size of every file.
-The baked .glb of BG 1 is large (~140 MB). With *Separate files* the browser may ask once to allow multiple downloads.
+The baked .glb of BG 1 is the biggest file: ≈ 93 MB at medium detail, ≈ 51 MB at light detail. With *Separate files* the browser may ask once to allow multiple downloads.
 
 ---
 
@@ -54,7 +54,7 @@ Scene switcher (‹ list ›), title and current shot, the active era, then: gui
   - *sky bands* (0 = smooth gradient) and *ground tint steps* (0 = smooth fog on the ground, the default)
   - drawn lines on/off, *line px @1080* (2.4 px, the same width everywhere), extra silhouette
   - *preview quality*: `auto` is sharp and lowers the resolution only if frames stay slow, `high` is always sharp, `low` is fastest. Exports always render at full 4K.
-- **Export options**: image format (long panorama or a single 4K frame), lineart colour, hand wobble, lineart on white, `.glb` mode, `.obj / .stl` detail.
+- **Export options**: image format (long panorama or a single 4K frame), lineart colour, hand wobble, lineart on white, `.glb` mode, 3D detail (baked .glb, .obj, .stl).
 - **Elements**: show/hide each element (sky, clouds, hills, city…). Hidden elements are left out of every export.
 - **Guides** and a per-scene folder (landmark, light preset, props…).
 
@@ -72,7 +72,7 @@ One button opens a grouped menu. Pick *Long panorama* or *Single 4K frame* at th
 | **3D · .stl** | Binary STL with shapes only (no colour), e.g. for 3D printing or other tools. |
 
 Exports never include the GUI, guides or the staging marker, and their size never depends on the browser window.
-For heavy scenes (BG 1 city), set *.obj / .stl detail* to `light (small file)`: the STL drops from about 99 MB to about 57 MB.
+For heavy scenes (BG 1 city), set *3D detail* (Settings → Export options) to `Light`: BG 1 baked .glb drops from ≈ 93 MB to ≈ 51 MB and the STL from ≈ 99 MB to ≈ 57 MB.
 
 ---
 

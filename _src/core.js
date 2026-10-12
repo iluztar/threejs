@@ -39,6 +39,10 @@ const TRANS = { none: 0, wave: 1, radial: 2, fade: 3, crack: 4 };
 const INK = '#8A6B64';          // ink colour from the team's own city test (convert mp4 to threejs.html)
 const INK_DARK = '#5A3A30';
 const EXPORT_W = 3840, EXPORT_H = 2160, MAX_SIDE = 32000;
+/** phones / tablets: lighter shapes, pixel ratio ≤ 1.5, no MSAA (the look stays the same, the GPU load drops a lot) */
+const MOBILE = (matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches) || Math.min(screen.width, screen.height) < 600;
+const SEG = MOBILE ? { s: [20, 12], lo: [10, 7], cap: [3, 10], rb: 2, rbs: 3, lathe: 18, cone: 14, tor: [8, 32], disc: 32, half: [20, 8] }
+                   : { s: [28, 18], lo: [14, 10], cap: [6, 14], rb: 4, rbs: 5, lathe: 28, cone: 24, tor: [12, 48], disc: 48, half: [28, 14] };
 
 /* ── colour helpers (sRGB, same maths as the shader) ────────────────────── */
 const hexToRgb = h => { const n = parseInt(String(h).replace('#', ''), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
@@ -195,6 +199,12 @@ export function startApp(cfg) {
   const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, premultipliedAlpha: false, preserveDrawingBuffer: false, powerPreference: 'high-performance' });
   renderer.setClearColor(0x000000, 0); renderer.outputColorSpace = THREE.SRGBColorSpace;
   stage.prepend(renderer.domElement);
+  // phones can drop the GPU context (memory pressure, app switch): say so instead of showing a frozen frame
+  renderer.domElement.addEventListener('webglcontextlost', e => {
+    e.preventDefault(); document.body.classList.remove('ready');
+    const t = document.getElementById('ldText'); if (t) t.innerHTML = 'The browser paused the 3D view<small>Tap here to reload the scene.</small>';
+    const l = document.getElementById('loader'); if (l) { l.style.pointerEvents = 'auto'; l.style.cursor = 'pointer'; l.onclick = () => location.reload(); }
+  });
   const gl = renderer.getContext();
   const MAX_RB = Math.min(gl.getParameter(gl.MAX_RENDERBUFFER_SIZE), gl.getParameter(gl.MAX_TEXTURE_SIZE));
 
@@ -297,11 +307,11 @@ export function startApp(cfg) {
   const lathe = (pts, seg = 28) => new THREE.LatheGeometry(pts.map(p => new THREE.Vector2(p[0], p[1])), seg);
   const rcPts = (() => { const p = [[0, 0], [0.92, 0], [0.99, 0.04], [1, 0.12]]; for (let i = 0; i <= 6; i++) { const a = i / 6 * Math.PI / 2; p.push([0.85 + 0.15 * Math.cos(a), 0.85 + 0.15 * Math.sin(a)]); } p.push([0, 1]); return p; })();
   const geo = {
-    sphere: new THREE.SphereGeometry(1, 28, 18), sphereLo: new THREE.SphereGeometry(1, 14, 10),
-    capsule: new THREE.CapsuleGeometry(0.5, 1, 6, 14), rbox: new RoundedBoxGeometry(1, 1, 1, 4, 0.16), rboxSoft: new RoundedBoxGeometry(1, 1, 1, 5, 0.3),
-    rcyl: lathe(rcPts), cone: lathe([[0, 0], [1, 0], [0.98, 0.08], [0.55, 0.62], [0.18, 0.95], [0, 1]], 24),
-    torus: new THREE.TorusGeometry(1, 0.12, 12, 48), disc: new THREE.CircleGeometry(1, 48).rotateX(-Math.PI / 2),
-    halfSphere: new THREE.SphereGeometry(1, 28, 14, 0, Math.PI * 2, 0, Math.PI / 2),
+    sphere: new THREE.SphereGeometry(1, ...SEG.s), sphereLo: new THREE.SphereGeometry(1, ...SEG.lo),
+    capsule: new THREE.CapsuleGeometry(0.5, 1, ...SEG.cap), rbox: new RoundedBoxGeometry(1, 1, 1, SEG.rb, 0.16), rboxSoft: new RoundedBoxGeometry(1, 1, 1, SEG.rbs, 0.3),
+    rcyl: lathe(rcPts, SEG.lathe), cone: lathe([[0, 0], [1, 0], [0.98, 0.08], [0.55, 0.62], [0.18, 0.95], [0, 1]], SEG.cone),
+    torus: new THREE.TorusGeometry(1, 0.12, ...SEG.tor), disc: new THREE.CircleGeometry(1, SEG.disc).rotateX(-Math.PI / 2),
+    halfSphere: new THREE.SphereGeometry(1, SEG.half[0], SEG.half[1], 0, Math.PI * 2, 0, Math.PI / 2),
     inkBar: new THREE.BoxGeometry(1, 1, 1),
   };
   geo.lathe = lathe;
@@ -450,7 +460,7 @@ export function startApp(cfg) {
   }
   /** exporting = huge 4K / panorama targets: no MSAA there (memory); the live preview gets 4× MSAA so edges don't crawl */
   function sizeTargets(w, h, exporting = false) {
-    const samples = exporting || !renderer.capabilities.isWebGL2 ? 0 : 4;
+    const samples = exporting || MOBILE || !renderer.capabilities.isWebGL2 ? 0 : 4;
     if (rt.samples !== samples) { rt.dispose(); rt.samples = samples; }
     for (const t of [rt, rtN, rtL, rtM]) t.setSize(w, h);
     rtN.depthTexture.image.width = w; rtN.depthTexture.image.height = h;
@@ -503,7 +513,7 @@ export function startApp(cfg) {
   const shots = cfg.shots; let acc = 0; for (const s of shots) { s.t0 = acc; acc += s.dur; } const TOTAL = acc;
   const shotAt = T => { for (const s of shots) if (T < s.t0 + s.dur) return s; return shots[shots.length - 1]; };
   const ease = k => k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-  const api = { THREE, scene, camera, groups, renderer, geo, toon, solid, Batch, B, buildBatches, fx, setSky, sun, hemi, ease, state, fxU, mapColour, hexToRgb, rgbToHex, register, mergeGeometries, setEl, inkLines, idMat, INK,
+  const api = { MOBILE, THREE, scene, camera, groups, renderer, geo, toon, solid, Batch, B, buildBatches, fx, setSky, sun, hemi, ease, state, fxU, mapColour, hexToRgb, rgbToHex, register, mergeGeometries, setEl, inkLines, idMat, INK,
     lerp: (a, b, k) => a + (b - a) * k, clamp: (v, a, b) => Math.min(b, Math.max(a, v)), smooth: (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); } };
   let refreshGui = () => {};
   function applyTime(T) {
@@ -533,7 +543,7 @@ export function startApp(cfg) {
      (< ~25 fps) and never bounces back up by itself — resolution changes cause a visible hitch. Exports are unaffected. */
   let autoScale = 1;
   const previewDpr = () => {
-    const dev = Math.min(2, window.devicePixelRatio || 1);
+    const dev = Math.min(MOBILE ? 1.5 : 2, window.devicePixelRatio || 1);
     if (state.quality === 'high') return dev;
     if (state.quality === 'low') return Math.max(0.75, dev * 0.6);
     return Math.max(0.75, dev * autoScale);
@@ -809,19 +819,8 @@ export function startApp(cfg) {
     const root = new THREE.Group(); root.name = cfg.id + '_' + slug(cfg.title);
     const els = new Map(), elGroup = name => { if (!els.has(name)) { const g = new THREE.Group(); g.name = name; root.add(g); els.set(name, { g, geos: [], mat: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, name: name }) }); } return els.get(name); };
     const shown = o => state.elVis[o.userData.el] !== false && o.visible !== false;
-    const m = new THREE.Matrix4(), col = new THREE.Color();
-    let n = 0;
-    for (const mesh of reg.fills) {
-      if (!shown(mesh) || !mesh.parent || !mesh.parent.visible) continue;
-      const e = elGroup(mesh.userData.el);
-      if (mesh.isInstancedMesh) {
-        const parts = [];
-        for (let i = 0; i < mesh.count; i++) { mesh.getMatrixAt(i, m); m.premultiply(mesh.matrixWorld); mesh.getColorAt(i, col); parts.push(bakeGeometry(lowGeo(mesh.geometry), m, col)); }
-        const g = merged(parts); if (g) e.geos.push(g);
-      } else e.geos.push(bakeGeometry(mesh.geometry, mesh.matrixWorld, new THREE.Color(mesh.userData.baseHex)));
-      if (++n % 40 === 0) { say(`3D — baking ${n} objects…`); await tick0(); }
-    }
-    for (const [name, e] of els) { const g = merged(e.geos); if (!g) continue; const mm = new THREE.Mesh(g, e.mat); mm.name = name + '_mesh'; e.g.add(mm); }
+    // solid shapes: one mesh per element × colour, the colour on the material (not on every vertex) → about half the file size
+    for (const { el, hex, geo: g } of await collectSolids(say, { fx: false })) { const mm = new THREE.Mesh(g, stdMat(hex)); mm.name = `${el}_${hex.replace('#', '')}`; elGroup(el).g.add(mm); }
     // flat pieces (ground, roads, river…) with their own colour or texture
     for (const f of reg.fx) {
       const mat = f.userData.fillMat; if (!shown(f) || !(mat && (mat.isMeshToonMaterial || mat.isMeshBasicMaterial || mat.isMeshStandardMaterial)) || !f.geometry) continue;
@@ -904,7 +903,7 @@ export function startApp(cfg) {
     return g;
   }
   /** → [{ el, hex, geo }] merged per element × colour, only what is visible (elements panel + scene toggles) */
-  async function collectSolids(say) {
+  async function collectSolids(say, { fx = true } = {}) {
     scene.updateMatrixWorld(true);
     const parts = new Map(), put = (el, hex, g) => { const k = el + '|' + hex; if (!parts.has(k)) parts.set(k, { el, hex, list: [] }); parts.get(k).list.push(g); };
     const shown = o => state.elVis[o.userData.el] !== false && visibleDeep(o);
@@ -916,7 +915,7 @@ export function startApp(cfg) {
       else put(mesh.userData.el, mesh.userData.baseHex, bakePN(lg, mesh.matrixWorld));
       if (++n % 40 === 0) { say(`3D — baking ${n} objects…`); await tick0(); }
     }
-    for (const f of reg.fx) {   // flat pieces: ground, roads, river…
+    if (fx) for (const f of reg.fx) {   // flat pieces: ground, roads, river…
       const mat = f.userData.fillMat;
       if (!f.isMesh || !f.geometry || !shown(f) || !(mat && (mat.isMeshToonMaterial || mat.isMeshBasicMaterial || mat.isMeshStandardMaterial))) continue;
       put(f.userData.el, f.userData.baseHex || '#' + (mat.color ? mat.color.getHexString() : 'ffffff'), bakePN(f.geometry, f.matrixWorld));
@@ -1001,7 +1000,7 @@ export function startApp(cfg) {
   fExp.add(state, 'lineWobble', 0, 2, 0.05).name('Hand wobble');
   fExp.add(state, 'whiteBg').name('Lineart on white');
   fExp.add(state, 'glbMode', { 'Instanced · small (Blender 3.6+)': 'instanced', 'Baked · one mesh per element': 'baked' }).name('.glb mode');
-  fExp.add(state, 'meshDetail', { 'Medium (smooth)': 'medium', 'Light (small file)': 'light' }).name('.obj / .stl detail');
+  fExp.add(state, 'meshDetail', { 'Medium (smooth)': 'medium', 'Light (small file)': 'light' }).name('3D detail (baked .glb, .obj, .stl)');
   const fEl = gui.addFolder('Elements (own PNG each)');
   elements.filter(e => e !== 'scene' && hasContent(e)).forEach(e => fEl.add(state.elVis, e));
   const fOv = gui.addFolder('Guides (screen only)');

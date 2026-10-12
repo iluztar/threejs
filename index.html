@@ -139,14 +139,14 @@ fieldset{border:0;margin:0 0 12px;padding:0}legend{font:800 10.5px/1 system-ui;l
         <label><input type="radio" name="format" value="glb-instanced"><span>.glb<small>instanced · small · Blender 3.6+</small></span></label>
         <label><input type="radio" name="format" value="obj"><span>.obj<small>+ .mtl colours · zipped</small></span></label>
         <label><input type="radio" name="format" value="stl"><span>.stl<small>shapes only</small></span></label></div></fieldset>
-      <fieldset id="bDetail" hidden><legend>Detail (.obj / .stl)</legend><div class="seg2">
-        <label><input type="radio" name="detail" value="medium" checked><span>Medium · smooth</span></label>
+      <fieldset id="bDetail"><legend>Detail</legend><div class="seg2">
+        <label><input type="radio" name="detail" value="medium" checked><span>Medium · smooth<small></small></span></label>
         <label><input type="radio" name="detail" value="light"><span>Light · small files</span></label></div></fieldset>
       <fieldset><legend>Save as</legend><div class="seg2">
         <label><input type="radio" name="output" value="zip" checked><span>One ZIP</span></label>
         <label><input type="radio" name="output" value="files"><span>Separate files</span></label></div></fieldset>
       <div class="b-run"><button type="button" class="go" id="bRun">Export</button><button type="button" class="ghost" id="bStop" hidden>Stop</button></div>
-      <p class="b-note">Camera animation = shot 1 of each scene. Baked .glb of BG 1 is large (~140 MB); "Separate files" may ask once to allow multiple downloads.</p>
+      <p class="b-note">Camera animation = shot 1 of each scene. Biggest file: BG 1 baked .glb ≈ 93 MB (medium) or ≈ 51 MB (light). "Separate files" may ask once to allow multiple downloads.</p>
     </div>
     <div class="b-live">
       <div class="b-frame" id="bFrame"><span>Preview of the scene being exported</span></div>

@@ -37,7 +37,8 @@ const DESERTS = [[12, 23, 24, 8], [-6, 24, 9, 5], [47, 22, 9, 6], [71, 27, 3.5, 
 
 const ll = (lat, lon, r = 1) => { const la = lat * Math.PI / 180, lo = lon * Math.PI / 180; return [r * Math.cos(la) * Math.sin(lo), r * Math.sin(la), r * Math.cos(la) * Math.cos(lo)]; };
 
-const W = 4096, H = 2048;
+const PHONE = (matchMedia('(pointer: coarse)').matches && !matchMedia('(any-pointer: fine)').matches) || Math.min(screen.width, screen.height) < 600;
+const W = PHONE ? 2048 : 4096, H = W / 2;                 // phones: a quarter of the pixels to paint (faster start, less memory)
 function paintGlobe(THREE) {
   const px = (lon, lat) => [(lon + 180) / 360 * W, (90 - lat) / 180 * H];
   const mask = document.createElement('canvas'); mask.width = W; mask.height = H; const m = mask.getContext('2d');
@@ -47,7 +48,7 @@ function paintGlobe(THREE) {
     for (const ring of poly) ring.forEach((p, i) => { const [x, y] = px(p[0], p[1]); i ? m.lineTo(x, y) : m.moveTo(x, y); });
     m.closePath(); m.fill('evenodd'); }
   const soft = document.createElement('canvas'); soft.width = W; soft.height = H; const s = soft.getContext('2d');
-  s.filter = 'blur(4px)'; s.drawImage(mask, 0, 0); s.filter = 'none';   // light rounding only: shapes stay true to the real Earth
+  s.filter = `blur(${W / 1024}px)`; s.drawImage(mask, 0, 0); s.filter = 'none';   // light rounding only: shapes stay true to the real Earth
   const md = s.getImageData(0, 0, W, H), land = new Uint8Array(W * H);
   for (let i = 0; i < W * H; i++) land[i] = md.data[i * 4] > 120 ? 1 : 0;
   // colour map (land only, alpha = land) + mask texture
