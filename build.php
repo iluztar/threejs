@@ -58,7 +58,8 @@ foreach ($bgs as [$id, $base, $title, $sub]) {
     $thumb = is_file("$dir/preview.jpg") ? "<img src=\"$base/preview.jpg?v=" . filemtime("$dir/preview.jpg") . "\" alt=\"\" loading=\"lazy\" decoding=\"async\" width=\"960\" height=\"540\">" : '<div class="ph"></div>';
     $num = (int) substr($id, 2);
     $links .= "<article class=\"card\">" . ($open ? "<a class=\"thumb\" href=\"$open\" aria-label=\"Open " . htmlspecialchars($title) . "\">$thumb<span class=\"play\" aria-hidden=\"true\"></span></a>" : "<div class=\"thumb\">$thumb</div>")
-        . "<div class=\"body\"><span class=\"num\">BG $num</span><h2>" . htmlspecialchars(preg_replace('/^BG \d+ · /', '', $title)) . "</h2><p>" . htmlspecialchars($sub) . "</p><div class=\"acts\">$row</div></div></article>\n";
+        . "<div class=\"body\"><div class=\"txt\"><span class=\"num\">BG $num</span><h2>" . htmlspecialchars(preg_replace('/^BG \d+ · /', '', $title)) . "</h2><p>" . htmlspecialchars($sub) . "</p></div>"
+        . ($open ? "<a class=\"playbtn\" href=\"$open\" title=\"Play scene\" aria-label=\"Play " . htmlspecialchars($title) . "\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 5.6v12.8c0 .8.9 1.3 1.6.8l9.6-6.4c.6-.4.6-1.2 0-1.6L9.6 4.8C8.9 4.3 8 4.8 8 5.6z\" fill=\"currentColor\"/></svg></a>" : '') . "</div></article>\n";   // prompt / references files are still built, just not linked
 }
 
 $brief = is_file("$out/00-brief/references.md") ? '<a class="brief" href="00-brief/references.md"><b>00 · Brief + anime era timeline</b><span>Shared references for all six backgrounds →</span></a>' : '';
@@ -133,14 +134,13 @@ main{max-width:1100px;margin:0 auto;padding:24px 16px 56px}
 .play{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;background:var(--pink);box-shadow:0 6px 16px -4px #0008;opacity:0;transform:translateY(4px);transition:.15s}
 .play:after{content:"";position:absolute;left:17px;top:13px;border-left:14px solid #2A1420;border-top:9px solid transparent;border-bottom:9px solid transparent}
 .thumb:hover .play,.thumb:focus-visible .play{opacity:1;transform:none}
-.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:2px;flex:1}
+.body{padding:14px 14px 16px 16px;display:flex;align-items:center;gap:12px;flex:1}
+.txt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.playbtn{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:var(--pink);color:#2A1420;box-shadow:inset -3px -3px 0 #0000001a;transition:transform .12s,background .12s}
+.playbtn svg{width:22px;height:22px;margin-left:3px}.playbtn:hover{background:#FF9DC2;transform:scale(1.06)}.playbtn:active{transform:scale(.96)}
 .num{font:800 10.5px/1 system-ui;letter-spacing:.12em;text-transform:uppercase;color:var(--pink)}
 h2{font-size:16px;margin:4px 0 0}
 .body p{margin:0;color:var(--tx2);font-size:13px;flex:1}
-.acts{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
-.acts a{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);text-decoration:none;font-weight:600;font-size:13px}
-.acts a:hover{border-color:var(--sky)}
-.acts a.go{background:var(--pink);border-color:var(--pink);color:#2A1420}.acts a.go:hover{background:#FF9DC2}
 footer{color:var(--tx3);font-size:12.5px;max-width:1100px;margin:0 auto;padding:0 16px 40px}
 footer kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;font:600 11px ui-monospace,monospace;color:var(--tx2)}
 :focus-visible{outline:2px solid var(--sky);outline-offset:2px}
@@ -182,7 +182,6 @@ $mascots
 <header><div class="hero"><span class="duo" aria-hidden="true"><svg><use href="#sp-boy"/></svg><svg><use href="#sp-girl"/></svg></span><div><h1>Sirpeltric · BG references</h1>
 <p>Six background scenes in Three.js, drawn flat 2D like Chiikawa and Kirby: flat colour fills, one ink line, banded sky. Background only, no characters. Each scene exports a long panorama (colour · lineart · base colour), a ZIP with one PNG per element, and 3D files for Blender (.glb · .obj · .stl).</p></div></div></header>
 <main>
-$brief
 <div class="grid">
 $links</div>
 $batch
