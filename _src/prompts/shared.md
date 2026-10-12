@@ -75,7 +75,8 @@ One continuous camera journey through anime history. Each background carries the
 - Base colour export = each object's flat colour mapped through the active era palette on the CPU (same maths as the shader).
 
 # TECH SPEC
-- Toon fills: `MeshToonMaterial` with a soft 3-step gradient (150/208/255), strong hemisphere light plus a soft sun (flat Chiikawa light).
+- **Flat 2D fills (default)**: every shape is ONE flat colour (unlit, like a cel painting / Chiikawa field / Kirby pixel scene). Depth tint (fog) is taken per object from its origin, so a shape never carries a gradient; big flat ground pieces get fog in a few hard steps. The sky is a few flat bands. The scene light colour/strength becomes one flat tint, so mood presets still work. Options: *flat + one cel shadow* (Kirby) and the old *soft 3D toon* (`MeshToonMaterial`, 3-step gradient 150/208/255).
+- Light page: preview pixel ratio ≤ 1.5 with auto step-down when slow, render only when something changes, minified Three.js + modulepreload, JSZip and GLTFExporter loaded only when exporting.
 - Rounded geometry only: `SphereGeometry`, `CapsuleGeometry`, `RoundedBoxGeometry`, `LatheGeometry`, extruded rounded gables. No sharp boxes (except hidden helpers).
 - Many copies go into `InstancedMesh` batches per (group, geometry, element) with per-instance colours.
 - Timeline: shots with play/pause, a scrub slider, a shot list, and a lens readout (mm). The era per shot follows the brief; the GUI can override it for previews.
