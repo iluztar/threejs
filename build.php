@@ -57,7 +57,7 @@ foreach ($bgs as [$id, $base, $title, $sub]) {
     // preview.jpg = a screenshot of the scene (clean view); without it the card shows a flat placeholder
     $thumb = is_file("$dir/preview.jpg") ? "<img src=\"$base/preview.jpg?v=" . filemtime("$dir/preview.jpg") . "\" alt=\"\" loading=\"lazy\" decoding=\"async\" width=\"960\" height=\"540\">" : '<div class="ph"></div>';
     $num = (int) substr($id, 2);
-    $links .= "<article class=\"card\">" . ($open ? "<a class=\"thumb\" href=\"$open\" aria-label=\"Open " . htmlspecialchars($title) . "\">$thumb<span class=\"play\" aria-hidden=\"true\"></span></a>" : "<div class=\"thumb\">$thumb</div>")
+    $links .= "<article class=\"card\">" . ($open ? "<a class=\"thumb\" href=\"$open\" aria-label=\"Open " . htmlspecialchars($title) . "\">$thumb</a>" : "<div class=\"thumb\">$thumb</div>")
         . "<div class=\"body\"><div class=\"txt\"><span class=\"num\">BG $num</span><h2>" . htmlspecialchars(preg_replace('/^BG \d+ · /', '', $title)) . "</h2><p>" . htmlspecialchars($sub) . "</p></div>"
         . ($open ? "<a class=\"playbtn\" href=\"$open\" title=\"Play scene\" aria-label=\"Play " . htmlspecialchars($title) . "\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 5.6v12.8c0 .8.9 1.3 1.6.8l9.6-6.4c.6-.4.6-1.2 0-1.6L9.6 4.8C8.9 4.3 8 4.8 8 5.6z\" fill=\"currentColor\"/></svg></a>" : '') . "</div></article>\n";   // prompt / references files are still built, just not linked
 }
@@ -131,13 +131,10 @@ main{max-width:1100px;margin:0 auto;padding:24px 16px 56px}
 .thumb img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .3s}
 .card:hover .thumb img{transform:scale(1.03)}
 .ph{width:100%;height:100%;background:linear-gradient(180deg,#BFE3F7 55%,#F6EFD4 55%)}
-.play{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;background:var(--pink);box-shadow:0 6px 16px -4px #0008;opacity:0;transform:translateY(4px);transition:.15s}
-.play:after{content:"";position:absolute;left:17px;top:13px;border-left:14px solid #2A1420;border-top:9px solid transparent;border-bottom:9px solid transparent}
-.thumb:hover .play,.thumb:focus-visible .play{opacity:1;transform:none}
 .body{padding:14px 14px 16px 16px;display:flex;align-items:center;gap:12px;flex:1}
 .txt{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
 .playbtn{flex:none;display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:var(--pink);color:#2A1420;box-shadow:inset -3px -3px 0 #0000001a;transition:transform .12s,background .12s}
-.playbtn svg{width:22px;height:22px;margin-left:3px}.playbtn:hover{background:#FF9DC2;transform:scale(1.06)}.playbtn:active{transform:scale(.96)}
+.playbtn svg{width:22px;height:22px;margin-left:3px}.playbtn:hover,.card:hover .playbtn{background:#FF9DC2;transform:scale(1.06)}   /* hovering the card highlights its one play button */.playbtn:active{transform:scale(.96)}
 .num{font:800 10.5px/1 system-ui;letter-spacing:.12em;text-transform:uppercase;color:var(--pink)}
 h2{font-size:16px;margin:4px 0 0}
 .body p{margin:0;color:var(--tx2);font-size:13px;flex:1}
