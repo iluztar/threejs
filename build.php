@@ -19,6 +19,7 @@ $bgs = [
 ];
 
 $tpl    = file_get_contents("$src/template.html");
+$mascots = file_get_contents("$src/mascots.html");   // the two characters as SVG symbols (#sp-boy, #sp-girl)
 $core   = preg_replace('/^export function startApp/m', 'function startApp', file_get_contents("$src/core.js"));
 $shared = file_get_contents("$src/prompts/shared.md");
 
@@ -34,7 +35,7 @@ foreach ($bgs as [$id, $base, $title, $sub]) {
     $open = null;
     if (is_file("$src/$id.js")) {
         $bg = preg_replace('/^import .*?;\s*$/m', '', file_get_contents("$src/$id.js"));
-        $html = str_replace(['{{TITLE}}', '{{NAV}}', '{{CODE}}'], [htmlspecialchars($title), $navJson, $core . "\n\n/* ═══════════ $title ═══════════ */\n" . $bg], $tpl);
+        $html = str_replace(['{{TITLE}}', '{{NAV}}', '{{MASCOTS}}', '{{CODE}}'], [htmlspecialchars($title), $navJson, $mascots, $core . "\n\n/* ═══════════ $title ═══════════ */\n" . $bg], $tpl);
         file_put_contents("$dir/$base.html", $html);
         echo "built $base/$base.html (" . round(strlen($html) / 1024) . " KB)\n";
         $open = "$base/$base.html";
@@ -62,6 +63,43 @@ foreach ($bgs as [$id, $base, $title, $sub]) {
 
 $brief = is_file("$out/00-brief/references.md") ? '<a class="brief" href="00-brief/references.md"><b>00 · Brief + anime era timeline</b><span>Shared references for all six backgrounds →</span></a>' : '';
 
+// batch export panel (logic in batch.js): every scene with a page, checked by default
+$chips = '';
+foreach ($bgs as [$id, $base, $title, $sub]) if (is_file("$src/$id.js"))
+    $chips .= '<label class="chip"><input type="checkbox" name="scene" value="' . $id . '" data-href="' . "$base/$base.html" . '" data-title="' . htmlspecialchars($title) . '" checked><span>' . htmlspecialchars(preg_replace('/ · .*$/', '', $title)) . '</span><small>' . htmlspecialchars(preg_replace('/^BG \d+ · /', '', $title)) . '</small></label>';
+$batch = <<<'BATCH'
+<section id="batch" class="batch" aria-labelledby="bTitle">
+  <div class="b-head"><div><h2 id="bTitle">Batch export</h2><p>Export the 3D files of several scenes in one go: each scene opens in the preview, exports itself, then the next one starts.</p></div>
+    <button type="button" class="ghost" id="bAll">All / none</button></div>
+  <div class="b-grid">
+    <div class="b-opts">
+      <fieldset><legend>Scenes</legend><div class="chips">%CHIPS%</div></fieldset>
+      <fieldset><legend>Format</legend><div class="seg4">
+        <label><input type="radio" name="format" value="glb-baked" checked><span>.glb<small>baked · best for Meshy / other tools</small></span></label>
+        <label><input type="radio" name="format" value="glb-instanced"><span>.glb<small>instanced · small · Blender 3.6+</small></span></label>
+        <label><input type="radio" name="format" value="obj"><span>.obj<small>+ .mtl colours · zipped</small></span></label>
+        <label><input type="radio" name="format" value="stl"><span>.stl<small>shapes only</small></span></label></div></fieldset>
+      <fieldset id="bDetail" hidden><legend>Detail (.obj / .stl)</legend><div class="seg2">
+        <label><input type="radio" name="detail" value="medium" checked><span>Medium · smooth</span></label>
+        <label><input type="radio" name="detail" value="light"><span>Light · small files</span></label></div></fieldset>
+      <fieldset><legend>Save as</legend><div class="seg2">
+        <label><input type="radio" name="output" value="zip" checked><span>One ZIP</span></label>
+        <label><input type="radio" name="output" value="files"><span>Separate files</span></label></div></fieldset>
+      <div class="b-run"><button type="button" class="go" id="bRun">Export</button><button type="button" class="ghost" id="bStop" hidden>Stop</button></div>
+      <p class="b-note">Camera animation = shot 1 of each scene. Baked .glb of BG 1 is large (~140 MB); "Separate files" may ask once to allow multiple downloads.</p>
+    </div>
+    <div class="b-live">
+      <div class="b-frame" id="bFrame"><span>Preview of the scene being exported</span></div>
+      <div class="b-cap" id="bCap">Ready</div>
+      <div class="b-prog"><i id="bBar"></i></div>
+      <div class="b-sum" id="bSum">Nothing exported yet</div>
+      <ol class="b-list" id="bList"></ol>
+    </div>
+  </div>
+</section>
+BATCH;
+$batch = str_replace('%CHIPS%', $chips, $batch);
+
 $index = <<<HTML
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><meta name="description" content="Sirpeltric · six kawaii background scenes built in Three.js, rendered flat 2D (Chiikawa / Kirby style).">
@@ -76,8 +114,10 @@ header:before,header:after{content:"";position:absolute;background:#B9B6D4;borde
 header:before{width:300px;height:64px;left:-180px}header:after{width:440px;height:96px;right:-150px;background:#D3D0E6}
 @media (max-width:700px){header{padding-bottom:84px}header:before{display:none}header:after{height:46px;width:260px;right:-110px}}
 .hero{max-width:1100px;margin:0 auto;position:relative;z-index:1;display:flex;align-items:center;gap:18px}
-.blob{width:64px;height:58px;flex:none;border-radius:50% 50% 46% 46%/56% 56% 44% 44%;background:var(--pink);border:3px solid #8A6B64;box-shadow:inset -8px -8px 0 #0000001a;position:relative}
-.blob:before,.blob:after{content:"";position:absolute;top:16px;width:6px;height:15px;border-radius:3px;background:#3B2B33}.blob:before{left:20px}.blob:after{left:32px}
+.duo{display:flex;align-items:flex-end;flex:none}.duo svg{display:block;width:92px;height:89px}.duo svg+svg{margin-left:-14px}
+.duo svg:first-child{animation:bob 2.4s ease-in-out infinite}.duo svg+svg{animation:bob 2.4s ease-in-out 1.2s infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.duo svg{animation:none!important}}
 h1{font-size:clamp(22px,4vw,34px);line-height:1.1;margin:0 0 6px;letter-spacing:-.01em}
 .hero p{margin:0;max-width:640px;color:#5A4650}
 main{max-width:1100px;margin:0 auto;padding:24px 16px 56px}
@@ -104,15 +144,50 @@ h2{font-size:16px;margin:4px 0 0}
 footer{color:var(--tx3);font-size:12.5px;max-width:1100px;margin:0 auto;padding:0 16px 40px}
 footer kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;font:600 11px ui-monospace,monospace;color:var(--tx2)}
 :focus-visible{outline:2px solid var(--sky);outline-offset:2px}
-@media (max-width:520px){.grid{grid-template-columns:1fr}.blob{width:48px;height:44px}.blob:before,.blob:after{top:12px;height:11px;width:5px}.blob:before{left:14px}.blob:after{left:24px}}
+/* batch export */
+.batch{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.b-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.b-head h2{margin:0;font-size:17px}.b-head p{margin:2px 0 0;color:var(--tx2);font-size:13px;max-width:620px}
+.b-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;margin-top:14px}
+fieldset{border:0;margin:0 0 12px;padding:0}legend{font:800 10.5px/1 system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:7px;padding:0}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.chip{display:flex;flex-direction:column;gap:1px;padding:8px 10px 8px 34px;border-radius:12px;border:1px solid var(--line2);background:var(--panel2);cursor:pointer;position:relative;min-width:0}
+.chip input{position:absolute;left:11px;top:11px;accent-color:var(--pink);width:15px;height:15px}
+.chip span{font-weight:800;font-size:12.5px}.chip small{color:var(--tx3);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip:has(input:checked){border-color:#FF86B488;background:#FF86B414}
+.seg4,.seg2{display:grid;gap:6px}.seg4{grid-template-columns:repeat(4,minmax(0,1fr))}.seg2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.seg4 label,.seg2 label{position:relative;cursor:pointer}.seg4 input,.seg2 input{position:absolute;opacity:0;pointer-events:none}
+.seg4 span,.seg2 span{display:block;height:100%;padding:8px 10px;border-radius:12px;border:1px solid var(--line2);background:var(--panel2);font-weight:800;font-size:13px}
+.seg4 small{display:block;font-weight:500;font-size:11px;color:var(--tx3);margin-top:2px;line-height:1.3}
+.seg4 input:checked+span,.seg2 input:checked+span{border-color:var(--pink);background:#FF86B41c}
+.seg4 input:focus-visible+span,.seg2 input:focus-visible+span{outline:2px solid var(--sky);outline-offset:2px}
+.b-run{display:flex;gap:8px;margin-top:4px}
+.batch button{height:40px;padding:0 16px;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;border:1px solid var(--line2);background:var(--panel2);color:var(--tx)}
+.batch button.go{flex:1;background:var(--pink);border-color:var(--pink);color:#2A1420}.batch button.go:hover:not(:disabled){background:#FF9DC2}
+.batch button:disabled{opacity:.5;cursor:default}.batch button.ghost:hover{border-color:var(--sky)}
+.b-note{color:var(--tx3);font-size:12px;margin:10px 0 0}
+.b-frame{aspect-ratio:16/10;border-radius:12px;overflow:hidden;background:#0d0c10;border:1px solid var(--line2);display:grid;place-items:center;color:var(--tx3);font-size:12px}
+.b-frame iframe{width:100%;height:100%;border:0;display:block}
+.b-cap{margin-top:8px;font-weight:700;font-size:13px}
+.b-prog{height:6px;border-radius:99px;background:#ffffff14;overflow:hidden;margin-top:8px}.b-prog i{display:block;height:100%;width:0;background:var(--pink);transition:width .3s}
+.b-sum{color:var(--tx2);font-size:12.5px;margin-top:6px}
+.b-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+.b-list li{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:10px;background:var(--panel2)}
+.b-list li b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.b-list .st{color:var(--tx3);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.b-list li.run .st{color:var(--sky)}.b-list li.ok .st{color:#7FD39B}.b-list li.err .st{color:#F28B82}
+@media (max-width:860px){.b-grid{grid-template-columns:1fr}.seg4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.grid{grid-template-columns:1fr}.duo svg{width:62px;height:60px}.duo svg+svg{margin-left:-10px}}
 </style></head><body>
-<header><div class="hero"><i class="blob" aria-hidden="true"></i><div><h1>Sirpeltric · BG references</h1>
+$mascots
+<header><div class="hero"><span class="duo" aria-hidden="true"><svg><use href="#sp-boy"/></svg><svg><use href="#sp-girl"/></svg></span><div><h1>Sirpeltric · BG references</h1>
 <p>Six background scenes in Three.js, drawn flat 2D like Chiikawa and Kirby: flat colour fills, one ink line, banded sky. Background only, no characters. Each scene exports a long panorama (colour · lineart · base colour), a ZIP with one PNG per element, and 3D files for Blender (.glb · .obj · .stl).</p></div></div></header>
 <main>
 $brief
 <div class="grid">
 $links</div>
+$batch
 </main>
+<script src="batch.js" defer></script>
 <footer>Single HTML files — open by double-click, internet needed once for the Three.js CDN. In a scene: <kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> frame · <kbd>E</kbd> export · <kbd>S</kbd> settings · <kbd>[</kbd><kbd>]</kbd> scene · <kbd>G</kbd> guides · <kbd>H</kbd> clean view · <kbd>F</kbd> fullscreen.</footer>
 </body></html>
 HTML;

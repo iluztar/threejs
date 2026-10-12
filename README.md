@@ -17,6 +17,15 @@ Every scene is a single HTML file. Open it from the site or by double-clicking i
 | ![](bg5-hobby/preview.jpg) | [BG 5 · Hobby background](bg5-hobby/bg5-hobby.html) | Sc 19–20 | full colour |
 | ![](bg6-forward-pathway/preview.jpg) | [BG 6 · Forward pathway](bg6-forward-pathway/bg6-forward-pathway.html) | Sc 21–24 | colour → grey warp → black |
 
+### Batch export (main page)
+At the bottom of `index.html`, **Batch export** saves the 3D files of several scenes in one go:
+1. Tick the scenes (all are ticked by default).
+2. Pick the format: **.glb baked** (one mesh per element, best for Meshy.ai and other tools), **.glb instanced** (small, Blender 3.6+), **.obj + .mtl** or **.stl**. For .obj / .stl you can also pick the detail.
+3. Choose **One ZIP** or **Separate files**, then press **Export**.
+
+Each scene opens in the small preview, exports itself (camera = shot 1) and the next one starts; the list shows the size of every file.
+The baked .glb of BG 1 is large (~140 MB). With *Separate files* the browser may ask once to allow multiple downloads.
+
 ---
 
 ## Using a scene

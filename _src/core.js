@@ -638,7 +638,8 @@ export function startApp(cfg) {
   const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const tick0 = () => new Promise(r => setTimeout(r, 20));
   const toBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
-  function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
+  let downloadSink = null;   // batch mode (index page): files go to the parent page instead of the browser
+  function download(blob, name) { if (downloadSink) return downloadSink(blob, name); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
   const focalPx = H => (H / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   api.focalPx = focalPx;
   function withExportSize(w, h, fn) {
@@ -1012,6 +1013,8 @@ export function startApp(cfg) {
   pane.on('change', () => { invalidate(); syncTools(); });
   resize(); syncTools();
 
+  const qs = new URLSearchParams(location.search), batch = qs.get('batch') && window.parent !== window ? { format: qs.get('batch'), glb: qs.get('glb'), detail: qs.get('detail'), shot: qs.get('shot') } : null;
+  if (batch) { state.playing = false; parent.postMessage({ source: 'sirpeltric', id: cfg.id, type: 'sp-progress', message: 'scene loaded' }, '*'); }
   /* loop — renders only when playing or when something changed */
   let last = performance.now(), slowAcc = 0, slowN = 0, slowHits = 0, firstFrame = true;
   function frame(now) {
@@ -1029,7 +1032,7 @@ export function startApp(cfg) {
       const eraLabel = (ERAS[state.eraNow] || ERAS.base).label;
       info.textContent = s.name; if (eraChip) eraChip.textContent = eraLabel;
       refreshExportLabels();
-      if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); }
+      if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); if (batch) setTimeout(runBatch, 50); }
       // auto quality: while playing, step the preview resolution down if frames are slow, back up when there is headroom
       if (state.playing && state.quality === 'auto' && dt > 0 && dt < 0.1 && autoScale > 0.6) {
         slowAcc += dt; slowN++;
@@ -1043,4 +1046,19 @@ export function startApp(cfg) {
   setScrub();
   requestAnimationFrame(frame);
   window.__app = { api, state, applyTime, renderPass, captureFrame, capturePano, shots, elements, reg, export3D, exportOBJ, exportSTL, invalidate, setShading };
+
+  /* ── batch mode: the index page opens this scene in a hidden frame with ?batch=glb|obj|stl and gets the file back.
+     ?glb=baked|instanced · ?detail=medium|light · ?shot=N (camera of shot N, default 1). Messages: sp-progress / sp-file / sp-done / sp-error ── */
+  function runBatch() {
+    const tell = m => parent.postMessage({ source: 'sirpeltric', id: cfg.id, ...m }, '*');
+    if (batch.glb) state.glbMode = batch.glb === 'instanced' ? 'instanced' : 'baked';
+    if (batch.detail) state.meshDetail = batch.detail === 'light' ? 'light' : 'medium';
+    const shot = shots[Math.max(0, Math.min(shots.length - 1, (+batch.shot || 1) - 1))];
+    state.playing = false; state.T = shot.t0 + 0.001; applyTime(state.T);
+    downloadSink = (blob, name) => tell({ type: 'sp-file', name, blob });
+    const fn = { glb: export3D, obj: exportOBJ, stl: exportSTL }[batch.format];
+    if (!fn) return tell({ type: 'sp-error', message: 'unknown format ' + batch.format });
+    Promise.resolve(fn(msg => tell({ type: 'sp-progress', message: msg })))
+      .then(() => tell({ type: 'sp-done' }), e => { console.error(e); tell({ type: 'sp-error', message: e.message || String(e) }); });
+  }
 }

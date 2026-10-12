@@ -18,7 +18,6 @@ const DOWNTOWN = [-34, 116];                // skyline faces the middle of the l
 const LANDMARK = [-52, 134];                // hero tower on the right third of that view
 const RINGS = [78, 150];
 const AVENUES = [0.35, 1.9, 3.5, 5.0];
-const PANELS = [{ a: -72, c: '#E0362C' }, { a: -36, c: '#5B9BE0' }, { a: 0, c: '#5B9BE0' }, { a: 36, c: '#5B9BE0' }, { a: 72, c: '#E0362C' }];
 
 const C = {
   brick: ['#E7A99A', '#D99A86', '#E9B8A2', '#DFA48F'], stone: ['#EBD9B4', '#F1E4CC', '#E6DCC6', '#EFE3D3'], greyc: ['#DDE1E4', '#E3E7D9', '#E6DCEB', '#D8E2E6'],
@@ -317,15 +316,6 @@ startApp({
   eras: ['e1960', 'e1945', 'base'],                // brief: Sc 3–4 1960s → Sc 5 1945 B&W → Sc 6 colour
   update(T, api) { if (landmarks._clouds) landmarks._clouds.rotation.y = T * 0.004; },
   staging: () => ({ center: [0, 0, 0], size: [2.6, 1.3, 1.4] }),
-  drawOverlay(ctx, W, H, d, api, shot) {
-    const cx = 74 * d, cy = H - 30 * d, R = 50 * d;
-    ctx.fillStyle = 'rgba(20,20,24,.72)'; ctx.fillRect(cx - 66 * d, cy - 66 * d, 132 * d, 86 * d); ctx.lineCap = 'round';
-    PANELS.forEach(p => { const a0 = (p.a - 16) * Math.PI / 180, a1 = (p.a + 16) * Math.PI / 180; ctx.strokeStyle = p.c; ctx.lineWidth = 5 * d;
-      ctx.beginPath(); ctx.moveTo(cx + Math.sin(a0) * R, cy - Math.cos(a0) * R); ctx.lineTo(cx + Math.sin(a1) * R, cy - Math.cos(a1) * R); ctx.stroke(); });
-    const rel = (shot.theta || 0) - Math.PI;
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 * d; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(rel) * R * 0.9, cy - Math.cos(rel) * R * 0.9); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = `${10 * d}px system-ui`; ctx.fillText('blue = draw · red = smear (by hand)', cx - 62 * d, cy + 14 * d);
-  },
   guiTitle: 'BG 1 · City',
   gui(f, api) {
     f.add(opts, 'landmark', { 'Art Deco spire tower': 'deco', 'Observation needle (1962)': 'needle' }).name('Landmark').onChange(setLandmark);

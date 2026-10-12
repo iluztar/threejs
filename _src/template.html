@@ -45,8 +45,8 @@ svg{display:block}
 #top{display:flex;align-items:center;gap:10px;padding:0 10px 0 14px;height:56px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--tx);flex:none;border-radius:10px;padding:4px 6px 4px 2px}
 .brand:hover{background:var(--panel2)}
-.blob{width:26px;height:24px;border-radius:50% 50% 46% 46%/56% 56% 44% 44%;background:var(--pink);box-shadow:inset -4px -4px 0 #0000001f,0 0 0 2px var(--pink-ink);position:relative;flex:none}
-.blob:before,.blob:after{content:"";position:absolute;top:8px;width:3px;height:7px;border-radius:2px;background:var(--pink-ink)}.blob:before{left:9px}.blob:after{left:14px}
+.duo{display:flex;align-items:flex-end;flex:none}.duo svg{display:block}
+.brand .duo svg{width:26px;height:25px}.brand .duo svg+svg{margin-left:-5px}
 .brand span{font-weight:800;letter-spacing:.01em;font-size:13px;color:var(--tx)}
 .brand small{display:block;font-weight:600;font-size:10.5px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-top:-1px}
 .sep{width:1px;height:24px;background:var(--line2);flex:none}
@@ -74,9 +74,11 @@ svg{display:block}
 body.ready #loader{opacity:0}
 body.exporting #loader{opacity:1;background:#121115e6;backdrop-filter:blur(6px)}   /* the canvas is resized to 4K while exporting: cover it */
 .ld{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--tx2);font-weight:600;text-align:center;padding:0 16px}
-.ld .blob{width:46px;height:42px;animation:hop .9s cubic-bezier(.3,.7,.4,1) infinite;box-shadow:inset -6px -6px 0 #0000001f,0 0 0 3px var(--pink-ink)}
-.ld .blob:before,.ld .blob:after{top:13px;width:5px;height:12px}.ld .blob:before{left:15px}.ld .blob:after{left:25px}
-.ld .shadow{width:40px;height:7px;border-radius:50%;background:#0006;margin-top:-10px;animation:sh .9s cubic-bezier(.3,.7,.4,1) infinite}
+.ld .pair{display:flex;gap:10px;align-items:flex-end}
+.ld .hopper{display:flex;flex-direction:column;align-items:center}
+.ld .hopper svg{width:64px;height:62px;animation:hop .9s cubic-bezier(.3,.7,.4,1) infinite;transform-origin:50% 100%}
+.ld .hopper:nth-child(2) svg,.ld .hopper:nth-child(2) .shadow{animation-delay:.45s}
+.ld .shadow{width:44px;height:7px;border-radius:50%;background:#0006;margin-top:2px;animation:sh .9s cubic-bezier(.3,.7,.4,1) infinite}
 .ld small{display:block;color:var(--tx3);font-weight:500;margin-top:4px;max-width:320px}
 @keyframes hop{0%,100%{transform:translateY(0) scale(1.08,.92)}45%{transform:translateY(-22px) scale(.95,1.05)}}
 @keyframes sh{0%,100%{transform:scale(1);opacity:.6}45%{transform:scale(.6);opacity:.25}}
@@ -166,13 +168,14 @@ body.clean #overlay{display:none}
   #exportMenu{left:10px;right:10px;width:auto;bottom:130px}
   #status{bottom:140px}
 }
-@media (prefers-reduced-motion:reduce){.ld .blob,.ld .shadow,#exportMenu,#status.busy:before{animation:none}}
+@media (prefers-reduced-motion:reduce){.ld .hopper svg,.ld .shadow,#exportMenu,#status.busy:before{animation:none}}
 </style>
 </head>
 <body>
+{{MASCOTS}}
 <div id="app">
   <header id="top">
-    <a class="brand" href="../index.html" title="All backgrounds"><i class="blob" aria-hidden="true"></i><div><span>Sirpeltric</span><small>BG references</small></div></a>
+    <a class="brand" href="../index.html" title="All backgrounds"><span class="duo" aria-hidden="true"><svg><use href="#sp-boy"/></svg><svg><use href="#sp-girl"/></svg></span><div><span>Sirpeltric</span><small>BG references</small></div></a>
     <i class="sep" aria-hidden="true"></i>
     <nav class="scenes" aria-label="Scenes">
       <a class="ib" id="scPrev" title="Previous scene" aria-label="Previous scene"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
@@ -192,7 +195,7 @@ body.clean #overlay{display:none}
   </header>
   <main id="stageWrap">
     <div id="stage"><canvas id="overlay"></canvas></div>
-    <div id="loader" aria-live="polite"><div class="ld"><i class="blob" aria-hidden="true"></i><i class="shadow" aria-hidden="true"></i><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
+    <div id="loader" aria-live="polite"><div class="ld"><div class="pair" aria-hidden="true"><div class="hopper"><svg><use href="#sp-boy"/></svg><i class="shadow"></i></div><div class="hopper"><svg><use href="#sp-girl"/></svg><i class="shadow"></i></div></div><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
   </main>
   <footer id="bottom">
     <div class="tl">

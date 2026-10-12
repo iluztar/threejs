@@ -11,8 +11,10 @@ header:before,header:after{content:"";position:absolute;background:#B9B6D4;borde
 header:before{width:300px;height:64px;left:-180px}header:after{width:440px;height:96px;right:-150px;background:#D3D0E6}
 @media (max-width:700px){header{padding-bottom:84px}header:before{display:none}header:after{height:46px;width:260px;right:-110px}}
 .hero{max-width:1100px;margin:0 auto;position:relative;z-index:1;display:flex;align-items:center;gap:18px}
-.blob{width:64px;height:58px;flex:none;border-radius:50% 50% 46% 46%/56% 56% 44% 44%;background:var(--pink);border:3px solid #8A6B64;box-shadow:inset -8px -8px 0 #0000001a;position:relative}
-.blob:before,.blob:after{content:"";position:absolute;top:16px;width:6px;height:15px;border-radius:3px;background:#3B2B33}.blob:before{left:20px}.blob:after{left:32px}
+.duo{display:flex;align-items:flex-end;flex:none}.duo svg{display:block;width:92px;height:89px}.duo svg+svg{margin-left:-14px}
+.duo svg:first-child{animation:bob 2.4s ease-in-out infinite}.duo svg+svg{animation:bob 2.4s ease-in-out 1.2s infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){.duo svg{animation:none!important}}
 h1{font-size:clamp(22px,4vw,34px);line-height:1.1;margin:0 0 6px;letter-spacing:-.01em}
 .hero p{margin:0;max-width:640px;color:#5A4650}
 main{max-width:1100px;margin:0 auto;padding:24px 16px 56px}
@@ -39,9 +41,82 @@ h2{font-size:16px;margin:4px 0 0}
 footer{color:var(--tx3);font-size:12.5px;max-width:1100px;margin:0 auto;padding:0 16px 40px}
 footer kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;font:600 11px ui-monospace,monospace;color:var(--tx2)}
 :focus-visible{outline:2px solid var(--sky);outline-offset:2px}
-@media (max-width:520px){.grid{grid-template-columns:1fr}.blob{width:48px;height:44px}.blob:before,.blob:after{top:12px;height:11px;width:5px}.blob:before{left:14px}.blob:after{left:24px}}
+/* batch export */
+.batch{margin-top:28px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+.b-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.b-head h2{margin:0;font-size:17px}.b-head p{margin:2px 0 0;color:var(--tx2);font-size:13px;max-width:620px}
+.b-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;margin-top:14px}
+fieldset{border:0;margin:0 0 12px;padding:0}legend{font:800 10.5px/1 system-ui;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3);margin-bottom:7px;padding:0}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.chip{display:flex;flex-direction:column;gap:1px;padding:8px 10px 8px 34px;border-radius:12px;border:1px solid var(--line2);background:var(--panel2);cursor:pointer;position:relative;min-width:0}
+.chip input{position:absolute;left:11px;top:11px;accent-color:var(--pink);width:15px;height:15px}
+.chip span{font-weight:800;font-size:12.5px}.chip small{color:var(--tx3);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip:has(input:checked){border-color:#FF86B488;background:#FF86B414}
+.seg4,.seg2{display:grid;gap:6px}.seg4{grid-template-columns:repeat(4,minmax(0,1fr))}.seg2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.seg4 label,.seg2 label{position:relative;cursor:pointer}.seg4 input,.seg2 input{position:absolute;opacity:0;pointer-events:none}
+.seg4 span,.seg2 span{display:block;height:100%;padding:8px 10px;border-radius:12px;border:1px solid var(--line2);background:var(--panel2);font-weight:800;font-size:13px}
+.seg4 small{display:block;font-weight:500;font-size:11px;color:var(--tx3);margin-top:2px;line-height:1.3}
+.seg4 input:checked+span,.seg2 input:checked+span{border-color:var(--pink);background:#FF86B41c}
+.seg4 input:focus-visible+span,.seg2 input:focus-visible+span{outline:2px solid var(--sky);outline-offset:2px}
+.b-run{display:flex;gap:8px;margin-top:4px}
+.batch button{height:40px;padding:0 16px;border-radius:12px;font-weight:800;font-size:13px;cursor:pointer;border:1px solid var(--line2);background:var(--panel2);color:var(--tx)}
+.batch button.go{flex:1;background:var(--pink);border-color:var(--pink);color:#2A1420}.batch button.go:hover:not(:disabled){background:#FF9DC2}
+.batch button:disabled{opacity:.5;cursor:default}.batch button.ghost:hover{border-color:var(--sky)}
+.b-note{color:var(--tx3);font-size:12px;margin:10px 0 0}
+.b-frame{aspect-ratio:16/10;border-radius:12px;overflow:hidden;background:#0d0c10;border:1px solid var(--line2);display:grid;place-items:center;color:var(--tx3);font-size:12px}
+.b-frame iframe{width:100%;height:100%;border:0;display:block}
+.b-cap{margin-top:8px;font-weight:700;font-size:13px}
+.b-prog{height:6px;border-radius:99px;background:#ffffff14;overflow:hidden;margin-top:8px}.b-prog i{display:block;height:100%;width:0;background:var(--pink);transition:width .3s}
+.b-sum{color:var(--tx2);font-size:12.5px;margin-top:6px}
+.b-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:12.5px}
+.b-list li{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:10px;background:var(--panel2)}
+.b-list li b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.b-list .st{color:var(--tx3);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:55%}
+.b-list li.run .st{color:var(--sky)}.b-list li.ok .st{color:#7FD39B}.b-list li.err .st{color:#F28B82}
+@media (max-width:860px){.b-grid{grid-template-columns:1fr}.seg4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:520px){.grid{grid-template-columns:1fr}.duo svg{width:62px;height:60px}.duo svg+svg{margin-left:-10px}}
 </style></head><body>
-<header><div class="hero"><i class="blob" aria-hidden="true"></i><div><h1>Sirpeltric · BG references</h1>
+<!-- The two Sirpeltric characters (front view), traced from the team's character sheet. Injected by build.php as {{MASCOTS}};
+     use them with <svg class="…"><use href="#sp-boy"/></svg> or #sp-girl. -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="sp-mouth"><ellipse cx="758" cy="572" rx="5" ry="3.2" fill="#000"/><path d="M738 576q-7 9 4 10q9 1 15-6q6 7 15 6q11-1 4-10" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <symbol id="sp-boy" viewBox="545 325 455 440">
+      <g stroke="#000" stroke-width="5" stroke-linejoin="round">
+        <ellipse cx="657" cy="428" rx="105" ry="89" fill="#E8F6FE"/>
+        <ellipse cx="874" cy="427" rx="96" ry="90" fill="#E8F6FE"/>
+        <ellipse cx="620" cy="608" rx="40" ry="33" fill="#E8F6FE"/>
+        <ellipse cx="917" cy="608" rx="39" ry="33" fill="#E8F6FE"/>
+        <ellipse cx="627" cy="705" rx="65" ry="33" transform="rotate(-8 627 705)" fill="#FF0000"/>
+        <ellipse cx="910" cy="700" rx="73" ry="32" transform="rotate(10 910 700)" fill="#FF0000"/>
+        <ellipse cx="765" cy="620" rx="145" ry="130" fill="#E8F6FE"/>
+        <ellipse cx="653" cy="597" rx="9" ry="7.5" fill="#FF0000" stroke-width="4"/>
+        <ellipse cx="875" cy="594" rx="9" ry="7.5" fill="#FF0000" stroke-width="4"/>
+      </g>
+      <ellipse cx="687" cy="567" rx="14" ry="12" fill="#000"/><ellipse cx="844" cy="565" rx="16" ry="12" fill="#000"/>
+      <use href="#sp-mouth"/>
+    </symbol>
+    <symbol id="sp-girl" viewBox="545 325 455 440">
+      <g stroke="#000" stroke-width="5" stroke-linejoin="round">
+        <ellipse cx="657" cy="428" rx="105" ry="89" fill="#F7E3E6"/>
+        <ellipse cx="874" cy="427" rx="96" ry="90" fill="#F7E3E6"/>
+        <ellipse cx="620" cy="608" rx="40" ry="33" fill="#F7E3E6"/>
+        <ellipse cx="917" cy="608" rx="39" ry="33" fill="#F7E3E6"/>
+        <ellipse cx="627" cy="705" rx="65" ry="33" transform="rotate(-8 627 705)" fill="#FF8CC6"/>
+        <ellipse cx="910" cy="700" rx="73" ry="32" transform="rotate(10 910 700)" fill="#FF8CC6"/>
+        <ellipse cx="765" cy="620" rx="145" ry="130" fill="#F7E3E6"/>
+        <ellipse cx="655" cy="590" rx="14" ry="4.5" fill="#FF8CC6" stroke-width="3.5"/>
+        <ellipse cx="881" cy="592" rx="12" ry="4.5" fill="#FF8CC6" stroke-width="3.5"/>
+        <ellipse cx="763" cy="478" rx="24" ry="45" transform="rotate(12 763 478)" fill="#FF8CC6"/>
+        <ellipse cx="855" cy="497" rx="25" ry="50" transform="rotate(18 855 497)" fill="#FF8CC6"/>
+        <circle cx="808" cy="494" r="24" fill="#FF8CC6"/>
+      </g>
+      <ellipse cx="687" cy="567" rx="14" ry="12" fill="#000"/><ellipse cx="844" cy="565" rx="16" ry="12" fill="#000"/>
+      <use href="#sp-mouth"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header><div class="hero"><span class="duo" aria-hidden="true"><svg><use href="#sp-boy"/></svg><svg><use href="#sp-girl"/></svg></span><div><h1>Sirpeltric · BG references</h1>
 <p>Six background scenes in Three.js, drawn flat 2D like Chiikawa and Kirby: flat colour fills, one ink line, banded sky. Background only, no characters. Each scene exports a long panorama (colour · lineart · base colour), a ZIP with one PNG per element, and 3D files for Blender (.glb · .obj · .stl).</p></div></div></header>
 <main>
 <a class="brief" href="00-brief/references.md"><b>00 · Brief + anime era timeline</b><span>Shared references for all six backgrounds →</span></a>
@@ -53,6 +128,36 @@ footer kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:5
 <article class="card"><a class="thumb" href="bg5-hobby/bg5-hobby.html" aria-label="Open BG 5 · Hobby background"><img src="bg5-hobby/preview.jpg?v=1791778444" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="play" aria-hidden="true"></span></a><div class="body"><span class="num">BG 5</span><h2>Hobby background</h2><p>Scenes 19–20 · full colour</p><div class="acts"><a class="go" href="bg5-hobby/bg5-hobby.html">Open scene</a><a href="bg5-hobby/bg5-hobby-prompt.md">Prompt</a><a href="bg5-hobby/references.md">References</a></div></div></article>
 <article class="card"><a class="thumb" href="bg6-forward-pathway/bg6-forward-pathway.html" aria-label="Open BG 6 · Forward pathway — Scene 22"><img src="bg6-forward-pathway/preview.jpg?v=1791778454" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="play" aria-hidden="true"></span></a><div class="body"><span class="num">BG 6</span><h2>Forward pathway — Scene 22</h2><p>Scenes 21–24 · colour → grey warp → black</p><div class="acts"><a class="go" href="bg6-forward-pathway/bg6-forward-pathway.html">Open scene</a><a href="bg6-forward-pathway/bg6-forward-pathway-prompt.md">Prompt</a><a href="bg6-forward-pathway/references.md">References</a></div></div></article>
 </div>
+<section id="batch" class="batch" aria-labelledby="bTitle">
+  <div class="b-head"><div><h2 id="bTitle">Batch export</h2><p>Export the 3D files of several scenes in one go: each scene opens in the preview, exports itself, then the next one starts.</p></div>
+    <button type="button" class="ghost" id="bAll">All / none</button></div>
+  <div class="b-grid">
+    <div class="b-opts">
+      <fieldset><legend>Scenes</legend><div class="chips"><label class="chip"><input type="checkbox" name="scene" value="bg1" data-href="bg1-world-reveal/bg1-world-reveal.html" data-title="BG 1 · World reveal — 360° turn" checked><span>BG 1</span><small>World reveal — 360° turn</small></label><label class="chip"><input type="checkbox" name="scene" value="bg2" data-href="bg2-earth-zoom-globe/bg2-earth-zoom-globe.html" data-title="BG 2 · Earth zoom out + Globe 360°" checked><span>BG 2</span><small>Earth zoom out + Globe 360°</small></label><label class="chip"><input type="checkbox" name="scene" value="bg3" data-href="bg3-underwater/bg3-underwater.html" data-title="BG 3 · Underwater" checked><span>BG 3</span><small>Underwater</small></label><label class="chip"><input type="checkbox" name="scene" value="bg4" data-href="bg4-mirrored/bg4-mirrored.html" data-title="BG 4 · Mirrored background — mountain lake" checked><span>BG 4</span><small>Mirrored background — mountain lake</small></label><label class="chip"><input type="checkbox" name="scene" value="bg5" data-href="bg5-hobby/bg5-hobby.html" data-title="BG 5 · Hobby background" checked><span>BG 5</span><small>Hobby background</small></label><label class="chip"><input type="checkbox" name="scene" value="bg6" data-href="bg6-forward-pathway/bg6-forward-pathway.html" data-title="BG 6 · Forward pathway — Scene 22" checked><span>BG 6</span><small>Forward pathway — Scene 22</small></label></div></fieldset>
+      <fieldset><legend>Format</legend><div class="seg4">
+        <label><input type="radio" name="format" value="glb-baked" checked><span>.glb<small>baked · best for Meshy / other tools</small></span></label>
+        <label><input type="radio" name="format" value="glb-instanced"><span>.glb<small>instanced · small · Blender 3.6+</small></span></label>
+        <label><input type="radio" name="format" value="obj"><span>.obj<small>+ .mtl colours · zipped</small></span></label>
+        <label><input type="radio" name="format" value="stl"><span>.stl<small>shapes only</small></span></label></div></fieldset>
+      <fieldset id="bDetail" hidden><legend>Detail (.obj / .stl)</legend><div class="seg2">
+        <label><input type="radio" name="detail" value="medium" checked><span>Medium · smooth</span></label>
+        <label><input type="radio" name="detail" value="light"><span>Light · small files</span></label></div></fieldset>
+      <fieldset><legend>Save as</legend><div class="seg2">
+        <label><input type="radio" name="output" value="zip" checked><span>One ZIP</span></label>
+        <label><input type="radio" name="output" value="files"><span>Separate files</span></label></div></fieldset>
+      <div class="b-run"><button type="button" class="go" id="bRun">Export</button><button type="button" class="ghost" id="bStop" hidden>Stop</button></div>
+      <p class="b-note">Camera animation = shot 1 of each scene. Baked .glb of BG 1 is large (~140 MB); "Separate files" may ask once to allow multiple downloads.</p>
+    </div>
+    <div class="b-live">
+      <div class="b-frame" id="bFrame"><span>Preview of the scene being exported</span></div>
+      <div class="b-cap" id="bCap">Ready</div>
+      <div class="b-prog"><i id="bBar"></i></div>
+      <div class="b-sum" id="bSum">Nothing exported yet</div>
+      <ol class="b-list" id="bList"></ol>
+    </div>
+  </div>
+</section>
 </main>
+<script src="batch.js" defer></script>
 <footer>Single HTML files — open by double-click, internet needed once for the Three.js CDN. In a scene: <kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> frame · <kbd>E</kbd> export · <kbd>S</kbd> settings · <kbd>[</kbd><kbd>]</kbd> scene · <kbd>G</kbd> guides · <kbd>H</kbd> clean view · <kbd>F</kbd> fullscreen.</footer>
 </body></html>

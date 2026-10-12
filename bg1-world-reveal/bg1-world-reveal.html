@@ -45,8 +45,8 @@ svg{display:block}
 #top{display:flex;align-items:center;gap:10px;padding:0 10px 0 14px;height:56px;border-bottom:1px solid var(--line);background:var(--panel);flex:none}
 .brand{display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--tx);flex:none;border-radius:10px;padding:4px 6px 4px 2px}
 .brand:hover{background:var(--panel2)}
-.blob{width:26px;height:24px;border-radius:50% 50% 46% 46%/56% 56% 44% 44%;background:var(--pink);box-shadow:inset -4px -4px 0 #0000001f,0 0 0 2px var(--pink-ink);position:relative;flex:none}
-.blob:before,.blob:after{content:"";position:absolute;top:8px;width:3px;height:7px;border-radius:2px;background:var(--pink-ink)}.blob:before{left:9px}.blob:after{left:14px}
+.duo{display:flex;align-items:flex-end;flex:none}.duo svg{display:block}
+.brand .duo svg{width:26px;height:25px}.brand .duo svg+svg{margin-left:-5px}
 .brand span{font-weight:800;letter-spacing:.01em;font-size:13px;color:var(--tx)}
 .brand small{display:block;font-weight:600;font-size:10.5px;color:var(--tx3);letter-spacing:.06em;text-transform:uppercase;margin-top:-1px}
 .sep{width:1px;height:24px;background:var(--line2);flex:none}
@@ -74,9 +74,11 @@ svg{display:block}
 body.ready #loader{opacity:0}
 body.exporting #loader{opacity:1;background:#121115e6;backdrop-filter:blur(6px)}   /* the canvas is resized to 4K while exporting: cover it */
 .ld{display:flex;flex-direction:column;align-items:center;gap:14px;color:var(--tx2);font-weight:600;text-align:center;padding:0 16px}
-.ld .blob{width:46px;height:42px;animation:hop .9s cubic-bezier(.3,.7,.4,1) infinite;box-shadow:inset -6px -6px 0 #0000001f,0 0 0 3px var(--pink-ink)}
-.ld .blob:before,.ld .blob:after{top:13px;width:5px;height:12px}.ld .blob:before{left:15px}.ld .blob:after{left:25px}
-.ld .shadow{width:40px;height:7px;border-radius:50%;background:#0006;margin-top:-10px;animation:sh .9s cubic-bezier(.3,.7,.4,1) infinite}
+.ld .pair{display:flex;gap:10px;align-items:flex-end}
+.ld .hopper{display:flex;flex-direction:column;align-items:center}
+.ld .hopper svg{width:64px;height:62px;animation:hop .9s cubic-bezier(.3,.7,.4,1) infinite;transform-origin:50% 100%}
+.ld .hopper:nth-child(2) svg,.ld .hopper:nth-child(2) .shadow{animation-delay:.45s}
+.ld .shadow{width:44px;height:7px;border-radius:50%;background:#0006;margin-top:2px;animation:sh .9s cubic-bezier(.3,.7,.4,1) infinite}
 .ld small{display:block;color:var(--tx3);font-weight:500;margin-top:4px;max-width:320px}
 @keyframes hop{0%,100%{transform:translateY(0) scale(1.08,.92)}45%{transform:translateY(-22px) scale(.95,1.05)}}
 @keyframes sh{0%,100%{transform:scale(1);opacity:.6}45%{transform:scale(.6);opacity:.25}}
@@ -166,13 +168,54 @@ body.clean #overlay{display:none}
   #exportMenu{left:10px;right:10px;width:auto;bottom:130px}
   #status{bottom:140px}
 }
-@media (prefers-reduced-motion:reduce){.ld .blob,.ld .shadow,#exportMenu,#status.busy:before{animation:none}}
+@media (prefers-reduced-motion:reduce){.ld .hopper svg,.ld .shadow,#exportMenu,#status.busy:before{animation:none}}
 </style>
 </head>
 <body>
+<!-- The two Sirpeltric characters (front view), traced from the team's character sheet. Injected by build.php as {{MASCOTS}};
+     use them with <svg class="…"><use href="#sp-boy"/></svg> or #sp-girl. -->
+<svg width="0" height="0" style="position:absolute;overflow:hidden" aria-hidden="true" focusable="false">
+  <defs>
+    <g id="sp-mouth"><ellipse cx="758" cy="572" rx="5" ry="3.2" fill="#000"/><path d="M738 576q-7 9 4 10q9 1 15-6q6 7 15 6q11-1 4-10" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+    <symbol id="sp-boy" viewBox="545 325 455 440">
+      <g stroke="#000" stroke-width="5" stroke-linejoin="round">
+        <ellipse cx="657" cy="428" rx="105" ry="89" fill="#E8F6FE"/>
+        <ellipse cx="874" cy="427" rx="96" ry="90" fill="#E8F6FE"/>
+        <ellipse cx="620" cy="608" rx="40" ry="33" fill="#E8F6FE"/>
+        <ellipse cx="917" cy="608" rx="39" ry="33" fill="#E8F6FE"/>
+        <ellipse cx="627" cy="705" rx="65" ry="33" transform="rotate(-8 627 705)" fill="#FF0000"/>
+        <ellipse cx="910" cy="700" rx="73" ry="32" transform="rotate(10 910 700)" fill="#FF0000"/>
+        <ellipse cx="765" cy="620" rx="145" ry="130" fill="#E8F6FE"/>
+        <ellipse cx="653" cy="597" rx="9" ry="7.5" fill="#FF0000" stroke-width="4"/>
+        <ellipse cx="875" cy="594" rx="9" ry="7.5" fill="#FF0000" stroke-width="4"/>
+      </g>
+      <ellipse cx="687" cy="567" rx="14" ry="12" fill="#000"/><ellipse cx="844" cy="565" rx="16" ry="12" fill="#000"/>
+      <use href="#sp-mouth"/>
+    </symbol>
+    <symbol id="sp-girl" viewBox="545 325 455 440">
+      <g stroke="#000" stroke-width="5" stroke-linejoin="round">
+        <ellipse cx="657" cy="428" rx="105" ry="89" fill="#F7E3E6"/>
+        <ellipse cx="874" cy="427" rx="96" ry="90" fill="#F7E3E6"/>
+        <ellipse cx="620" cy="608" rx="40" ry="33" fill="#F7E3E6"/>
+        <ellipse cx="917" cy="608" rx="39" ry="33" fill="#F7E3E6"/>
+        <ellipse cx="627" cy="705" rx="65" ry="33" transform="rotate(-8 627 705)" fill="#FF8CC6"/>
+        <ellipse cx="910" cy="700" rx="73" ry="32" transform="rotate(10 910 700)" fill="#FF8CC6"/>
+        <ellipse cx="765" cy="620" rx="145" ry="130" fill="#F7E3E6"/>
+        <ellipse cx="655" cy="590" rx="14" ry="4.5" fill="#FF8CC6" stroke-width="3.5"/>
+        <ellipse cx="881" cy="592" rx="12" ry="4.5" fill="#FF8CC6" stroke-width="3.5"/>
+        <ellipse cx="763" cy="478" rx="24" ry="45" transform="rotate(12 763 478)" fill="#FF8CC6"/>
+        <ellipse cx="855" cy="497" rx="25" ry="50" transform="rotate(18 855 497)" fill="#FF8CC6"/>
+        <circle cx="808" cy="494" r="24" fill="#FF8CC6"/>
+      </g>
+      <ellipse cx="687" cy="567" rx="14" ry="12" fill="#000"/><ellipse cx="844" cy="565" rx="16" ry="12" fill="#000"/>
+      <use href="#sp-mouth"/>
+    </symbol>
+  </defs>
+</svg>
+
 <div id="app">
   <header id="top">
-    <a class="brand" href="../index.html" title="All backgrounds"><i class="blob" aria-hidden="true"></i><div><span>Sirpeltric</span><small>BG references</small></div></a>
+    <a class="brand" href="../index.html" title="All backgrounds"><span class="duo" aria-hidden="true"><svg><use href="#sp-boy"/></svg><svg><use href="#sp-girl"/></svg></span><div><span>Sirpeltric</span><small>BG references</small></div></a>
     <i class="sep" aria-hidden="true"></i>
     <nav class="scenes" aria-label="Scenes">
       <a class="ib" id="scPrev" title="Previous scene" aria-label="Previous scene"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></a>
@@ -192,7 +235,7 @@ body.clean #overlay{display:none}
   </header>
   <main id="stageWrap">
     <div id="stage"><canvas id="overlay"></canvas></div>
-    <div id="loader" aria-live="polite"><div class="ld"><i class="blob" aria-hidden="true"></i><i class="shadow" aria-hidden="true"></i><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
+    <div id="loader" aria-live="polite"><div class="ld"><div class="pair" aria-hidden="true"><div class="hopper"><svg><use href="#sp-boy"/></svg><i class="shadow"></i></div><div class="hopper"><svg><use href="#sp-girl"/></svg><i class="shadow"></i></div></div><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
   </main>
   <footer id="bottom">
     <div class="tl">
@@ -887,7 +930,8 @@ function startApp(cfg) {
   const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const tick0 = () => new Promise(r => setTimeout(r, 20));
   const toBlob = c => new Promise(r => c.toBlob(r, 'image/png'));
-  function download(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
+  let downloadSink = null;   // batch mode (index page): files go to the parent page instead of the browser
+  function download(blob, name) { if (downloadSink) return downloadSink(blob, name); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); }
   const focalPx = H => (H / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   api.focalPx = focalPx;
   function withExportSize(w, h, fn) {
@@ -1261,6 +1305,8 @@ function startApp(cfg) {
   pane.on('change', () => { invalidate(); syncTools(); });
   resize(); syncTools();
 
+  const qs = new URLSearchParams(location.search), batch = qs.get('batch') && window.parent !== window ? { format: qs.get('batch'), glb: qs.get('glb'), detail: qs.get('detail'), shot: qs.get('shot') } : null;
+  if (batch) { state.playing = false; parent.postMessage({ source: 'sirpeltric', id: cfg.id, type: 'sp-progress', message: 'scene loaded' }, '*'); }
   /* loop — renders only when playing or when something changed */
   let last = performance.now(), slowAcc = 0, slowN = 0, slowHits = 0, firstFrame = true;
   function frame(now) {
@@ -1278,7 +1324,7 @@ function startApp(cfg) {
       const eraLabel = (ERAS[state.eraNow] || ERAS.base).label;
       info.textContent = s.name; if (eraChip) eraChip.textContent = eraLabel;
       refreshExportLabels();
-      if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); }
+      if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); if (batch) setTimeout(runBatch, 50); }
       // auto quality: while playing, step the preview resolution down if frames are slow, back up when there is headroom
       if (state.playing && state.quality === 'auto' && dt > 0 && dt < 0.1 && autoScale > 0.6) {
         slowAcc += dt; slowN++;
@@ -1292,6 +1338,21 @@ function startApp(cfg) {
   setScrub();
   requestAnimationFrame(frame);
   window.__app = { api, state, applyTime, renderPass, captureFrame, capturePano, shots, elements, reg, export3D, exportOBJ, exportSTL, invalidate, setShading };
+
+  /* ── batch mode: the index page opens this scene in a hidden frame with ?batch=glb|obj|stl and gets the file back.
+     ?glb=baked|instanced · ?detail=medium|light · ?shot=N (camera of shot N, default 1). Messages: sp-progress / sp-file / sp-done / sp-error ── */
+  function runBatch() {
+    const tell = m => parent.postMessage({ source: 'sirpeltric', id: cfg.id, ...m }, '*');
+    if (batch.glb) state.glbMode = batch.glb === 'instanced' ? 'instanced' : 'baked';
+    if (batch.detail) state.meshDetail = batch.detail === 'light' ? 'light' : 'medium';
+    const shot = shots[Math.max(0, Math.min(shots.length - 1, (+batch.shot || 1) - 1))];
+    state.playing = false; state.T = shot.t0 + 0.001; applyTime(state.T);
+    downloadSink = (blob, name) => tell({ type: 'sp-file', name, blob });
+    const fn = { glb: export3D, obj: exportOBJ, stl: exportSTL }[batch.format];
+    if (!fn) return tell({ type: 'sp-error', message: 'unknown format ' + batch.format });
+    Promise.resolve(fn(msg => tell({ type: 'sp-progress', message: msg })))
+      .then(() => tell({ type: 'sp-done' }), e => { console.error(e); tell({ type: 'sp-error', message: e.message || String(e) }); });
+  }
 }
 
 
@@ -1316,7 +1377,6 @@ const DOWNTOWN = [-34, 116];                // skyline faces the middle of the l
 const LANDMARK = [-52, 134];                // hero tower on the right third of that view
 const RINGS = [78, 150];
 const AVENUES = [0.35, 1.9, 3.5, 5.0];
-const PANELS = [{ a: -72, c: '#E0362C' }, { a: -36, c: '#5B9BE0' }, { a: 0, c: '#5B9BE0' }, { a: 36, c: '#5B9BE0' }, { a: 72, c: '#E0362C' }];
 
 const C = {
   brick: ['#E7A99A', '#D99A86', '#E9B8A2', '#DFA48F'], stone: ['#EBD9B4', '#F1E4CC', '#E6DCC6', '#EFE3D3'], greyc: ['#DDE1E4', '#E3E7D9', '#E6DCEB', '#D8E2E6'],
@@ -1615,15 +1675,6 @@ startApp({
   eras: ['e1960', 'e1945', 'base'],                // brief: Sc 3–4 1960s → Sc 5 1945 B&W → Sc 6 colour
   update(T, api) { if (landmarks._clouds) landmarks._clouds.rotation.y = T * 0.004; },
   staging: () => ({ center: [0, 0, 0], size: [2.6, 1.3, 1.4] }),
-  drawOverlay(ctx, W, H, d, api, shot) {
-    const cx = 74 * d, cy = H - 30 * d, R = 50 * d;
-    ctx.fillStyle = 'rgba(20,20,24,.72)'; ctx.fillRect(cx - 66 * d, cy - 66 * d, 132 * d, 86 * d); ctx.lineCap = 'round';
-    PANELS.forEach(p => { const a0 = (p.a - 16) * Math.PI / 180, a1 = (p.a + 16) * Math.PI / 180; ctx.strokeStyle = p.c; ctx.lineWidth = 5 * d;
-      ctx.beginPath(); ctx.moveTo(cx + Math.sin(a0) * R, cy - Math.cos(a0) * R); ctx.lineTo(cx + Math.sin(a1) * R, cy - Math.cos(a1) * R); ctx.stroke(); });
-    const rel = (shot.theta || 0) - Math.PI;
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 * d; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(rel) * R * 0.9, cy - Math.cos(rel) * R * 0.9); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = `${10 * d}px system-ui`; ctx.fillText('blue = draw · red = smear (by hand)', cx - 62 * d, cy + 14 * d);
-  },
   guiTitle: 'BG 1 · City',
   gui(f, api) {
     f.add(opts, 'landmark', { 'Art Deco spire tower': 'deco', 'Observation needle (1962)': 'needle' }).name('Landmark').onChange(setLandmark);
