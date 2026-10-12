@@ -16,6 +16,7 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 // GLTFExporter + JSZip are loaded on demand (only when exporting) so the page opens light
 const loadGLTF = () => import('three/addons/exporters/GLTFExporter.js').then(m => m.GLTFExporter);
+const loadSTL = () => import('three/addons/exporters/STLExporter.js').then(m => m.STLExporter);
 let zipLoading = null;
 const loadZip = () => window.JSZip ? Promise.resolve() : (zipLoading ||= new Promise((res, rej) => {
   const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
@@ -404,7 +405,7 @@ export function startApp(cfg) {
   const state = {
     playing: true, T: 0, eraMode: 'auto', nextEra: 'e1945', waveType: 'wave', manual: null,
     outlines: false, edges: true, lineW: 2.4, pxScale: 1, lineColour: 'ink', lineWobble: 0.25, glbMode: 'instanced', whiteBg: false,
-    shading: 'flat', skyBands: 4, fogSteps: 4, quality: 'auto',
+    shading: 'flat', skyBands: 4, fogSteps: 4, quality: 'auto', meshDetail: 'medium',
     ov: { thirds: false, safe: false, horizon: false, vp: false, staging: false }, exportMode: 'pano', elVis: {}, eraShown: 'base', eraNow: 'base',
   };
   const fxU = { four: 0, quad: [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]], depthWarm: 0, wash: 0, black: 0 };
@@ -746,6 +747,13 @@ export function startApp(cfg) {
       [geo.rcyl, lathe(rcPts, 12)], [geo.halfSphere, new THREE.SphereGeometry(1, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2)]]);
     return lowMap.get(g) || g;
   };
+  let lightMap = null;   // even coarser copies for light .obj / .stl files
+  const lightGeo = g => {
+    if (!lightMap) lightMap = new Map([[geo.sphere, new THREE.SphereGeometry(1, 10, 7)], [geo.sphereLo, new THREE.SphereGeometry(1, 8, 6)], [geo.capsule, new THREE.CapsuleGeometry(0.5, 1, 2, 6)],
+      [geo.rbox, new RoundedBoxGeometry(1, 1, 1, 1, 0.16)], [geo.rboxSoft, new RoundedBoxGeometry(1, 1, 1, 1, 0.3)], [geo.cone, lathe([[0, 0], [1, 0], [0.98, 0.08], [0.55, 0.62], [0.18, 0.95], [0, 1]], 8)],
+      [geo.rcyl, lathe(rcPts, 8)], [geo.halfSphere, new THREE.SphereGeometry(1, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2)]]);
+    return lightMap.get(g) || lowGeo(g);
+  };
   const stdCache = new Map();
   const stdMat = hex => { if (!stdCache.has(hex)) stdCache.set(hex, new THREE.MeshStandardMaterial({ color: new THREE.Color(hex), roughness: 1, metalness: 0, name: hex })); return stdCache.get(hex); };
   async function export3D(say) {
@@ -832,7 +840,74 @@ export function startApp(cfg) {
     download(new Blob([data], { type: 'model/gltf-binary' }), `${cfg.id}_${slug(s.name)}_scene.glb`);
     return data.byteLength;
   }
-  mkBtn('Export 3D (.glb · Blender)', '', b => job(b, '3D .glb', export3D));
+  /* ── OBJ (+ .mtl colours) and STL: plain baked meshes in world space, one part per element × colour ── */
+  const visibleDeep = o => { for (let p = o; p; p = p.parent) if (p.visible === false) return false; return true; };
+  /** world-space position + normal only (so every part merges cleanly) */
+  function bakePN(src, matrix) {
+    const pos = src.attributes.position, nor = src.attributes.normal, vc = pos.count;
+    const P = new Float32Array(vc * 3), N = new Float32Array(vc * 3), nm = new THREE.Matrix3().getNormalMatrix(matrix), v = new THREE.Vector3();
+    for (let j = 0; j < vc; j++) {
+      v.fromBufferAttribute(pos, j).applyMatrix4(matrix); P[j * 3] = v.x; P[j * 3 + 1] = v.y; P[j * 3 + 2] = v.z;
+      if (nor) { v.fromBufferAttribute(nor, j).applyMatrix3(nm).normalize(); N[j * 3] = v.x; N[j * 3 + 1] = v.y; N[j * 3 + 2] = v.z; }
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+    let idx = src.index ? Array.from(src.index.array) : [...Array(vc).keys()];
+    if (matrix.determinant() < 0) for (let k = 0; k < idx.length; k += 3) { const t = idx[k + 1]; idx[k + 1] = idx[k + 2]; idx[k + 2] = t; }   // mirrored copies keep their faces outward
+    g.setIndex(idx); if (!nor) g.computeVertexNormals();
+    return g;
+  }
+  /** → [{ el, hex, geo }] merged per element × colour, only what is visible (elements panel + scene toggles) */
+  async function collectSolids(say) {
+    scene.updateMatrixWorld(true);
+    const parts = new Map(), put = (el, hex, g) => { const k = el + '|' + hex; if (!parts.has(k)) parts.set(k, { el, hex, list: [] }); parts.get(k).list.push(g); };
+    const shown = o => state.elVis[o.userData.el] !== false && visibleDeep(o);
+    const m = new THREE.Matrix4(); let n = 0;
+    for (const mesh of reg.fills) {
+      if (!shown(mesh)) continue;
+      const lg = state.meshDetail === 'light' ? lightGeo(mesh.geometry) : lowGeo(mesh.geometry);
+      if (mesh.isInstancedMesh) mesh.userData.hexes.forEach((hex, i) => { mesh.getMatrixAt(i, m); m.premultiply(mesh.matrixWorld); put(mesh.userData.el, hex, bakePN(lg, m)); });
+      else put(mesh.userData.el, mesh.userData.baseHex, bakePN(lg, mesh.matrixWorld));
+      if (++n % 40 === 0) { say(`3D — baking ${n} objects…`); await tick0(); }
+    }
+    for (const f of reg.fx) {   // flat pieces: ground, roads, river…
+      const mat = f.userData.fillMat;
+      if (!f.isMesh || !f.geometry || !shown(f) || !(mat && (mat.isMeshToonMaterial || mat.isMeshBasicMaterial || mat.isMeshStandardMaterial))) continue;
+      put(f.userData.el, f.userData.baseHex || '#' + (mat.color ? mat.color.getHexString() : 'ffffff'), bakePN(f.geometry, f.matrixWorld));
+    }
+    say('3D — merging…'); await tick0();
+    return [...parts.values()].map(p => ({ el: p.el, hex: p.hex, geo: p.list.length === 1 ? p.list[0] : mergeGeometries(p.list) })).filter(p => p.geo);
+  }
+  const fileBase = () => `${cfg.id}_${slug(shotAt(state.T).name)}_scene`;
+  async function exportOBJ(say) {
+    await loadZip();
+    const solids = await collectSolids(say), name = fileBase(), out = [], mtl = [`# ${cfg.title} — colours for ${name}.obj\n`], mats = new Set();
+    out.push(`# ${cfg.title} · ${shotAt(state.T).name}\n# Sirpeltric BG · flat colour per part (see ${name}.mtl) · Y up · 1 unit = 1 m\nmtllib ${name}.mtl\n`);
+    let base = 1, i = 0;
+    for (const { el, hex, geo } of solids) {
+      const id = hex.replace('#', '').toLowerCase(), mn = 'c_' + id;
+      if (!mats.has(mn)) { mats.add(mn); const c = new THREE.Color(hex).toArray().map(v => v.toFixed(4)).join(' ') /* linear: Blender reads Kd as linear */; mtl.push(`newmtl ${mn}\nKa 0 0 0\nKd ${c}\nKs 0 0 0\nd 1\nillum 1\n`); }
+      const P = geo.attributes.position.array, N = geo.attributes.normal.array, I = geo.index.array, vc = P.length / 3, lines = [`o ${slug(el)}_${id}\nusemtl ${mn}\n`];
+      for (let j = 0; j < vc; j++) lines.push(`v ${+P[j * 3].toFixed(4)} ${+P[j * 3 + 1].toFixed(4)} ${+P[j * 3 + 2].toFixed(4)}\n`);
+      for (let j = 0; j < vc; j++) lines.push(`vn ${+N[j * 3].toFixed(3)} ${+N[j * 3 + 1].toFixed(3)} ${+N[j * 3 + 2].toFixed(3)}\n`);
+      for (let k = 0; k < I.length; k += 3) { const a = I[k] + base, b = I[k + 1] + base, c = I[k + 2] + base; lines.push(`f ${a}//${a} ${b}//${b} ${c}//${c}\n`); }
+      out.push(lines.join('')); base += vc;
+      if (++i % 20 === 0) { say(`OBJ — writing ${i}/${solids.length} parts…`); await tick0(); }
+    }
+    say('OBJ — compressing…'); await tick0();
+    const zip = new JSZip(); zip.file(`${name}.obj`, new Blob(out)); zip.file(`${name}.mtl`, mtl.join('\n'));
+    zip.file('README.txt', `${cfg.title}\nShot: ${shotAt(state.T).name}\n\n${name}.obj + ${name}.mtl — one object per element × colour, flat colours in the .mtl.\nBlender: File › Import › Wavefront (.obj), keep both files in the same folder.\nBackground only — no characters. Ink lines and the camera are not part of OBJ (use the .glb for those).\n`);
+    download(await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' }), `${name}_obj.zip`);
+  }
+  async function exportSTL(say) {
+    const [STLExporter, solids] = await Promise.all([loadSTL(), collectSolids(say)]);
+    const root = new THREE.Group(); for (const { el, hex, geo } of solids) { const mm = new THREE.Mesh(geo); mm.name = el + '_' + hex; root.add(mm); }
+    say('STL — writing binary .stl…'); await tick0();
+    const data = new STLExporter().parse(root, { binary: true });
+    download(new Blob([data], { type: 'model/stl' }), `${fileBase()}.stl`);
+  }
+  mkBtn('3D · .glb (Blender)', '', b => job(b, '3D .glb', export3D));
+  mkBtn('3D · .obj', '', b => job(b, '3D .obj', exportOBJ));
+  mkBtn('3D · .stl', '', b => job(b, '3D .stl', exportSTL));
 
   api.exportExtra = (label, fn) => mkBtn(label, '', b => job(b, label, async say => { await loadZip(); return fn({ say, captureFrame, capturePano, toBlob, download, zip: () => new JSZip(), applyTime, tick: tick0, state }); }));
 
@@ -877,6 +952,7 @@ export function startApp(cfg) {
   fExp.add(state, 'lineColour', { 'ink #8a6b64 (team)': 'ink', 'dark brown #5a3a30': 'dark', 'black': 'black' }).name('lineart colour');
   fExp.add(state, 'lineWobble', 0, 2, 0.05).name('hand wobble');
   fExp.add(state, 'whiteBg').name('lineart on white');
+  fExp.add(state, 'meshDetail', { 'medium (smooth)': 'medium', 'light (small file)': 'light' }).name('.obj / .stl detail');
   fExp.add(state, 'glbMode', { 'instanced · small (blender 3.6+)': 'instanced', 'baked · one mesh / element': 'baked' }).name('3d .glb mode');
   const fEl = gui.addFolder('elements (own png each)');
   elements.filter(e => e !== 'scene' && hasContent(e)).forEach(e => fEl.add(state.elVis, e));
@@ -918,5 +994,5 @@ export function startApp(cfg) {
   }
   setScrub();
   requestAnimationFrame(frame);
-  window.__app = { api, state, applyTime, renderPass, captureFrame, capturePano, shots, elements, reg, export3D, invalidate, setShading };
+  window.__app = { api, state, applyTime, renderPass, captureFrame, capturePano, shots, elements, reg, export3D, exportOBJ, exportSTL, invalidate, setShading };
 }

@@ -46,8 +46,7 @@ foreach ($bgs as [$id, $base, $title, $sub]) {
         $row .= "<a href=\"$base/$base-prompt.md\">Prompt</a>";
     }
     if (is_file("$dir/references.md")) {
-        $n = count(glob("$dir/references/*/*"));
-        $row .= "<a href=\"$base/references.md\">References · $n</a>";
+        $row .= "<a href=\"$base/references.md\">References</a>";   // captions + credits; the image folders stay local (.gitignore)
     }
     // preview.jpg = a screenshot of the scene (clean view); without it the card shows a flat placeholder
     $thumb = is_file("$dir/preview.jpg") ? "<img src=\"$base/preview.jpg?v=" . filemtime("$dir/preview.jpg") . "\" alt=\"\" loading=\"lazy\" decoding=\"async\" width=\"960\" height=\"540\">" : '<div class="ph"></div>';
@@ -103,7 +102,7 @@ footer kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:5
 @media (max-width:520px){.grid{grid-template-columns:1fr}.blob{width:48px;height:44px}.blob:before,.blob:after{top:12px;height:11px;width:5px}.blob:before{left:14px}.blob:after{left:24px}}
 </style></head><body>
 <header><div class="hero"><i class="blob" aria-hidden="true"></i><div><h1>Sirpeltric · BG references</h1>
-<p>Six background scenes in Three.js, drawn flat 2D like Chiikawa and Kirby: flat colour fills, one ink line, banded sky. Background only, no characters. Each scene exports a long panorama (colour · lineart · base colour), a ZIP with one PNG per element, and a 3D .glb for Blender.</p></div></div></header>
+<p>Six background scenes in Three.js, drawn flat 2D like Chiikawa and Kirby: flat colour fills, one ink line, banded sky. Background only, no characters. Each scene exports a long panorama (colour · lineart · base colour), a ZIP with one PNG per element, and 3D files for Blender (.glb · .obj · .stl).</p></div></div></header>
 <main>
 $brief
 <div class="grid">
