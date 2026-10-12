@@ -281,7 +281,7 @@ startApp({
     hemi.intensity = api.lerp(2.3, 0.75, t); sun.intensity = api.lerp(0.9, 2.6, t); sun.position.set(1, 0.3, 0.4); hemi.color.set('#FFFFFF'); hemi.groundColor.set(t > 0.5 ? '#1C2A4A' : '#E8E0C8');
     if (S.nightMat) S.nightMat.uniforms.uSun.value.copy(sun.position).normalize();
     if (S.stars) S.stars.userData.fxVisible = t > 0.05;
-    api.scene.fog = t < 0.3 ? new THREE.Fog('#E4F3FA', 220, 2600) : null;
+    api.scene.fog = t < 0.3 ? (S.fog ||= new THREE.Fog('#E4F3FA', 220, 2600)) : null;   // one Fog object: a new one every frame forces three.js to re-check every material
   },
   staging: (api, shot) => { if (shot !== shots[0]) return null; const p = S.island.localToWorld(new api.THREE.Vector3(0, DOME_TOP, 0)); return { center: p.toArray(), size: [2.6, 1.3, 1.4] }; },
 });

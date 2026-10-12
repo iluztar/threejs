@@ -225,7 +225,7 @@ export function startApp(cfg) {
      - big flat fx pieces (ground, roads) keep per-pixel fog, but quantised into a few painted steps
      - light colour / strength of the scene (hemi + sun) becomes one flat tint, so mood presets still work
      - optional single cel shadow (Kirby) on the side away from the sun */
-  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 4 } };
+  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 0 } };
   const FLAT_FS_HEAD = 'uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; varying vec3 vFlatN;\n';
   function flatPatch(mat, perObjectFog) {
     mat.onBeforeCompile = sh => {
@@ -244,7 +244,7 @@ export function startApp(cfg) {
             #endif
             vFogDepth = -(modelViewMatrix * fogO).z;
           #endif` : '#include <fog_vertex>');
-      sh.fragmentShader = FLAT_FS_HEAD + sh.fragmentShader
+      sh.fragmentShader = (perObjectFog ? '' : '#define FLAT_FOG_STEPS\n') + FLAT_FS_HEAD + sh.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
           diffuseColor.rgb *= uTint;
           if (uCel > 0.5) { vec3 n = normalize(vFlatN); n = gl_FrontFacing ? n : -n; diffuseColor.rgb *= mix(uShade, vec3(1.0), step(0.05, dot(n, uSunV))); }`)
@@ -254,7 +254,9 @@ export function startApp(cfg) {
             #else
               float fogF = smoothstep(fogNear, fogFar, vFogDepth);
             #endif
-            if (uFogSteps > 0.5) fogF = floor(fogF * uFogSteps + 0.5) / uFogSteps;
+            #ifdef FLAT_FOG_STEPS
+              if (uFogSteps > 0.5) fogF = floor(fogF * uFogSteps + 0.5) / uFogSteps;
+            #endif
             gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);
           #endif`);
     };
@@ -405,7 +407,7 @@ export function startApp(cfg) {
   const state = {
     playing: true, T: 0, eraMode: 'auto', nextEra: 'e1945', waveType: 'wave', manual: null,
     outlines: false, edges: true, lineW: 2.4, pxScale: 1, lineColour: 'ink', lineWobble: 0.25, glbMode: 'instanced', whiteBg: false,
-    shading: 'flat', skyBands: 4, fogSteps: 4, quality: 'auto', meshDetail: 'medium',
+    shading: 'flat', skyBands: 4, fogSteps: 0, quality: 'auto', meshDetail: 'medium',
     ov: { thirds: false, safe: false, horizon: false, vp: false, staging: false }, exportMode: 'pano', elVis: {}, eraShown: 'base', eraNow: 'base',
   };
   const fxU = { four: 0, quad: [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]], depthWarm: 0, wash: 0, black: 0 };
@@ -446,7 +448,10 @@ export function startApp(cfg) {
     }
     if (p === 'normal') for (const h of reg.hulls) h.visible = false;
   }
-  function sizeTargets(w, h) {
+  /** exporting = huge 4K / panorama targets: no MSAA there (memory); the live preview gets 4× MSAA so edges don't crawl */
+  function sizeTargets(w, h, exporting = false) {
+    const samples = exporting || !renderer.capabilities.isWebGL2 ? 0 : 4;
+    if (rt.samples !== samples) { rt.dispose(); rt.samples = samples; }
     for (const t of [rt, rtN, rtL, rtM]) t.setSize(w, h);
     rtN.depthTexture.image.width = w; rtN.depthTexture.image.height = h;
     frameMat.uniforms.uRes.value.set(w, h); edgeMat.uniforms.uRes.value.set(w, h);
@@ -524,13 +529,14 @@ export function startApp(cfg) {
   }
 
   /* display sizing (16:9 stage) */
-  /* preview resolution: 'auto' caps the pixel ratio at 1.5 and steps down while frames are slow; exports are unaffected */
+  /* preview resolution: sharp by default (pixel ratio up to 2). 'auto' steps down only when frames stay really slow
+     (< ~25 fps) and never bounces back up by itself — resolution changes cause a visible hitch. Exports are unaffected. */
   let autoScale = 1;
   const previewDpr = () => {
-    const dev = window.devicePixelRatio || 1;
-    if (state.quality === 'high') return Math.min(2, dev);
-    if (state.quality === 'low') return Math.max(0.5, Math.min(1, dev) * 0.7);
-    return Math.max(0.5, Math.min(1.5, dev) * autoScale);
+    const dev = Math.min(2, window.devicePixelRatio || 1);
+    if (state.quality === 'high') return dev;
+    if (state.quality === 'low') return Math.max(0.75, dev * 0.6);
+    return Math.max(0.75, dev * autoScale);
   };
   function resize() {
     const wrap = $('#stageWrap'), pad = document.body.classList.contains('clean') ? 0 : 24, W = wrap.clientWidth - pad, H = wrap.clientHeight - pad;
@@ -547,8 +553,8 @@ export function startApp(cfg) {
   /* only render when something changed (playing, scrubbing, GUI, resize, transition) → an idle page costs ~nothing */
   let dirty = true;
   function invalidate() { dirty = true; }
-  let resizeRaf = 0;
-  window.addEventListener('resize', () => { cancelAnimationFrame(resizeRaf); resizeRaf = requestAnimationFrame(resize); });
+  let needResize = false;   // resized inside the render loop, right before drawing → no blank frame
+  window.addEventListener('resize', () => { needResize = true; dirty = true; });
 
   /* overlays (screen only, never exported) */
   const project = v => { const p = v.clone().project(camera); return [(p.x * 0.5 + 0.5) * overlay.width, (1 - (p.y * 0.5 + 0.5)) * overlay.height, p.z]; };
@@ -622,7 +628,7 @@ export function startApp(cfg) {
   api.focalPx = focalPx;
   function withExportSize(w, h, fn) {
     const prevPR = renderer.getPixelRatio();
-    renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeTargets(w, h); state.pxScale = EXPORT_H / 1080;
+    renderer.setPixelRatio(1); renderer.setSize(w, h, false); sizeTargets(w, h, true); state.pxScale = EXPORT_H / 1080;
     try { fn(); } finally { camera.clearViewOffset(); frameMat.uniforms.uTile.value.set(0, 0, 1, 1); frameMat.uniforms.uNoVig.value = 0; renderer.setPixelRatio(prevPR); resize(); applyTime(state.T); }
   }
   /** Single 4K frame (tiles if the GPU limit is smaller). */
@@ -944,9 +950,9 @@ export function startApp(cfg) {
   const fLook = gui.addFolder('look', true);
   fLook.add(state, 'shading', { 'flat 2d (chiikawa)': 'flat', 'flat + cel shadow (kirby)': 'cel', 'soft 3d toon (old)': 'toon' }).name('shading').onChange(setShading);
   fLook.add(state, 'skyBands', 0, 8, 1).name('sky bands').onChange(v => { if (state.shading !== 'toon') skyMat.uniforms.uBands.value = v; });
-  fLook.add(state, 'fogSteps', 0, 8, 1).name('depth tint steps').onChange(v => flatU.uFogSteps.value = v);
+  fLook.add(state, 'fogSteps', 0, 8, 1).name('ground tint steps').onChange(v => flatU.uFogSteps.value = v);
   fLook.add(state, 'edges').name('drawn lines'); fLook.add(state, 'lineW', 1, 6, 0.1).name('line px @1080'); fLook.add(state, 'outlines').name('extra silhouette');
-  fLook.add(state, 'quality', { 'auto (light)': 'auto', 'high (sharp)': 'high', 'low (fast)': 'low' }).name('preview quality').onChange(() => { autoScale = 1; resize(); });
+  fLook.add(state, 'quality', { 'auto (sharp, lowers if slow)': 'auto', 'high (always sharp)': 'high', 'low (fast)': 'low' }).name('preview quality').onChange(() => { autoScale = 1; resize(); });
   const fExp = gui.addFolder('export', true);
   fExp.add(state, 'exportMode', { 'long panorama (shot)': 'pano', 'single 4k frame': 'frame' }).name('png format').onChange(() => { lastKey = ''; });
   fExp.add(state, 'lineColour', { 'ink #8a6b64 (team)': 'ink', 'dark brown #5a3a30': 'dark', 'black': 'black' }).name('lineart colour');
@@ -966,11 +972,12 @@ export function startApp(cfg) {
   resize(); syncTools();
 
   /* loop — renders only when playing or when something changed */
-  let last = performance.now(), slowAcc = 0, slowN = 0, firstFrame = true;
+  let last = performance.now(), slowAcc = 0, slowN = 0, slowHits = 0, firstFrame = true;
   function frame(now) {
     const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;   // first rAF stamp can be older than performance.now()
     if (state.playing && !busy) { state.T += dt; if (state.T >= TOTAL) state.T = 0; setScrub(); }
     if (!busy && (state.playing || dirty || state.manual)) {
+      if (needResize) { needResize = false; resize(); slowAcc = slowN = 0; }
       dirty = false;
       const s = applyTime(state.T);
       renderPass('final');
@@ -983,11 +990,11 @@ export function startApp(cfg) {
       refreshExportLabels();
       if (firstFrame) { firstFrame = false; document.body.classList.add('ready'); }
       // auto quality: while playing, step the preview resolution down if frames are slow, back up when there is headroom
-      if (state.playing && state.quality === 'auto' && dt > 0) {
+      if (state.playing && state.quality === 'auto' && dt > 0 && dt < 0.1 && autoScale > 0.6) {
         slowAcc += dt; slowN++;
-        if (slowN >= 45) { const avg = slowAcc / slowN; slowAcc = slowN = 0;
-          if (avg > 0.03 && autoScale > 0.55) { autoScale = Math.max(0.55, autoScale - 0.15); resize(); }
-          else if (avg < 0.019 && autoScale < 1) { autoScale = Math.min(1, autoScale + 0.1); resize(); } }
+        if (slowN >= 90) { const avg = slowAcc / slowN; slowAcc = slowN = 0;
+          slowHits = avg > 0.04 ? slowHits + 1 : 0;                                  // two slow windows in a row (~3 s)
+          if (slowHits >= 2) { slowHits = 0; autoScale = Math.max(0.6, autoScale - 0.2); resize(); } }
       }
     }
     requestAnimationFrame(frame);

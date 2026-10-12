@@ -36,9 +36,9 @@ Every scene is a single HTML file. Open it from the site or by double-clicking i
 - **era**: era look (timeline from the brief, or a fixed era) and the red wave / rotating wave / colour bleed / crack transitions.
 - **look**
   - *shading*: `flat 2d (chiikawa)` (default), `flat + cel shadow (kirby)`, or `soft 3d toon (old)`
-  - *sky bands* (0 = smooth gradient) and *depth tint steps* (0 = smooth fog)
+  - *sky bands* (0 = smooth gradient) and *ground tint steps* (0 = smooth fog on the ground, the default)
   - drawn lines on/off, *line px @1080* (2.4 px, the same width everywhere), extra silhouette
-  - *preview quality*: `auto` keeps the page light, `high` is sharp, `low` is fastest. Exports always render at full 4K.
+  - *preview quality*: `auto` is sharp and lowers the resolution only if frames stay slow, `high` is always sharp, `low` is fastest. Exports always render at full 4K.
 - **export**: PNG format (long panorama or a single 4K frame), lineart colour, hand wobble, lineart on white, `.glb` mode, `.obj / .stl` detail.
 - **elements**: show/hide each element (sky, clouds, hills, city…). Hidden elements are left out of every export.
 - **guides** and a per-scene folder (landmark, light preset, props…).
@@ -62,8 +62,8 @@ For heavy scenes (BG 1 city), set *.obj / .stl detail* to `light (small file)`: 
 ## Performance
 - Minified Three.js, with all modules fetched in parallel (`modulepreload`). JSZip, `GLTFExporter` and `STLExporter` load only when an export needs them.
 - Frames are drawn only while playing or after something changes, so an idle page costs almost nothing.
-- Preview pixel ratio is capped at 1.5 and steps down automatically when frames get slow.
-- No MSAA or preserved buffer on the canvas, 8-bit helper render targets, and frustum culling per instanced batch.
+- Preview renders at the screen pixel ratio (up to 2) with 4× MSAA; in `auto` it lowers the resolution once if frames stay below ~25 fps.
+- No MSAA or preserved buffer on the canvas itself (it only receives the finished picture), 8-bit helper render targets, and frustum culling per instanced batch.
 
 ---
 
