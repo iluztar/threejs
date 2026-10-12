@@ -22,6 +22,11 @@ $tpl    = file_get_contents("$src/template.html");
 $core   = preg_replace('/^export function startApp/m', 'function startApp', file_get_contents("$src/core.js"));
 $shared = file_get_contents("$src/prompts/shared.md");
 
+// scene switcher list for the page header (paths relative to a scene folder)
+$nav = [];
+foreach ($bgs as [$id, $base, $title, $sub]) if (is_file("$src/$id.js")) $nav[] = ['href' => "../$base/$base.html", 'title' => $title];
+$navJson = json_encode($nav, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG);
+
 $links = '';
 foreach ($bgs as [$id, $base, $title, $sub]) {
     $row = ''; $dir = "$out/$base"; if (!is_dir($dir)) mkdir($dir, 0777, true);
@@ -29,7 +34,7 @@ foreach ($bgs as [$id, $base, $title, $sub]) {
     $open = null;
     if (is_file("$src/$id.js")) {
         $bg = preg_replace('/^import .*?;\s*$/m', '', file_get_contents("$src/$id.js"));
-        $html = str_replace(['{{TITLE}}', '{{CODE}}'], [htmlspecialchars($title), $core . "\n\n/* ═══════════ $title ═══════════ */\n" . $bg], $tpl);
+        $html = str_replace(['{{TITLE}}', '{{NAV}}', '{{CODE}}'], [htmlspecialchars($title), $navJson, $core . "\n\n/* ═══════════ $title ═══════════ */\n" . $bg], $tpl);
         file_put_contents("$dir/$base.html", $html);
         echo "built $base/$base.html (" . round(strlen($html) / 1024) . " KB)\n";
         $open = "$base/$base.html";
@@ -108,7 +113,7 @@ $brief
 <div class="grid">
 $links</div>
 </main>
-<footer>Single HTML files — open by double-click, internet needed once for the Three.js CDN. In a scene: <kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> frame · <kbd>G</kbd> guides · <kbd>H</kbd> clean view · <kbd>F</kbd> fullscreen. Look, sky bands and preview quality are in the config menu.</footer>
+<footer>Single HTML files — open by double-click, internet needed once for the Three.js CDN. In a scene: <kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> frame · <kbd>E</kbd> export · <kbd>S</kbd> settings · <kbd>[</kbd><kbd>]</kbd> scene · <kbd>G</kbd> guides · <kbd>H</kbd> clean view · <kbd>F</kbd> fullscreen.</footer>
 </body></html>
 HTML;
 file_put_contents("$out/index.html", $index);
