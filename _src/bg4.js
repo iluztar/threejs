@@ -1,81 +1,120 @@
 import { startApp } from './core.js';
-/* BG 4 · Mirrored background · storyboard scenes 11–18
+/* BG 4 · Mirrored background · storyboard scenes 11–18 — MOUNTAIN LAKE
    Brief eras: Sc 11 red wave → 1970s · Sc 12–14 mirrored platform, B&W close-up (1945 values) · Sc 15 rotating red wave → 1980s ·
    Sc 16 wave → 1990s (wide) · Sc 17–18 4-box mirrored BG, a colour per side (full colour).
-   Refs read: Salar de Uyuni (pink→blue horizon, perfect reflection, cloud-patch ripples), Kanuti / Norway lakes (mirrored clouds),
-   Schloss Buldern on a lily pond, Jefferson Memorial at night, a neon waterfront at night (1980s mood),
-   Kirby & the Amazing Mirror (white pillars with glass orbs, arches, cloudscape, sparkles), Inception folding city.
-   The reflection is a real mirrored copy (darker, softer) so every export has it; the platform stays empty (characters). */
+   Look (client update): a still mountain lake that mirrors everything — pastel lavender mountains with snow caps (Kirby pixel ref),
+   round green shore hills, round trees and pines, rocks, lily pads; refs: Norway / Kanuti lakes (mirrored clouds), Uyuni stillness.
+   The characters stand on a small round wooden dock in the middle of the lake. The reflection is a real mirrored copy
+   (darker, a little bluer) so every export has it; the dock stays calm and empty. */
 
 const rand = (s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(1975);
-const pick = a => a[Math.floor(rand() * a.length)];
 const between = (a, b) => a + rand() * (b - a);
 const FOLD_Z = 90;
-const C = { cloud: ['#FFFFFF', '#FDF6FA', '#F4F7FF'], platform: '#F7F4FA', rim: '#E6E0F2', gold: '#F5D27A', pillar: '#F4F2FA', orb: '#CFEFFF', arch: '#F1EEF8', island: '#FFFFFF' };
-const S = {}; const opts = { fold: 0, ring: true };
+const C = {
+  cloud: ['#FFFFFF', '#FDFBF4', '#F4F8FF'],
+  mtnFar: ['#B7BEE0', '#AFB6DC', '#C2C3E4'], mtnNear: ['#A3A9D6', '#9FA7D2', '#ABA6D4'], snow: '#F8F9FF',
+  hill: ['#A6D6A0', '#9BD09A', '#B3DCA5'], tree: ['#86C984', '#93CF95', '#7CBF80', '#A2D69A'], pine: ['#5FA57C', '#6AAE84', '#579B74'], trunk: '#D9B48F',
+  rock: ['#D9D5E6', '#CFCBE0', '#E2DEEC'], deck: '#EBCB9F', deckRim: '#D9AE7E', post: '#C99B72', lily: '#8CCB86', flower: ['#FFB3C7', '#FFFFFF', '#FFD98A'], reed: '#7FB77A',
+};
+const S = {}; const opts = { fold: 0 };
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines, hexToRgb, rgbToHex } = api;
   const { SKY, BG, MG, FG } = G;
-  const darken = h => { const c = hexToRgb(h), t = [0.36, 0.43, 0.61]; return rgbToHex(c.map((v, i) => (v + (t[i] - v) * 0.18) * 0.86)); };
+  const mixHex = (h, t, k) => { const a = hexToRgb(h), b = hexToRgb(t); return rgbToHex(a.map((v, i) => v + (b[i] - v) * k)); };
+  const darken = h => { const c = hexToRgb(h), t = [0.36, 0.45, 0.66]; return rgbToHex(c.map((v, i) => (v + (t[i] - v) * 0.2) * 0.88)); };
 
-  /** the world above the mirror; built twice (the second time mirrored, darker, as one "reflection" element) */
+  /** the world above the water; built twice (the second time mirrored, darker, as one "reflection" element) */
   function world(parent, mirror) {
     const el = n => setEl(mirror ? 'reflection' : n), col = h => mirror ? darken(h) : h;
+    const colSoft = h => mirror ? mixHex(h, '#CFE3F3', 0.35) : h;            // white clouds reflect light, not grey
     const r0 = (s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(77);   // same layout both times
-    const bt = (a, b) => a + r0() * (b - a);
-    el('platform');
-    solid(geo.rcyl, col(C.platform), parent, { pos: [0, -0.2, 0], scale: [6.4, 1, 6.4] });
-    solid(geo.torus, col(C.rim), parent, { pos: [0, 0.82, 0], scale: [6.2, 6.2, 2.4], rot: [Math.PI / 2, 0, 0] });
-    for (let i = 0; i < 10; i++) { const a = i / 10 * 6.283; solid(geo.capsule, col(C.platform), parent, { pos: [Math.sin(a) * 5.9, 1.3, Math.cos(a) * 5.9], scale: [0.3, 0.9, 0.3] }); solid(geo.sphere, col(C.gold), parent, { pos: [Math.sin(a) * 5.9, 2.0, Math.cos(a) * 5.9], scale: 0.28 }); }
-    el('pillars');
-    for (const s of [-1, 1]) { solid(geo.rcyl, col(C.rim), parent, { pos: [s * 8, 0, -9], scale: [1.6, 1, 1.6] }); solid(geo.capsule, col(C.pillar), parent, { pos: [s * 8, 8, -9], scale: [2.2, 13, 2.2] });
-      solid(geo.rcyl, col(C.rim), parent, { pos: [s * 8, 14.6, -9], scale: [1.7, 0.8, 1.7] }); solid(geo.sphere, col(C.orb), parent, { pos: [s * 8, 16.8, -9], scale: 1.7 }); }
-    el('mirror-ring');
-    const ring = solid(geo.torus, col(C.gold), parent, { pos: [0, 8.5, -9.5], scale: [5.4, 5.4, 4], rot: [0, 0, 0] }); ring.userData.ringToggle = true; S.rings = S.rings || []; S.rings.push(ring);
-    el('arches');
-    for (let i = 0; i < 18; i++) { const a = i / 18 * 6.283, R = 185, x = Math.sin(a) * R, z = Math.cos(a) * R, ry = a;
-      for (const s of [-1, 1]) solid(geo.capsule, col(C.arch), parent, { pos: [x + Math.cos(ry) * s * 7, 9, z - Math.sin(ry) * s * 7], scale: [2.4, 16, 2.4] });
-      const top = new THREE.TorusGeometry(7, 1.2, 10, 24, Math.PI); solid(top, col(C.arch), parent, { pos: [x, 17, z], rot: [0, ry, 0] }); }
+    const bt = (a, b) => a + r0() * (b - a), pk = a => a[Math.floor(r0() * a.length)];
+    /** angle around the lake: most things sit behind the dock (−z, where every shot looks), fewer at the sides */
+    const aroundBack = () => Math.PI + (r0() + r0() + r0() - 1.5) * 1.6;
+
+    el('dock');                                                                // round wooden dock, top at y ≈ 0.8 (characters)
+    solid(geo.rcyl, col(C.deck), parent, { pos: [0, -0.2, 0], scale: [5.6, 1, 5.6] });
+    solid(geo.torus, col(C.deckRim), parent, { pos: [0, 0.78, 0], scale: [5.5, 5.5, 2.2], rot: [Math.PI / 2, 0, 0] });
+    for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283; solid(geo.capsule, col(C.post), parent, { pos: [Math.sin(a) * 5.7, 0.5, Math.cos(a) * 5.7], scale: [0.45, 1.3, 0.45] }); }
+    for (let i = 0; i < 4; i++) solid(geo.rbox, col(C.deck), parent, { pos: [0, 0.38, 7.4 + i * 2.1], scale: [2.6, 0.32, 1.8] });   // little walkway toward the camera
+
+    el('mountains');
+    for (let i = 0; i < 26; i++) {                                              // far range: big, soft, snow-capped
+      const a = aroundBack(), d = bt(480, 780), h = Math.min(bt(110, 190), d * 0.22), r = h * bt(1.0, 1.4), x = Math.sin(a) * d, z = Math.cos(a) * d, hex = pk(C.mtnFar);
+      B(parent, 'cone').add([x, -1, z], [r, h, r], col(hex), [0, bt(0, 6.28), 0]);
+      B(parent, 'cone').add([x, h * 0.62 - 1, z], [r * 0.43, h * 0.38, r * 0.43], col(C.snow), [0, bt(0, 6.28), 0]);
+    }
+    for (let i = 0; i < 16; i++) {                                              // nearer range: smaller, bluer, some without snow
+      const a = aroundBack(), d = bt(300, 440), h = Math.min(bt(55, 100), d * 0.2), r = h * bt(1.1, 1.6), x = Math.sin(a) * d, z = Math.cos(a) * d;
+      B(parent, 'cone').add([x, -1, z], [r, h, r], col(pk(C.mtnNear)), [0, bt(0, 6.28), 0]);
+      if (r0() < 0.55) B(parent, 'cone').add([x, h * 0.66 - 1, z], [r * 0.38, h * 0.34, r * 0.38], col(C.snow), [0, bt(0, 6.28), 0]);
+    }
+
+    el('hills');
+    for (let i = 0; i < 30; i++) { const a = aroundBack(), d = bt(170, 250), r = bt(22, 42), h = r * bt(0.3, 0.5);
+      B(parent, 'halfSphere').add([Math.sin(a) * d, -0.5, Math.cos(a) * d], [r, h, r * bt(0.8, 1.1)], col(pk(C.hill))); }
+
+    el('trees');
+    for (let i = 0; i < 80; i++) { const a = aroundBack(), d = bt(150, 215), x = Math.sin(a) * d, z = Math.cos(a) * d, s = bt(4, 7.5);
+      if (r0() < 0.45) {                                                       // round tree (Chiikawa / Kirby)
+        B(parent, 'capsule').add([x, s * 0.5, z], [s * 0.22, s * 0.7, s * 0.22], col(C.trunk));
+        B(parent, 'sphere').add([x, s * 1.35, z], [s * 0.85, s * 0.78, s * 0.85], col(pk(C.tree)));
+      } else {                                                                  // soft pine: three stacked rounded cones
+        B(parent, 'capsule').add([x, s * 0.3, z], [s * 0.18, s * 0.5, s * 0.18], col(C.trunk));
+        const hex = pk(C.pine);
+        for (let k = 0; k < 3; k++) B(parent, 'cone').add([x, s * (0.45 + k * 0.55), z], [s * (0.8 - k * 0.2), s * 0.9, s * (0.8 - k * 0.2)], col(hex));
+      } }
+
+    el('rocks');
+    for (let i = 0; i < 22; i++) { const a = aroundBack(), d = bt(140, 175), r = bt(2, 4.5);             // shore rocks
+      B(parent, 'sphereLo').add([Math.sin(a) * d, r * 0.15, Math.cos(a) * d], [r * 1.3, r * 0.75, r], col(pk(C.rock))); }
+    for (let i = 0; i < 6; i++) { const a = Math.PI + bt(-1.2, 1.2), d = bt(28, 60), r = bt(0.8, 1.8);   // a few rocks poking out of the lake
+      B(parent, 'sphereLo').add([Math.sin(a) * d, 0, Math.cos(a) * d - 6], [r * 1.4, r * 0.6, r], col(pk(C.rock))); }
+
     el('clouds');
-    for (let i = 0; i < 46; i++) {                                            // banks around the horizon + higher puffs, varied sizes
-      const a = r0() * 6.283, d = bt(120, 420), high = r0() < 0.35, s = high ? bt(4, 9) : bt(9, 24), n = high ? 3 + Math.floor(r0() * 2) : 5 + Math.floor(r0() * 4);
-      const y = high ? bt(30, 70) : bt(2, 10), x = Math.sin(a) * d, z = Math.cos(a) * d, tx = Math.cos(a), tz = -Math.sin(a);
-      for (let k = 0; k < n; k++) { const u = (k - (n - 1) / 2) / Math.max(1, (n - 1) / 2), r = s * (1 - Math.abs(u) * 0.4) * bt(0.8, 1.15), off = u * s * n * 0.42;
-        B(parent, 'sphereLo').add([x + tx * off, y + r * 0.55 + bt(0, 0.3) * s, z + tz * off], [r, r * 0.8, r * 0.75], col(pick(C.cloud))); } }
-    el('cloud-islands');
-    for (let i = 0; i < 7; i++) { const a = bt(-1.2, 1.2) + (r0() < 0.5 ? 0 : Math.PI), d = bt(45, 95), x = Math.sin(a) * d, z = -Math.cos(a) * d, y = bt(14, 26), s = bt(4, 7);
-      for (let k = 0; k < 5; k++) B(parent, 'sphereLo').add([x + (k - 2) * s * 0.8, y + (k % 2) * s * 0.3, z + bt(-1, 1)], [s, s * 0.6, s * 0.8], col(C.island));
-      B(parent, 'cone').add([x, y - s * 0.3, z], [s * 1.6, s * 1.2, s * 1.6], col('#F3EEFA'), [Math.PI, 0, 0]); }
+    for (let i = 0; i < 40; i++) {                                            // banks over the mountains + higher puffs, flat bottoms
+      const a = aroundBack(), d = bt(560, 900), high = r0() < 0.4, s = high ? bt(10, 18) : bt(18, 34), n = high ? 3 + Math.floor(r0() * 2) : 5 + Math.floor(r0() * 3);
+      const y = high ? bt(190, 260) : bt(120, 185), x = Math.sin(a) * d, z = Math.cos(a) * d, tx = Math.cos(a), tz = -Math.sin(a);
+      for (let k = 0; k < n; k++) { const u = (k - (n - 1) / 2) / Math.max(1, (n - 1) / 2), rr = s * (1 - Math.abs(u) * 0.4) * bt(0.8, 1.15), off = u * s * n * 0.42;
+        B(parent, 'sphereLo').add([x + tx * off, y + rr * 0.55 + bt(0, 0.3) * s, z + tz * off], [rr, rr * 0.8, rr * 0.75], colSoft(pk(C.cloud))); } }
   }
 
-  /* sky (pink → blue, Uyuni) */
-  api.setSky('#8FC3F0', '#FBD9E4', '#FBD9E4', { baseHex: '#B9D6F2' });
+  /* sky: clear Kirby blue → pale horizon */
+  api.setSky('#7FC4EE', '#EAF5FB', '#8FC6EA', { baseHex: '#A9D6F2' });   // below the horizon = the sky mirrored in the lake (pale → blue)
   world(MG, false);
   const pivot = new THREE.Group(); pivot.position.set(0, 0, -FOLD_Z); BG.add(pivot); S.pivot = pivot;
   const refl = new THREE.Group(); refl.position.set(0, 0, FOLD_Z); refl.scale.y = -1; pivot.add(refl);
   world(refl, true);
 
-  /* water film: ripples + a soft darkening (colour render); ripple rings and sparkles as ink */
+  /* lily pads, flowers and reeds sit ON the water (not mirrored) */
+  setEl('lily-pads');
+  for (let i = 0; i < 34; i++) { const a = between(0, 6.28), d = between(9, 40), x = Math.sin(a) * d, z = Math.cos(a) * d * 0.8 - 4, r = between(0.6, 1.4);
+    if (Math.abs(x) < 2.2 && z > 5) continue;                                 // keep the walkway clear
+    B(FG, 'disc', false).add([x, 0.03, z], [r, 1, r], C.lily, [0, between(0, 6.28), 0]);
+    if (rand() < 0.3) B(FG, 'sphereLo').add([x + r * 0.3, 0.25, z], [0.35, 0.25, 0.35], C.flower[Math.floor(rand() * 3)]); }
+  setEl('reeds');
+  { const segs = [], cols = [];
+    for (let g = 0; g < 14; g++) { const a = Math.PI + between(-1.3, 1.3), d = between(135, 160), cx = Math.sin(a) * d, cz = Math.cos(a) * d;
+      for (let k = 0; k < 7; k++) { const x = cx + between(-3, 3), z = cz + between(-2, 2), h = between(2.5, 5), lean = between(-0.5, 0.5);
+        segs.push(x, 0, z, x + lean, h, z); cols.push(C.reed); } }
+    inkLines(segs, cols, FG); }
+
+  /* water film: soft ripples (colour render); ripple rings around the dock as ink */
   setEl('water');
   S.waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uTime: { value: 0 } },
     vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
-    fragmentShader: 'uniform float uTime; varying vec3 vW; void main(){ float r = length(vW.xz); float ring = smoothstep(0.85, 1.0, sin(r * 1.4 - uTime * 2.0)) * smoothstep(40.0, 8.0, r) * 0.25; float a = 0.12 + ring; gl_FragColor = vec4(pow(mix(vec3(0.55, 0.62, 0.8), vec3(1.0), ring * 3.0), vec3(2.2)), a); }' });
+    fragmentShader: 'uniform float uTime; varying vec3 vW; void main(){ float r = length(vW.xz); float ring = smoothstep(0.85, 1.0, sin(r * 1.4 - uTime * 2.0)) * smoothstep(40.0, 8.0, r) * 0.22; float a = 0.14 + ring; gl_FragColor = vec4(pow(mix(vec3(0.5, 0.66, 0.84), vec3(1.0), ring * 3.0), vec3(2.2)), a); }' });
   fx(new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000).rotateX(-Math.PI / 2), S.waterMat), FG, { occluder: false }).renderOrder = 1;
   { const segs = [], cols = [];
-    for (const [cx, cz, rr] of [[0, 0, 8.5], [0, 0, 11], [0, 0, 14], [14, 18, 3], [-18, 10, 2.4], [24, -20, 4], [-30, 26, 3.2]]) for (let k = 0; k < 40; k++) { if (k % 5 === 4) continue; const a0 = k / 40 * 6.283, a1 = (k + 1) / 40 * 6.283;
-      segs.push(cx + Math.cos(a0) * rr, 0.02, cz + Math.sin(a0) * rr, cx + Math.cos(a1) * rr, 0.02, cz + Math.sin(a1) * rr); cols.push('#C9C2E6'); }
+    for (const [cx, cz, rr] of [[0, 0, 7.4], [0, 0, 9.6], [0, 0, 12.4], [14, -18, 2.4], [-18, -8, 2], [22, -26, 3.2], [-26, -22, 2.6]]) for (let k = 0; k < 40; k++) { if (k % 5 === 4) continue; const a0 = k / 40 * 6.283, a1 = (k + 1) / 40 * 6.283;
+      segs.push(cx + Math.cos(a0) * rr, 0.02, cz + Math.sin(a0) * rr, cx + Math.cos(a1) * rr, 0.02, cz + Math.sin(a1) * rr); cols.push('#BFD7EA'); }
     inkLines(segs, cols, FG); }
-  setEl('sparkles');
-  { const segs = [], cols = [];
-    for (let i = 0; i < 140; i++) { const a = rand() * 6.283, d = between(30, 260), x = Math.sin(a) * d, z = Math.cos(a) * d, y = between(8, 90), s = between(0.6, 2.2) * d / 80;
-      segs.push(x - s, y, z, x + s, y, z, x, y - s, z, x, y + s, z); cols.push('#FFF6C8', '#FFF6C8'); }
-    inkLines(segs, cols, SKY); }
   setFold(opts.fold);
 }
 function setFold(v) { if (S.pivot) S.pivot.rotation.x = -v * Math.PI / 2; }
 
-const look = (api, p, t, mm = 28) => { const { camera } = api; camera.position.set(...p); camera.up.set(0, 1, 0); camera.lookAt(...t); camera.fov = 2 * Math.atan(12 / mm) * 180 / Math.PI; camera.near = 0.1; camera.far = 3000; };
+const look = (api, p, t, mm = 28) => { const { camera } = api; camera.position.set(...p); camera.up.set(0, 1, 0); camera.lookAt(...t); camera.fov = 2 * Math.atan(12 / mm) * 180 / Math.PI; camera.near = 0.1; camera.far = 4000; };
 /** long panorama of a shot: the camera turns in place (seamless) ±75° around its view to the platform */
 const panFrom = (p, t, mm, label) => { const yaw0 = Math.atan2(t[0] - p[0], -(t[2] - p[2])), pitch = Math.atan2(t[1] - p[1], Math.hypot(t[0] - p[0], t[2] - p[2]));
   return { label, axis: 'x', from: yaw0 - 1.3, to: yaw0 + 1.3, reverse: false, pxPerUnit: (H, api) => api.focalPx(H),
@@ -101,12 +140,12 @@ const shots = [
 ];
 
 startApp({
-  id: 'bg4', title: 'BG 4 · Mirrored background', fov: 40, shots, build,
+  id: 'bg4', title: 'BG 4 · Mirrored background — mountain lake', fov: 40, shots, build,
   eras: ['e1960', 'e1970', 'e1945', 'e1980', 'e1990', 'colour'],
   update(T, api) { if (S.waterMat) S.waterMat.uniforms.uTime.value = T; const { hemi, sun, scene, THREE } = api; hemi.intensity = 2.2; hemi.color.set('#FFFFFF'); hemi.groundColor.set('#D8D2EE'); sun.intensity = 0.9; sun.position.set(-0.6, 1, 0.8);
-    if (!scene.fog) scene.fog = new THREE.Fog('#FBE4EC', 160, 900); (S.rings || []).forEach(r => r.visible = opts.ring); },
+    if (!scene.fog) scene.fog = new THREE.Fog('#E6F0FA', 260, 1500); },
   vanishingPoint: api => new api.THREE.Vector3(0, 0, -2000),
   staging: () => ({ center: [0, 0.85, 0], size: [2.6, 1.3, 1.4] }),
-  guiTitle: 'BG 4 · Mirror',
-  gui(f) { f.add(opts, 'fold', 0, 1, 0.01).name('Fold the mirror world (Inception)').onChange(setFold); f.add(opts, 'ring').name('Golden mirror ring'); },
+  guiTitle: 'BG 4 · Lake',
+  gui(f) { f.add(opts, 'fold', 0, 1, 0.01).name('Fold the mirror world (Inception)').onChange(setFold); },
 });

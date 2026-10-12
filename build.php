@@ -13,7 +13,7 @@ $bgs = [
     ['bg1', 'bg1-world-reveal',    'BG 1 · World reveal — 360° turn',          'Scenes 3–4 · 1960s'],
     ['bg2', 'bg2-earth-zoom-globe', 'BG 2 · Earth zoom out + Globe 360°',       'Scenes 7–9 · base → 1950s'],
     ['bg3', 'bg3-underwater',       'BG 3 · Underwater',                        'Scene 10 · 1960s graphic sea → crack to 1970s'],
-    ['bg4', 'bg4-mirrored',         'BG 4 · Mirrored background',               'Scenes 11–18 · 1970s → 1945 close-up → 1980s → 1990s → 4-box colour'],
+    ['bg4', 'bg4-mirrored',         'BG 4 · Mirrored background — mountain lake', 'Scenes 11–18 · 1970s → 1945 close-up → 1980s → 1990s → 4-box colour'],
     ['bg5', 'bg5-hobby',            'BG 5 · Hobby background',                  'Scenes 19–20 · full colour'],
     ['bg6', 'bg6-forward-pathway',  'BG 6 · Forward pathway — Scene 22',        'Scenes 21–24 · colour → grey warp → black'],
 ];
