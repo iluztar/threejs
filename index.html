@@ -1,21 +1,58 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Sirpeltric BG References</title>
+<meta name="color-scheme" content="dark"><meta name="description" content="Sirpeltric · six kawaii background scenes built in Three.js, rendered flat 2D (Chiikawa / Kirby style).">
+<title>Sirpeltric BG · Three.js backgrounds</title>
 <style>
-:root{--bg:#141416;--panel:#1E1E21;--line:#34343A;--tx:#E6E6E9;--tx2:#9A9AA3;--acc:#2F6FEB}
-body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,sans-serif;padding:32px 16px}
-main{max-width:760px;margin:0 auto}h1{font-size:20px;margin:0 0 4px}p{color:var(--tx2);margin:0 0 20px}
-.bg{display:flex;flex-direction:column;gap:2px;padding:14px 16px;margin:0 0 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
-.bg span{color:var(--tx2);font-size:13px}.acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
-.acts a{display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:6px;border:1px solid var(--line);color:var(--tx);text-decoration:none;font-weight:600}
-.acts a.go{background:var(--acc);border-color:var(--acc);color:#fff}.acts a:hover{border-color:var(--acc)}
-</style></head><body><main>
-<h1>Sirpeltric · BG references (Three.js)</h1>
-<p>One file per background, background only (no characters). Each page exports one long panorama (colour · lineart · base colour), a ZIP with one PNG per element, and a 3D .glb for Blender. Internet is needed once for the Three.js CDN.</p>
-<div class="bg"><b>00 · Brief + Anime era timeline</b><span>Shared references for all six backgrounds</span><div class="acts"><a href="00-brief/references.md">References</a><a href="00-brief/references/">Reference folder</a></div></div>
-<div class="bg"><b>BG 1 · World reveal — 360° turn</b><span>Scenes 3–4 · 1960s</span><div class="acts"><a class="go" href="bg1-world-reveal/bg1-world-reveal.html">Open scene</a><a href="bg1-world-reveal/bg1-world-reveal-prompt.md">Prompt (.md)</a><a href="bg1-world-reveal/references.md">References (25 files)</a><a href="bg1-world-reveal/references/">Reference folder</a></div></div>
-<div class="bg"><b>BG 2 · Earth zoom out + Globe 360°</b><span>Scenes 7–9 · base → 1950s</span><div class="acts"><a class="go" href="bg2-earth-zoom-globe/bg2-earth-zoom-globe.html">Open scene</a><a href="bg2-earth-zoom-globe/bg2-earth-zoom-globe-prompt.md">Prompt (.md)</a><a href="bg2-earth-zoom-globe/references.md">References (11 files)</a><a href="bg2-earth-zoom-globe/references/">Reference folder</a></div></div>
-<div class="bg"><b>BG 3 · Underwater</b><span>Scene 10 · 1960s graphic sea → crack to 1970s</span><div class="acts"><a class="go" href="bg3-underwater/bg3-underwater.html">Open scene</a><a href="bg3-underwater/bg3-underwater-prompt.md">Prompt (.md)</a><a href="bg3-underwater/references.md">References (25 files)</a><a href="bg3-underwater/references/">Reference folder</a></div></div>
-<div class="bg"><b>BG 4 · Mirrored background</b><span>Scenes 11–18 · 1970s → 1945 close-up → 1980s → 1990s → 4-box colour</span><div class="acts"><a class="go" href="bg4-mirrored/bg4-mirrored.html">Open scene</a><a href="bg4-mirrored/bg4-mirrored-prompt.md">Prompt (.md)</a><a href="bg4-mirrored/references.md">References (9 files)</a><a href="bg4-mirrored/references/">Reference folder</a></div></div>
-<div class="bg"><b>BG 5 · Hobby background</b><span>Scenes 19–20 · full colour</span><div class="acts"><a class="go" href="bg5-hobby/bg5-hobby.html">Open scene</a><a href="bg5-hobby/bg5-hobby-prompt.md">Prompt (.md)</a><a href="bg5-hobby/references.md">References (14 files)</a><a href="bg5-hobby/references/">Reference folder</a></div></div>
-<div class="bg"><b>BG 6 · Forward pathway — Scene 22</b><span>Scenes 21–24 · colour → grey warp → black</span><div class="acts"><a class="go" href="bg6-forward-pathway/bg6-forward-pathway.html">Open scene</a><a href="bg6-forward-pathway/bg6-forward-pathway-prompt.md">Prompt (.md)</a><a href="bg6-forward-pathway/references.md">References (14 files)</a><a href="bg6-forward-pathway/references/">Reference folder</a></div></div>
-</main></body></html>
+:root{--bg:#141317;--panel:#1C1B20;--panel2:#24232A;--line:#302E36;--line2:#3D3A45;--tx:#F1EEF4;--tx2:#A7A2AF;--tx3:#77727F;--pink:#FF86B4;--sky:#8CCBF2}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+header{padding:44px 16px 64px;background:linear-gradient(180deg,#8CCBF2 0%,#BFE3F7 calc(100% - 34px),#8A6B64 calc(100% - 34px),#8A6B64 calc(100% - 32px),#F6EFD4 calc(100% - 32px));color:#3B2B33;position:relative;overflow:hidden}
+header:before,header:after{content:"";position:absolute;background:#B9B6D4;border:2px solid #8A6B64;border-radius:50% 50% 0 0;bottom:32px;z-index:0}
+header:before{width:300px;height:64px;left:-180px}header:after{width:440px;height:96px;right:-150px;background:#D3D0E6}
+@media (max-width:700px){header{padding-bottom:84px}header:before{display:none}header:after{height:46px;width:260px;right:-110px}}
+.hero{max-width:1100px;margin:0 auto;position:relative;z-index:1;display:flex;align-items:center;gap:18px}
+.blob{width:64px;height:58px;flex:none;border-radius:50% 50% 46% 46%/56% 56% 44% 44%;background:var(--pink);border:3px solid #8A6B64;box-shadow:inset -8px -8px 0 #0000001a;position:relative}
+.blob:before,.blob:after{content:"";position:absolute;top:16px;width:6px;height:15px;border-radius:3px;background:#3B2B33}.blob:before{left:20px}.blob:after{left:32px}
+h1{font-size:clamp(22px,4vw,34px);line-height:1.1;margin:0 0 6px;letter-spacing:-.01em}
+.hero p{margin:0;max-width:640px;color:#5A4650}
+main{max-width:1100px;margin:0 auto;padding:24px 16px 56px}
+.brief{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 18px;border-radius:14px;border:1px dashed var(--line2);text-decoration:none;margin-bottom:22px}
+.brief span{color:var(--tx2)}.brief:hover{border-color:var(--pink)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--line2)}
+.thumb{display:block;position:relative;aspect-ratio:16/9;background:#F6EFD4;overflow:hidden}
+.thumb img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .3s}
+.card:hover .thumb img{transform:scale(1.03)}
+.ph{width:100%;height:100%;background:linear-gradient(180deg,#BFE3F7 55%,#F6EFD4 55%)}
+.play{position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:50%;background:var(--pink);box-shadow:0 6px 16px -4px #0008;opacity:0;transform:translateY(4px);transition:.15s}
+.play:after{content:"";position:absolute;left:17px;top:13px;border-left:14px solid #2A1420;border-top:9px solid transparent;border-bottom:9px solid transparent}
+.thumb:hover .play,.thumb:focus-visible .play{opacity:1;transform:none}
+.body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:2px;flex:1}
+.num{font:800 10.5px/1 system-ui;letter-spacing:.12em;text-transform:uppercase;color:var(--pink)}
+h2{font-size:16px;margin:4px 0 0}
+.body p{margin:0;color:var(--tx2);font-size:13px;flex:1}
+.acts{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.acts a{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--line2);background:var(--panel2);text-decoration:none;font-weight:600;font-size:13px}
+.acts a:hover{border-color:var(--sky)}
+.acts a.go{background:var(--pink);border-color:var(--pink);color:#2A1420}.acts a.go:hover{background:#FF9DC2}
+footer{color:var(--tx3);font-size:12.5px;max-width:1100px;margin:0 auto;padding:0 16px 40px}
+footer kbd{border:1px solid var(--line2);border-bottom-width:2px;border-radius:5px;padding:0 5px;font:600 11px ui-monospace,monospace;color:var(--tx2)}
+:focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+@media (max-width:520px){.grid{grid-template-columns:1fr}.blob{width:48px;height:44px}.blob:before,.blob:after{top:12px;height:11px;width:5px}.blob:before{left:14px}.blob:after{left:24px}}
+</style></head><body>
+<header><div class="hero"><i class="blob" aria-hidden="true"></i><div><h1>Sirpeltric · BG references</h1>
+<p>Six background scenes in Three.js, drawn flat 2D like Chiikawa and Kirby: flat colour fills, one ink line, banded sky. Background only, no characters. Each scene exports a long panorama (colour · lineart · base colour), a ZIP with one PNG per element, and a 3D .glb for Blender.</p></div></div></header>
+<main>
+<a class="brief" href="00-brief/references.md"><b>00 · Brief + anime era timeline</b><span>Shared references for all six backgrounds →</span></a>
+<div class="grid">
+<article class="card"><a class="thumb" href="bg1-world-reveal/bg1-world-reveal.html" aria-label="Open BG 1 · World reveal — 360° turn"><img src="bg1-world-reveal/preview.jpg?v=1791774097" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="play" aria-hidden="true"></span></a><div class="body"><span class="num">BG 1</span><h2>World reveal — 360° turn</h2><p>Scenes 3–4 · 1960s</p><div class="acts"><a class="go" href="bg1-world-reveal/bg1-world-reveal.html">Open scene</a><a href="bg1-world-reveal/bg1-world-reveal-prompt.md">Prompt</a><a href="bg1-world-reveal/references.md">References · 25</a></div></div></article>
+<article class="card"><a class="thumb" href="bg2-earth-zoom-globe/bg2-earth-zoom-globe.html" aria-label="Open BG 2 · Earth zoom out + Globe 360°"><img src="bg2-earth-zoom-globe/preview.jpg?v=1791774106" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="play" aria-hidden="true"></span></a><div class="body"><span class="num">BG 2</span><h2>Earth zoom out + Globe 360°</h2><p>Scenes 7–9 · base → 1950s</p><div class="acts"><a class="go" href="bg2-earth-zoom-globe/bg2-earth-zoom-globe.html">Open scene</a><a href="bg2-earth-zoom-globe/bg2-earth-zoom-globe-prompt.md">Prompt</a><a href="bg2-earth-zoom-globe/references.md">References · 11</a></div></div></article>
+<article class="card"><a class="thumb" href="bg3-underwater/bg3-underwater.html" aria-label="Open BG 3 · Underwater"><img src="bg3-underwater/preview.jpg?v=1791774113" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="play" aria-hidden="true"></span></a><div class="body"><span class="num">BG 3</span><h2>Underwater</h2><p>Scene 10 · 1960s graphic sea → crack to 1970s</p><div class="acts"><a class="go" href="bg3-underwater/bg3-underwater.html">Open scene</a><a href="bg3-underwater/bg3-underwater-prompt.md">Prompt</a><a href="bg3-underwater/references.md">References · 25</a></div></div></article>
+<article class="card"><a class="thumb" href="bg4-mirrored/bg4-mirrored.html" aria-label="Open BG 4 · Mirrored background"><img src="bg4-mirrored/preview.jpg?v=1791774117" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="play" aria-hidden="true"></span></a><div class="body"><span class="num">BG 4</span><h2>Mirrored background</h2><p>Scenes 11–18 · 1970s → 1945 close-up → 1980s → 1990s → 4-box colour</p><div class="acts"><a class="go" href="bg4-mirrored/bg4-mirrored.html">Open scene</a><a href="bg4-mirrored/bg4-mirrored-prompt.md">Prompt</a><a href="bg4-mirrored/references.md">References · 9</a></div></div></article>
+<article class="card"><a class="thumb" href="bg5-hobby/bg5-hobby.html" aria-label="Open BG 5 · Hobby background"><img src="bg5-hobby/preview.jpg?v=1791774121" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="play" aria-hidden="true"></span></a><div class="body"><span class="num">BG 5</span><h2>Hobby background</h2><p>Scenes 19–20 · full colour</p><div class="acts"><a class="go" href="bg5-hobby/bg5-hobby.html">Open scene</a><a href="bg5-hobby/bg5-hobby-prompt.md">Prompt</a><a href="bg5-hobby/references.md">References · 14</a></div></div></article>
+<article class="card"><a class="thumb" href="bg6-forward-pathway/bg6-forward-pathway.html" aria-label="Open BG 6 · Forward pathway — Scene 22"><img src="bg6-forward-pathway/preview.jpg?v=1791774125" alt="" loading="lazy" decoding="async" width="960" height="540"><span class="play" aria-hidden="true"></span></a><div class="body"><span class="num">BG 6</span><h2>Forward pathway — Scene 22</h2><p>Scenes 21–24 · colour → grey warp → black</p><div class="acts"><a class="go" href="bg6-forward-pathway/bg6-forward-pathway.html">Open scene</a><a href="bg6-forward-pathway/bg6-forward-pathway-prompt.md">Prompt</a><a href="bg6-forward-pathway/references.md">References · 14</a></div></div></article>
+</div>
+</main>
+<footer>Single HTML files — open by double-click, internet needed once for the Three.js CDN. In a scene: <kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> frame · <kbd>G</kbd> guides · <kbd>H</kbd> clean view · <kbd>F</kbd> fullscreen. Look, sky bands and preview quality are in the config menu.</footer>
+</body></html>
