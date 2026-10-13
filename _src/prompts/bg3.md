@@ -21,6 +21,9 @@
 - MG (< 40): the reef and Poki's calm sand patch.
 - BG (< 110): far ledges, shell towers; far: the fog wall, lightest.
 
+## Grounded on the sea floor
+The floor is uneven (≈ ±2.3): wide pieces (plate-rock ledges, rocks, fan coral, the far mounds) rest on the lowest point under their footprint, coral and kelp grow from the floor, the crab stands on six little legs. Only fish, the turtle, the seahorse, bubbles and marine snow float.
+
 ## Elements in the ZIP
 foreground · sky (water) · floor · surface · rays · ledges · plate-coral · branch-coral · brain-coral · tube-coral · fan-coral · rocks · kelp · seagrass · creatures · fish · bubbles · marine-snow · far-town
 

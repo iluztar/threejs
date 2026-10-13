@@ -9,8 +9,9 @@
 
 ## The path (kawaii)
 - A soft cream / sand path with rounded raised edges, straight to the vanishing point on the eye line; the path centre stays clear.
-- **Repeating module** (length 12): a pair of round lollipop trees (Kirby Green Greens / Waddle Dee Town), a lumpy bush, a little lamp post, flowers, grass clumps, a rock or a fallen log now and then, a wooden fence (WBB road). Optional tree-tunnel arches (Kawaguchiko momiji tunnel, English tree tunnels) and a pine-tree style (WBB).
-- At the vanishing point: a soft mountain with a pastel snow cap (Fuji at the end of the momiji tunnel) and puffy outlined clouds.
+- **Repeating module** (length 12): a pair of leafy round trees (Kirby Green Greens / Waddle Dee Town, built from many leaf clumps on a tapered trunk with branches; ≈ 30 % taller ones), lumpy bushes, one big FG bush cluster right at the path edge, a little lamp post, flowers, grass clumps, a rock or a fallen log now and then, a wooden fence (WBB road). Optional tree-tunnel arches (Kawaguchiko momiji tunnel, English tree tunnels) and a pine-tree style (WBB).
+- At the vanishing point: a soft mountain with a pastel snow cap (Fuji at the end of the momiji tunnel), foothills either side (2 massifs each, with shoulders) and puffy outlined clouds.
+- The 18 modules are grouped three at a time; a group wraps around the camera only once it is fully behind it, so the path never shows a gap.
 - Nothing bare: the grass sides carry tufts, dashes, flowers and stones.
 
 ## Exports

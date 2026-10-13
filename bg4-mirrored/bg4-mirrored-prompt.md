@@ -8,18 +8,12 @@ Reference images exported from the board sit next to this file: `references/` (o
 **Era (brief):** Sc 11 red wave → **1970s** · Sc 12–14 mirrored platform, B&W close-up (**1945** values) · Sc 15 the wave **rotates 360°** → **1980s** · Sc 16 wave → **1990s** (wide shot) · Sc 17–18 **4-box mirrored BG, a colour per side** (**full colour**). The era dropdown offers exactly these.
 **Deadline (plan):** week 4 · Fri 30 Oct 2026.
 
-> **Client update (Oct 2026): the setting is now a MOUNTAIN LAKE.** A still lake mirrors everything (real mirrored copy, a little darker/bluer;
-> white clouds reflect light, the water below the horizon is the mirrored blue sky). Pastel lavender mountains with soft snow caps far
-> behind, round green shore hills, round trees and soft pines, shore rocks and reeds, lily pads with small flowers on the water, ink ripple
-> rings around the dock. The characters stand on a small round wooden dock in the middle of the lake (top ≈ 0.8, calm and empty),
-> with a short walkway toward the camera. This replaces the white pillars / arches / mirror ring / cloud islands described below;
-> shots, eras, transitions, the 4-box and the "fold the mirror world" option stay the same.
-
-## The world
-- A calm, endless mirror: the **horizon is the mirror line**. Above it, a bright, simple cloudscape (Kirby & the Amazing Mirror "Dimension Mirror"); below, its reflection, slightly **darker and softer**, with small ripple rings breaking the symmetry (Salar de Uyuni).
-- The reflection is a real mirrored copy of the world (scale y −1, darker base colours), so it works in colour, lineart, base colour and element exports. A thin semi-transparent water film adds ripples in the colour render only.
-- A **round floating platform** (soft white disc with a rounded rim and little posts) at the mirror line. It stays empty: the characters stand there (staging guide only).
-- **White pillars with glass orbs** behind the platform and a ring of soft **arches** in the distance (Amazing Mirror), sparkles in the sky, puffy cloud banks around the horizon, a few floating cloud islands.
+## The world: a still mountain lake (client update, Oct 2026)
+- A calm lake that mirrors everything: the **horizon is the mirror line**. The reflection is a real mirrored copy of the whole world (scale y −1, a little darker and bluer; white clouds reflect light, not grey), so it works in colour, lineart, base colour and element exports. A thin water film adds ink ripple rings in the colour render only.
+- The characters stand on a small **round wooden dock** in the middle (top ≈ 0.8, rim with little posts, calm and empty, staging guide only). A short **walkway** of 4 planks leads toward the camera, level with the deck and standing on posts in the water.
+- **Mountains** behind the lake (few, believable): one far snow range of 9 massifs (d 520–700, 120–185 high, snow only above 130) and one nearer, lower range of 7 massifs (d 330–420, 50–90 high) — each massif a main summit with concave flanks and a rounded top plus 1–2 shoulders. Pastel lavender, soft snow caps.
+- **Shore**: 9 long, low rolling hills (d 175–235), leafy round trees and soft pines on far LOD, shore rocks and reeds, lily pads with small flowers on the water.
+- **Clouds**: puffy banks over the mountains and higher puffs, flat bottoms.
 - **Folded-world option** (Inception folding city): the far mirror half lifts up into the sky.
 - **4-box** (Sc 17–18): the same frame mirrored into 4 quadrants (normal / flip X / flip Y / flip XY), each with its own colour story (warm yellow, pink, mint, sky blue from the full-colour palette). The camera tilt matches across all halves.
 
@@ -33,28 +27,29 @@ Reference images exported from the board sit next to this file: `references/` (o
 - BG (< 6 × distance): shore hills and trees; far: mountains, clouds and their reflection, lightest.
 
 ## Elements in the ZIP
-foreground · sky · platform · pillars · mirror-ring · arches · clouds · cloud-islands · reflection · water · sparkles
+sky · foreground · dock · mountains · hills · trees · rocks · clouds · reflection · lily-pads · reeds · water
 
 ## Palettes
 - 1970s #4B3B2A #7A8B3C #C98B3A #D9B98A #5B8DB8 · 1980s #1B1446 #5B2A86 #E94F8A #F29E4C #7ED3E6 · 1990s #1E2A30 #3F6E73 #8FB3A8 #D8C9A3 #B04A3A · colour #2E5E3A #6BA368 #F2D17B #4F8FC0 #F6EFE0.
 - Reflection reference: #0F0B0B #2F3031 #4C546C #8F908E #92AAC6 #F0EFF2.
 
 ## References read on the board
-Salar de Uyuni (pink-to-blue horizon, the jeep's perfect reflection, cloud-patch ripples at sunset) · Kanuti lake and a Norway lake (clouds mirrored) · Schloss Buldern on a lily pond · Jefferson Memorial at night · a night waterfront with purple neon reflections (1980s mood) · Kirby & the Amazing Mirror (winged mirror on white pillars, arches, cloudscape, sparkles) · Inception folding city breakdowns.
+Salar de Uyuni (pink-to-blue horizon, the jeep's perfect reflection, cloud-patch ripples at sunset) · Kanuti lake and a Norway lake (clouds mirrored) · Schloss Buldern on a lily pond · Jefferson Memorial at night · a night waterfront with purple neon reflections (1980s mood) · Kirby pixel scenes (lavender mountains with pastel caps, flat bright lake) · Kirby & the Amazing Mirror (cloudscape, older idea) · Inception folding city breakdowns.
 
 
 ---
 
 # OUTPUT YOU MUST DELIVER
-- ONE single, self-contained HTML file. Opening it in Chrome by double-click (file://) shows the full **background** built in Three.js. No build step, no server, no external assets except these CDN scripts: Three.js r170 (importmap from `https://cdn.jsdelivr.net/npm/three@0.170.0/`, including `examples/jsm/` addons and `lil-gui`) and JSZip 3.10.1. All CSS, JS, shaders and procedural textures are inline.
+- ONE single, self-contained HTML file. Opening it in Chrome by double-click (file://) shows the full **background** built in Three.js. No build step, no server, no external assets except these CDN scripts: Three.js r170 (importmap from `https://cdn.jsdelivr.net/npm/three@0.170.0/`, including `examples/jsm/` addons such as `OrbitControls`, `GLTFExporter`, `STLExporter`), Tweakpane 4.0.4 for the settings panel and JSZip 3.10.1. All CSS, JS, shaders and procedural textures are inline.
 - **Background only.** Do NOT model any character, stand-in, sphere or placeholder body. The team's quick 3D mockup (Snow) shows two coloured spheres standing in for the characters: ignore them, because they would cover the background that has to be painted. Mark where the characters will stand with an overlay-only staging guide (dashed box, off by default, never exported), and keep that spot calm and low in contrast.
-- A fixed, always-visible **EXPORT BAR** (bottom of the screen, big labelled buttons, never hidden in a menu):
-  1. **Export 4K Panorama PNG**: the whole shot as ONE LONG PANORAMA (see below), final colour look.
-  2. **Panorama Lineart**: lines only, transparent background (option: white background).
-  3. **Panorama Base color**: flat fills only (no light, shadow, fog, lines, grain or vignette), clean areas for the magic wand.
+- One pink **Export** button (key `E`) opens a grouped export menu, with *Long panorama* / *Single 4K frame* at the top:
+  1. **Colour PNG**: the whole shot as ONE LONG PANORAMA (see below) or one 3840 × 2160 frame, final colour look.
+  2. **Lineart**: lines only, transparent background (option: white background).
+  3. **Base colour**: flat fills only (no light, shadow, fog, lines, grain or vignette), clean areas for the magic wand.
   4. **ZIP · each element**: one PNG per element (city, trees, hills, clouds, rocks…) for each pass (colour / lineart / base colour), plus the full image, all in one ZIP, with a README listing the elements.
-  5. **Export 3D (.glb · Blender)**: glTF 2.0 binary via `GLTFExporter`, low-poly versions of the shapes. One group per element; flat pieces with their colour/texture; ink lines as edges; the shot camera "ShotCamera" animated over the shot at 24 fps (position + rotation). Two modes: **instanced** (default, small file of a few MB: each instanced batch is split per colour and exported with `EXT_mesh_gpu_instancing`, which Blender 3.6+ imports as linked copies) and **baked** (one mesh per element with vertex colours, for older Blender). Opens with *File › Import › glTF 2.0*.
-  - Each button shows progress ("Rendering…", "stitching…", "encoding…") and then downloads. The GUI can switch "PNG format" between *one long panorama* (default) and *single 4K frame (3840×2160)*.
+  5. **This view · 4K PNG**: exactly what the stage shows (shot camera or free view, current look) at 3840 × 2160.
+  6. **Export 3D (.glb · Blender)**: glTF 2.0 binary via `GLTFExporter`, low-poly versions of the shapes. One group per element; flat pieces with their colour/texture; ink lines as edges; the shot camera "ShotCamera" animated over the shot at 24 fps (position + rotation). Two modes: **instanced** (default, small file of a few MB: each instanced batch is split per colour and exported with `EXT_mesh_gpu_instancing`, which Blender 3.6+ imports as linked copies) and **baked** (one mesh per element with vertex colours, for older Blender). Opens with *File › Import › glTF 2.0*.
+  - Also **.obj + .mtl** (ZIP) and **.stl**, with a *3D detail* option (medium / light). Every export shows its progress in a small toast and then downloads.
   - Exports never include the GUI, guides, safe frames or the staging marker, and their size never depends on the browser window.
 - Return the complete file in one code block, with no "…rest of code" gaps.
 
@@ -69,9 +64,10 @@ Salar de Uyuni (pink-to-blue horizon, the jeep's perfect reflection, cloud-patch
 
 # ELEMENTS (one PNG each)
 - Element PNGs show each element's **whole** shapes by default (the other elements are left out, so nothing is cut), numbered far → near so they stack back to front; a *holdout* option keeps only the visible parts.
-- Every object belongs to a named element (for example: sky, clouds, hills, ground, river, dome, rocks, logs, grass, flowers, trees, houses, city, landmark, poles, cars, street…). The GUI lists them with visibility checkboxes.
-- Element PNGs use a **holdout**: the element is drawn normally and everything else only writes depth (invisible). Each PNG therefore contains only what the camera really sees of that element, and stacking all element PNGs of a pass rebuilds the full image exactly, in any order.
-- Element lineart = the drawn lines that touch that element (mask the edge lines with the element's coverage, slightly dilated).
+- Every object belongs to a named element (for example: sky, clouds, hills, ground, river, dome, rocks, logs, grass, flowers, trees, houses, city, landmark, poles, cars, street, foreground…). The GUI lists them with visibility checkboxes.
+- *Whole objects* (default): the other elements are left out entirely (not even as depth), so each PNG has the complete shapes and its own lines, and the files are numbered far → near (stack 01 at the bottom).
+- *Visible parts only* (option): a holdout — everything else only writes depth, so stacking rebuilds the frame in any order.
+- Element lineart = the edge lines of that element alone (normal pass of that element) plus its hand-drawn marks.
 
 # LINEART: EVERYTHING HAS LINES, ALL THE SAME WIDTH
 - Every element has lineart, including flat things (roads, river banks, ponds, windows, coastlines) and small details (dashes, grass tufts, wires).
@@ -80,24 +76,30 @@ Salar de Uyuni (pink-to-blue horizon, the jeep's perfect reflection, cloud-patch
   - Flat decals and windows: in that normal pass they output a unique flat "id colour", so their borders become lines too.
   - Hand-drawn marks (dashes, tufts, wires): `LineSegments2` + `LineMaterial` with `worldUnits: false` and `linewidth` = the same pixel width, so it is constant at any distance.
   - Inverted-hull silhouettes are optional only ("extra silhouette", off by default), because they would double the outer line.
-- Ink colour **#8A6B64** (from the team's own city test), with options for dark brown #5A3A30 or black. Lines are composited AFTER the era grade, so they never get recoloured (grey in B&W eras). In the colour render, lines fade slightly with fog distance. The colour render has no wobble; lineart has an optional small hand wobble.
+- Ink colour **#8A6B64** (from the team's own city test), with options for dark brown #5A3A30 or black. Lines are composited AFTER the era grade, so they never get recoloured (grey in B&W eras). Far lines stay readable: with fog distance they get at most 25 % lighter. The colour render has no wobble; lineart has an optional small hand wobble.
 
 # NOTHING CUT OFF, NOTHING BARE
 - No element may be cut off in a weird way: clouds, towers and landmarks sit fully inside the frame and the camera range (no clouds clipped by a cylinder or texture edge). Keep **open sky above the tallest roofs**: limit heights by distance to the camera so every roof stays ≈10° below the top of the frame.
 - Clouds are never generic: mix big cumulus, medium clusters and small puffs (4–8 puffs each, bigger in the middle, flat bottoms like Chiikawa clouds) at varied distances and heights, each one placed so it stays whole inside the frame.
 - Any camera move must have a clear lane: the camera never passes through a building or tree.
+
+# GROUNDED: NOTHING FLOATS
+- Everything that stands on the ground or on water really touches it — no gap under any object from any angle (check in free view).
+- On curved or uneven ground (the BG 1 dome, the BG 3 sea floor, the BG 2 sea, which is the globe and drops by d² / 2R) every piece takes the height of the surface at its own position; wide or long pieces (logs, branches, plate rocks, ledges, stumps, bushes) are sunk by the slope so their downhill side still touches; wide pieces on a bumpy floor rest on the lowest point under their footprint.
+- Things over water stand on something: piers and walkways on posts down into the water, bridges with abutments on both banks and piers in the river, boats sit half in the water. Bush clumps at the bottom sit on the ground, higher ones on the inner masses; leaves grow from the pot.
+- Only things that really fly or swim may float (clouds, fish, the seahorse and turtle, the warp rings).
 - Nothing is plain or empty. Even simple surfaces carry small, simple details: hills get rocks, fallen logs, stumps and dead branches, grass clumps, flowers and Chiikawa-style dashes; cities get windows, rooftop props, street furniture, cars; walls and floors get props.
 
 # DEPTH STRUCTURE: FOREGROUND · MIDGROUND · BACKGROUND (required in every BG)
 Every frame reads as stacked planes, like a multiplane / 2D game parallax layout:
 - **Foreground (FG)**: big, simple, dark shapes right in front of the lens, always cut by a frame edge and never covering the middle (staging / character area). Examples: rocks, a fallen log, stumps and grass tufts on the hill (BG 1); hedge, lamp post and leaves on the street (BG 2); kelp, branch coral and plate rocks on the sea floor (BG 3); a pine bough, reeds and shore rocks (BG 4); a house plant, a stack of books, a hanging plant in the room and a row of bushes / rocks / tall grass on the front edge of the run strip (BG 5); big bushes right at the path edge that sweep past the lens (BG 6).
 - **Midground (MG)**: where the characters stand and the action happens; the most readable, most detailed plane.
-- **Background (BG)** and **far**: city, ridges, mountains, sky; lighter and closer to the haze colour with every step back.
+- **Background (BG)** and **far**: city, ridges, mountains, sky; a step lighter each, but never washed out — shapes and their lines must stay easy to read.
 - Implementation: FG is **real objects in the world, close to the camera path** — never a frame or sticker locked to the camera. As the camera turns or moves, different FG pieces enter and leave the frame and they parallax faster than the MG (BG 1: big trees planted just outside the orbit with low crowns reaching over the camera path + a ring of rocks / stumps / bushes / tall grass / logs; BG 2: bushes, rocks, grass, lamp posts and two trees along both sides of the street run; BG 3: a row of kelp, coral and rocks in front of the descent and the reef track; BG 4: reed islets, shore rocks and a pine in the water close to every camera, mirrored with the world; BG 5: plants, a stool and a hanging plant at the open front of the room + a front row on the run strip; BG 6: big bushes at the path edge). Keep FG low or at the sides where it would cross the line to the characters. FG is its own element (`foreground`) in the element ZIP.
 
 # VALUE STRUCTURE (read it in black & white first)
 - Reference: grey value thumbnails (forest, canyon, alley, ruins). FG darkest, MG mid grey, BG light grey, far + sky lightest; each plane is close to ONE value, so the planes separate at a glance even without colour.
-- Each scene defines its plane distances (`layers(api, shot)` → [FG end, MG end, BG end] in view distance). The colour version is pulled to the same values: every plane keeps its hues and inner shading but is squeezed around its value (FG only darker, a touch cooler; MG mid; BG / far only lighter and mixed with the haze / fog colour).
+- Each scene defines its plane distances (`layers(api, shot)` → [FG end, MG end, BG end] in view distance). The colour version is pulled to the same values: every plane keeps its hues and inner shading but is squeezed around its value (FG only darker, a touch cooler, keeps its saturation; MG mid; BG only lighter with 10 % haze; far only lighter with 20 % haze). Inner contrast is kept (exponent 0.7–0.8), scene fog is capped at 55 % (except the BG 3 fog wall), and big floors / paths / the dome never count as FG — so every plane, near or far, still shows its shapes and lines. Value targets (linear): FG 0.04 · MG 0.36 · BG 0.50 · far 0.62.
 - Settings → *Depth / value structure*: planes on/off, plane contrast, **Value check (B&W, key `V`)** to see the frame in black & white. The colour picture must read exactly like that grey picture.
 
 # DETAIL SHADING (default, also without pixel art)
@@ -119,7 +121,7 @@ Optional look for every BG (Settings → *Pixel art*). Not "plain 3D made blocky
 No walls of identical cones or rows of half-balls. A range is a few massifs spread along an arc or a line; each massif is one main summit (concave flanks, rounded top) with 1–2 lower shoulders on the same ridge; heights rise and fall along the range; snow only on the high summits. Hills are low, wide, soft domes. Typical counts: one far range of 7–14 massifs + a nearer, lower range or a few rolling hills.
 
 # FREE VIEW + CAPTURE
-Every scene has a free view (`C`) to look at the set from any angle, and *Capture 4K* (`Enter`, or the pink button) saves exactly that view as a 3840 × 2160 PNG with the current look.
+Every scene has a free view (`C` or the globe button): drag to turn, right-drag / two fingers to move, wheel / pinch to zoom, `W` `A` `S` `D` / `Q` `E` to walk, `R` back to the shot camera, `Esc` to leave; the camera never goes below the ground. *Capture 4K* (`Enter`, or the pink button in the stage corner) saves exactly that view as a 3840 × 2160 PNG with the current look (pixel art, B&W check…).
 
 # STORYBOARD (Poki & Poka intro, 00:00–01:13) → which BG covers it
 - Sc 1–2 · text scroll intro, Poki & Poka drop from off screen (BG only "text scroll", not one of these files).
@@ -144,7 +146,7 @@ One continuous camera journey through anime history. Each background carries the
 - The era changes only the colour / line / texture treatment, never the rounded shape language.
 
 # MINIMAL STYLE TARGET (simple references on the board)
-- Chiikawa field (from Sir Peltric): cream ground, short green tufts and short brown dashes, round cloud-shaped trees with an ink outline, lavender triangle hills, pale sky with one small cloud.
+- Chiikawa field (from Sir Peltric): cream ground, short green tufts and short brown dashes, round cloud-shaped trees with an ink outline, lavender hills on the horizon, pale sky with one small cloud. (We keep its calm colours but build hills / mountains as believable ranges and trees as leafy clumps — see above.)
 - Chiikawa room: cream wall, soft-grey floor, one window, few props, wobbly ink lines, dashes instead of shading.
 - Kirby pixel scenes (from Sir Peltric): sky blue, puffy cumulus, lavender-blue mountains with pastel snow caps, bright flat green ground, one big round fruit tree, lumpy bushes.
 - Kirby: Cappy Town (round houses, soft hills), Green Greens (round tree, floating blocks, clean sky), Forgotten Land (blocks softened by grass and round trees, benches, lamp posts).
@@ -165,8 +167,8 @@ One continuous camera journey through anime history. Each background carries the
 - Base colour export = each object's flat colour mapped through the active era palette on the CPU (same maths as the shader).
 
 # TECH SPEC
-- **Flat 2D fills (default)**: every shape is ONE flat colour (unlit, like a cel painting / Chiikawa field / Kirby pixel scene). Depth tint (fog) is taken per object from its origin, so a shape never carries a gradient; big flat ground pieces get fog in a few hard steps. The sky is a few flat bands. The scene light colour/strength becomes one flat tint, so mood presets still work. Options: *flat + one cel shadow* (Kirby) and the old *soft 3D toon* (`MeshToonMaterial`, 3-step gradient 150/208/255).
-- Light page: preview pixel ratio ≤ 1.5 with auto step-down when slow, render only when something changes, minified Three.js + modulepreload, JSZip and GLTFExporter loaded only when exporting.
+- **Flat 2D fills + detail shading (default)**: every shape starts from ONE flat colour (unlit, like a cel painting), then gets the detail shading above (5-tone light ramp from the sun, leaf clumps, cloud billows, broken bands) and its value plane. Depth tint (fog) is taken per object from its origin, so a shape never carries a smooth gradient; big flat ground pieces get fog in a few hard steps. The sky is a few flat bands. The scene light colour/strength becomes one flat tint, so mood presets still work. Options: *flat + one cel shadow* (Kirby) and the old *soft 3D toon* (`MeshToonMaterial`, 3-step gradient 150/208/255).
+- Light page: preview pixel ratio ≤ 2 with auto step-down when slow, render only when something changes, minified Three.js + modulepreload; JSZip, the exporters and OrbitControls load only when needed. Detail shading uses an 8-tap cell pattern; trees have 3 levels of detail (full near the camera, light in the middle distance, very far = trunk + 7 tiny clumps on a 9×6 sphere); repeating modules share instanced batches (BG 6: three per group).
 - Rounded geometry only: `SphereGeometry`, `CapsuleGeometry`, `RoundedBoxGeometry`, `LatheGeometry`, extruded rounded gables. No sharp boxes (except hidden helpers).
 - Many copies go into `InstancedMesh` batches per (group, geometry, element) with per-instance colours.
 - Timeline: shots with play/pause, a scrub slider, a shot list, and a lens readout (mm). The era per shot follows the brief; the GUI can override it for previews.

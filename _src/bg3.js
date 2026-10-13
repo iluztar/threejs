@@ -13,6 +13,7 @@ const between = (a, b) => a + rand() * (b - a);
 
 const FLOOR = -40, CAUSTIC_PERIOD = 1.0;          // caustics loop every second (12 frames at 12 fps)
 const SPOT = [0, -2];                             // Poki's calm patch (x, z)
+const floorMin = (x, z, rx, rz = rx) => Math.min(floorY(x, z), floorY(x - rx, z), floorY(x + rx, z), floorY(x, z - rz), floorY(x, z + rz));   // wide pieces rest on the lowest point
 const floorY = (x, z) => FLOOR + 1.5 * Math.sin(x * 0.08) * Math.cos(z * 0.06) + 0.8 * Math.sin(x * 0.21 + z * 0.13);
 const C = {
   plate: ['#3FA9C9', '#5BC2D6', '#4CB6C9', '#7FD3E0'], branch: ['#D7559B', '#B65FC9', '#E06AA8', '#C94F8C'], brain: ['#F49AB0', '#F6A86A', '#F3C66B', '#F2B38A'],
@@ -39,7 +40,7 @@ function build(api) {
     for (let x = -46; x <= 46; x += between(2.2, 3.6)) { const z = between(18, 23), far = Math.abs(x) >= 9, k = rand();
       if (far && k < 0.5) kelp(x, z, between(9, 13));
       else if (k < 0.75) coral(x, z, between(far ? 3 : 2.2, far ? 5 : 3.4));
-      else for (let i = 0; i < 2; i++) { const s = between(1.2, 2.2); B(FG0, 'sphereLo').add([x + i * s, floorY(x, z) + s * 0.25, z], [s, s * 0.55, s * 0.9], pick(C.ledge)); } }
+      else for (let i = 0; i < 2; i++) { const s = between(1.2, 2.2); B(FG0, 'sphereLo').add([x + i * s, floorMin(x + i * s, z, s * 0.9) + s * 0.18, z], [s, s * 0.55, s * 0.9], pick(C.ledge)); } }
   }
   const { SKY, BG, MG, FG } = G;
   geo.fish = mergeGeometries([new THREE.SphereGeometry(0.5, 16, 12).scale(1, 0.62, 0.36), new THREE.ConeGeometry(0.32, 0.46, 3).rotateZ(Math.PI / 2).scale(1, 1, 0.35).translate(-0.6, 0, 0)]);
@@ -92,7 +93,7 @@ function build(api) {
   const clear = (x, z, d = 8) => Math.hypot(x - SPOT[0], z - SPOT[1]) > d;
   const pts = n => { const out = []; let guard = 0; while (out.length < n && guard++ < n * 20) { const x = between(-70, 70) * (rand() < 0.5 ? 1 : 0.6), z = between(-110, 30); if (clear(x, z)) out.push([x, z]); } return out; };
   setEl('ledges');                                                  // Doraemon blue plate-rock ledges
-  for (const [x, z] of pts(14)) { const y = yAt(x, z), w = between(6, 12); for (let k = 0; k < 3; k++) B(MG, 'rboxSoft').add([x + k * 0.8, y + 0.6 + k * 1.3, z - k * 0.6], [w * (1 - k * 0.22), 1.3, w * 0.7 * (1 - k * 0.22)], pick(C.ledge)); }
+  for (const [x, z] of pts(14)) { const w = between(6, 12), y = floorMin(x, z, w * 0.5, w * 0.35) - 0.3; for (let k = 0; k < 3; k++) B(MG, 'rboxSoft').add([x + k * 0.8, y + 0.6 + k * 1.3, z - k * 0.6], [w * (1 - k * 0.22), 1.3, w * 0.7 * (1 - k * 0.22)], pick(C.ledge)); }
   setEl('plate-coral');
   for (const [x, z] of pts(26)) { const y = yAt(x, z), n = 2 + Math.floor(rand() * 3), r0 = between(2, 4.2), col = pick(C.plate);
     B(MG, 'capsule').add([x, y + n * 0.5, z], [0.6, n * 0.8, 0.6], '#E7D7B8');
@@ -108,9 +109,9 @@ function build(api) {
   for (const [x, z] of pts(16)) { const y = yAt(x, z), col = pick(C.tube);
     for (let k = 0; k < 4; k++) { const dx = between(-0.9, 0.9), dz = between(-0.9, 0.9), h = between(1.2, 2.6); B(MG, 'rcyl').add([x + dx, y - 0.2, z + dz], [0.38, h, 0.38], col); B(MG, 'torus').add([x + dx, y + h - 0.2, z + dz], [0.36, 0.36, 0.5], '#FFF1D6', [Math.PI / 2, 0, 0]); } }
   setEl('fan-coral');
-  for (const [x, z] of pts(12)) { const s = between(1.6, 2.8); B(MG, 'sphere').add([x, yAt(x, z) + s, z], [s, s, 0.16], pick(C.fan), [0, between(-0.6, 0.6), 0]); B(MG, 'capsule').add([x, yAt(x, z) + 0.4, z], [0.2, 1, 0.2], '#C98B6A'); }
+  for (const [x, z] of pts(12)) { const s = between(1.6, 2.8), y = floorMin(x, z, s * 0.8) - 0.15; B(MG, 'sphere').add([x, y + s, z], [s, s, 0.16], pick(C.fan), [0, between(-0.6, 0.6), 0]); B(MG, 'capsule').add([x, yAt(x, z) + 0.5, z], [0.2, 1.1, 0.2], '#C98B6A'); }
   setEl('rocks');
-  for (const [x, z] of pts(40)) { const s = between(0.6, 2.2); B(MG, 'sphereLo').add([x, yAt(x, z) + s * 0.3, z], [s, s * 0.6, s * 0.85], pick(C.rock)); }
+  for (const [x, z] of pts(40)) { const s = between(0.6, 2.2); B(MG, 'sphereLo').add([x, floorMin(x, z, s * 0.9) + s * 0.25, z], [s, s * 0.6, s * 0.85], pick(C.rock)); }
   setEl('kelp');
   for (const [x, z] of pts(22)) { const y0 = yAt(x, z), n = 7 + Math.floor(rand() * 6), ph = rand() * 6, col = pick(C.kelp); let px = x, py = y0, pz = z;
     for (let k = 0; k < n; k++) { const ang = Math.sin(ph + k * 0.6) * 0.35, L = 1.6; const nx = px + Math.sin(ang) * L, ny = py + Math.cos(ang) * L;
@@ -130,7 +131,8 @@ function build(api) {
     solid(geo.sphere, '#F6D24A', MG, { pos: [x + 0.6, y + 4.4, z], scale: [0.7, 0.45, 0.45] }); solid(geo.torus, '#F6D24A', MG, { pos: [x - 0.2, y + 0.6, z], scale: 0.6, rot: [0, Math.PI / 2, 0] }); }
   { const [x, z] = [9, 9], y = yAt(x, z);                                             // crab
     solid(geo.sphere, '#E8543A', MG, { pos: [x, y + 0.6, z], scale: [1.3, 0.7, 1] });
-    for (const s of [-1, 1]) { solid(geo.sphere, '#E8543A', MG, { pos: [x + s * 1.6, y + 0.9, z + 0.6], scale: [0.55, 0.45, 0.45] }); solid(geo.capsule, '#FFFFFF', MG, { pos: [x + s * 0.4, y + 1.5, z + 0.4], scale: [0.2, 0.5, 0.2] }); } }
+    for (const s of [-1, 1]) for (const lz of [-0.5, 0.2, 0.8]) solid(geo.capsule, '#D9472F', MG, { pos: [x + s * 1.25, y + 0.16, z + lz], scale: [0.14, 0.34, 0.14], rot: [0, 0, s * 0.6] });   // legs down to the sand
+    for (const s of [-1, 1]) { solid(geo.sphere, '#E8543A', MG, { pos: [x + s * 1.6, y + 0.9, z + 0.6], scale: [0.55, 0.45, 0.45] }); solid(geo.capsule, '#E8543A', MG, { pos: [x + s * 1.35, y + 0.75, z + 0.4], scale: [0.18, 0.3, 0.18], rot: [0, 0, s * 0.9] }); solid(geo.capsule, '#FFFFFF', MG, { pos: [x + s * 0.4, y + 1.5, z + 0.4], scale: [0.2, 0.5, 0.2] }); } }
 
   /* ── fish shoals (they swim; deterministic by time) ── */
   setEl('fish');
@@ -158,7 +160,7 @@ function build(api) {
   setEl('far-town');
   for (let i = 0; i < 16; i++) { const x = between(-130, 130), z = between(-230, -170), y = floorY(x, z), h = between(14, 34), r = between(3, 6), col = pick(C.town);
     B(BG, 'rcyl').add([x, y - 1, z], [r, h, r], col); for (let k = 0; k < 3; k++) B(BG, 'cone').add([x, y + h * (0.55 + k * 0.17), z], [r * (1.25 - k * 0.25), r * 0.9, r * (1.25 - k * 0.25)], pick(C.town)); B(BG, 'sphere').add([x, y + h + 2.5, z], r * 0.35, '#FFF3C2'); }
-  for (let i = 0; i < 5; i++) B(BG, 'halfSphere').add([between(-120, 120), FLOOR - 1, between(-260, -200)], [between(18, 30), between(12, 20), between(18, 30)], '#D9F2F6');
+  for (let i = 0; i < 5; i++) B(BG, 'halfSphere').add([between(-120, 120), FLOOR - 3, between(-260, -200)], [between(18, 30), between(12, 20), between(18, 30)], '#D9F2F6');
 
   S.api = api;
 }
@@ -215,7 +217,7 @@ const shots = [
 ];
 
 startApp({
-  id: 'bg3', title: 'BG 3 · Underwater (1960s)', fov: 46, shots, build,
+  id: 'bg3', title: 'BG 3 · Underwater (1960s)', fov: 46, shots, build, fogMax: 1,   // the fog wall hides the end of the sea
   layers: api => api.camera.position.y < 0 ? [10, 40, 110] : null,
   eras: ['e1960', 'e1970'],
   update(T, api) { animate(T, api); water(api); },

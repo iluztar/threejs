@@ -81,7 +81,7 @@ function build(api) {
   { const leaf = ['#5E9E62', '#6FAE6A', '#4F8E5A'];
     const plant = (x, z, pot, h, n) => { solid(geo.rcyl, pot, room, { pos: [x, 0, z], scale: [0.36, 0.55, 0.36] });
       for (let i = 0; i < n; i++) { const a = i / n * 6.283 + between(0, 0.5), t = between(0.35, 0.9);
-        B(room, 'sphereLo').add([x + Math.sin(a) * 0.3 * h, 0.55 + h * 0.45, z + Math.cos(a) * 0.3 * h], [0.15, h * 0.5, 0.05], pick(leaf), [Math.cos(a) * t, a, -Math.sin(a) * t]); } };
+        B(room, 'sphereLo').add([x + Math.sin(a) * 0.16 * h, 0.5 + h * 0.48, z + Math.cos(a) * 0.16 * h], [0.15, h * 0.5, 0.05], pick(leaf), [Math.cos(a) * t * 0.6, a, -Math.sin(a) * t * 0.6]); } };   // leaves grow from the pot
     plant(-2.75, 3.85, '#C9785E', 1.5, 12); plant(3.35, 3.95, '#E9C49A', 1.2, 10);
     solid(geo.rcyl, C.woodDark, room, { pos: [-1.6, 0, 4.1], scale: [0.3, 0.55, 0.3] }); solid(geo.rcyl, C.pink, room, { pos: [-1.6, 0.55, 4.1], scale: [0.36, 0.1, 0.36] });
     B(room, 'capsule').add([-2.2, 4.65, 3.6], [0.02, 0.55, 0.02], C.woodDark); solid(geo.rcyl, '#D9A877', room, { pos: [-2.2, 3.85, 3.6], scale: [0.26, 0.3, 0.26] });
