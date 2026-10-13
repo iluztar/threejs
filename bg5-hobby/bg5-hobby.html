@@ -81,6 +81,8 @@ svg{display:block}
 #freeHint.open .fh-list{display:grid}#freeHint dt{justify-self:end;color:#CFCBDA;white-space:nowrap}#freeHint dd{margin:0;color:#A9A6B4;white-space:nowrap}
 #freeHint kbd{min-width:18px;padding:0 4px;margin-left:2px;font-size:10.5px}
 @media (max-width:640px){#freeHint .fh-list{grid-template-columns:auto auto}#freeHint{font-size:11px}}
+#dragHint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:4;padding:6px 12px;border-radius:999px;background:#1E1D23D9;color:#EDEBF2;font-size:12px;white-space:nowrap;pointer-events:none;opacity:.55;transition:opacity .4s}
+#dragHint.show{opacity:1}body.can-drag #stage{cursor:grab;touch-action:none}body.can-drag #stage:active{cursor:grabbing}body.clean #dragHint{display:none}
 #btnCap{display:none;position:absolute;top:10px;right:10px;z-index:4;align-items:center;gap:6px;padding:7px 12px 7px 10px;border:0;border-radius:10px;background:#F6A6C1;color:#2A1E26;font:600 12.5px/1 inherit;cursor:pointer;box-shadow:0 6px 18px -6px #0008}
 #btnCap svg{width:18px;height:18px}#btnCap:hover{background:#F9BCD1}body.free #btnCap{display:flex}body.exporting #btnCap{opacity:.5;pointer-events:none}
 body.free #stage{cursor:grab;touch-action:none}body.free #stage:active{cursor:grabbing}
@@ -270,7 +272,7 @@ body.clean #overlay{display:none}
     </nav>
   </header>
   <main id="stageWrap">
-    <div id="stage"><canvas id="overlay"></canvas><button type="button" id="btnCap" title="Capture this view · 4K PNG (Enter)" aria-label="Capture this view as a 4K PNG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.7l1.3-2h5l1.3 2h1.7A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.3" r="3.6"/></svg><span>Capture 4K</span></button><div id="freeHint" hidden><button type="button" class="fh-head" aria-expanded="true"><b>Free view</b><span class="fh-more">controls</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div id="stage"><canvas id="overlay"></canvas><button type="button" id="btnCap" title="Capture this view · 4K PNG (Enter)" aria-label="Capture this view as a 4K PNG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.7l1.3-2h5l1.3 2h1.7A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.3" r="3.6"/></svg><span>Capture 4K</span></button><div id="dragHint" hidden>Drag or swipe to turn the globe · double-click to reset</div><div id="freeHint" hidden><button type="button" class="fh-head" aria-expanded="true"><b>Free view</b><span class="fh-more">controls</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <dl class="fh-list"><dt>Drag</dt><dd>turn</dd><dt>Right-drag</dt><dd>move</dd><dt>Wheel</dt><dd>zoom</dd><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>walk</dd>
     <dt><kbd>Q</kbd><kbd>E</kbd></dt><dd>down / up</dd><dt><kbd>R</kbd></dt><dd>back to shot</dd><dt><kbd>Enter</kbd></dt><dd>capture 4K</dd><dt><kbd>Esc</kbd></dt><dd>exit</dd></dl></div></div>
     <div id="loader" aria-live="polite"><div class="ld"><div class="pair" aria-hidden="true"><div class="hopper"><svg><use href="#sp-boy"/></svg><i class="shadow"></i></div><div class="hopper"><svg><use href="#sp-girl"/></svg><i class="shadow"></i></div></div><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
@@ -308,6 +310,7 @@ body.clean #overlay{display:none}
     <dt><kbd>G</kbd></dt><dd>Guides (thirds, safe frames, horizon, staging)</dd>
     <dt><kbd>H</kbd></dt><dd>Clean view — picture only (<kbd>Esc</kbd> to leave)</dd>
     <dt><kbd>F</kbd></dt><dd>Fullscreen</dd>
+    <dt>Drag</dt><dd>BG 2 globe shots: turn / tilt the globe (double-click resets)</dd>
     <dt><kbd>C</kbd></dt><dd>Free view: drag to turn, right-drag to move, wheel to zoom, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Q</kbd><kbd>E</kbd> to walk, <kbd>R</kbd> back to the shot, <kbd>Enter</kbd> capture the view as a 4K PNG</dd>
     <dt><kbd>P</kbd></dt><dd>Pixel art (2D game look) on / off</dd>
     <dt><kbd>V</kbd></dt><dd>Value check: black &amp; white view of the FG / MG / BG planes</dd>
@@ -1201,8 +1204,8 @@ function startApp(cfg) {
       OrbitControlsP ||= import('three/addons/controls/OrbitControls.js').then(m => m.OrbitControls);
       const OrbitControls = await OrbitControlsP;
       setPlaying(false); applyTime(state.T); camera.updateMatrixWorld();             // start from the shot's own camera
-      const st = cfg.staging && cfg.staging(api, shotAt(state.T)), dir = camera.getWorldDirection(new THREE.Vector3());
-      let dist = st ? camera.position.distanceTo(new THREE.Vector3(...st.center)) : 12; if (!(dist > 0.5 && dist < 2000)) dist = 12;
+      const st = cfg.staging && cfg.staging(api, shotAt(state.T)), dir = camera.getWorldDirection(new THREE.Vector3()), ft = cfg.freeTarget && cfg.freeTarget(api, shotAt(state.T));
+      let dist = ft ? camera.position.distanceTo(new THREE.Vector3(...ft)) : st ? camera.position.distanceTo(new THREE.Vector3(...st.center)) : 12; if (!(dist > 0.5 && dist < (ft ? 1e6 : 2000))) dist = 12;
       if (camera.fov < 10) { camera.fov = 40; camera.position.addScaledVector(dir, camera.position.distanceTo(new THREE.Vector3(...(st ? st.center : [0, 0, 0]))) - 40); dist = 40; }   // near-ortho strip cams
       camera.up.set(0, 1, 0);
       if (!free.ctl) { free.ctl = new OrbitControls(camera, stage); free.ctl.screenSpacePanning = true; free.ctl.zoomSpeed = 0.8; free.ctl.rotateSpeed = 0.6; free.ctl.maxPolarAngle = Math.PI * 0.495;   // never below the ground
@@ -1224,6 +1227,18 @@ function startApp(cfg) {
     m.normalize().multiplyScalar(sp * dt); camera.position.add(m); free.ctl.target.add(m); free.ctl.update();
   }
   btnFree && (btnFree.onclick = () => setFree(!free.on));
+  /* scene drag (cfg.drag): e.g. turn the globe by dragging / swiping right on the picture, outside free view.
+     cfg.drag = { active(api, shot), move(dxFrac, dyFrac, api), tick(dt, api) → still moving?, reset(api) } */
+  const drag = { on: false, x: 0, y: 0 }, dragHint = $('#dragHint');
+  const dragActive = () => !!cfg.drag && !free.on && !busy && cfg.drag.active(api, shotAt(state.T));
+  stage.addEventListener('pointerdown', e => { if (e.button !== 0 || !dragActive()) return; drag.on = true; drag.x = e.clientX; drag.y = e.clientY; stage.setPointerCapture?.(e.pointerId); });
+  stage.addEventListener('pointermove', e => { if (!drag.on) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    cfg.drag.move(dx / stage.clientWidth, dy / stage.clientHeight, api); invalidate(); });
+  const dragEnd = () => { drag.on = false; };
+  stage.addEventListener('pointerup', dragEnd); stage.addEventListener('pointercancel', dragEnd);
+  stage.addEventListener('dblclick', () => { if (dragActive() && cfg.drag.reset) { cfg.drag.reset(api); invalidate(); } });
+  let dragShown = false;
+  const syncDrag = () => { const on = dragActive(); document.body.classList.toggle('can-drag', on); if (dragHint) { dragHint.hidden = !on; if (on && !dragShown) { dragShown = true; dragHint.classList.add('show'); setTimeout(() => dragHint.classList.remove('show'), 4500); } if (!on) dragShown = false; } };
   /** free view from a given position looking at a target (repeatable angles, tests) */
   api.freeLook = async (pos, target) => { await setFree(true); camera.position.set(...pos); free.ctl.target.set(...target); free.ctl.update(); savePose(); invalidate(); };
   window.addEventListener('keyup', e => { free.keys.delete(e.key.toLowerCase()); if (e.key === 'Shift') free.keys.delete('shift'); });
@@ -1676,6 +1691,7 @@ function startApp(cfg) {
     const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;   // first rAF stamp can be older than performance.now()
     if (state.playing && !busy) { state.T += dt; if (state.T >= TOTAL) state.T = 0; setScrub(); }
     freeWalk(dt);
+    if (cfg.drag) { syncDrag(); if (!drag.on && cfg.drag.tick && cfg.drag.tick(dt, api)) invalidate(); }
     if (!busy && (state.playing || dirty || state.manual)) {
       if (needResize) { needResize = false; resize(); slowAcc = slowN = 0; }
       dirty = false;
@@ -1870,6 +1886,9 @@ function build(api) {
       if (kind < 0.45) for (let k = 0; k < 3; k++) B(g, 'sphere').add([x + (k - 1) * 0.9, -1.5 + bt(0, 0.3), z], [bt(0.9, 1.3), bt(0.8, 1.1), 0.8], pk(['#5E9E62', '#6FAE6A', '#4F8E5A']));
       else if (kind < 0.65) B(g, 'sphere').add([x, -1.4, z], [bt(0.8, 1.2), bt(0.6, 0.8), 0.8], pk(['#8E89A8', '#9C97B4']));
       else for (let k = -2; k <= 2; k++) B(g, 'cone').add([x + k * 0.22, -0.9, z], [0.12, bt(0.9, 1.5), 0.12], pk(['#5E9E62', '#6FAE6A']), [0, 0, k * 0.22]); }
+    setEl('strip-hills');                                              // the land goes on behind: rolling hills + a far, pale range (same in every loop copy)
+    api.range(g, { x: [6, LOOP - 6], z: [-50, -46], count: 7, h: [3.5, 6], col: ['#B9DCA4', '#C6E2B2'], hill: true, depth: 0.3, seed: 551 });
+    api.range(g, { x: [8, LOOP - 8], z: [-80, -74], count: 6, h: [8, 13], col: ['#CFCBEA', '#D8D4EE'], snow: '#F4F0FA', snowAbove: 11, depth: 0.3, seed: 552 });
     setEl('strip-clouds');
     for (let i = 0; i < 9; i++) { const x = bt(0, LOOP), y = bt(11.5, 14), s = bt(0.8, 1.6), n = 3 + Math.floor(r() * 4); for (let k = 0; k < n; k++) B(g, 'sphereLo').add([x + (k - n / 2) * s * 0.9, y + (k % 2) * s * 0.3, -40], [s, s * 0.8, s * 0.6], '#FFFFFF'); }
   }

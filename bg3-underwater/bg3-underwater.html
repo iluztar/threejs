@@ -81,6 +81,8 @@ svg{display:block}
 #freeHint.open .fh-list{display:grid}#freeHint dt{justify-self:end;color:#CFCBDA;white-space:nowrap}#freeHint dd{margin:0;color:#A9A6B4;white-space:nowrap}
 #freeHint kbd{min-width:18px;padding:0 4px;margin-left:2px;font-size:10.5px}
 @media (max-width:640px){#freeHint .fh-list{grid-template-columns:auto auto}#freeHint{font-size:11px}}
+#dragHint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:4;padding:6px 12px;border-radius:999px;background:#1E1D23D9;color:#EDEBF2;font-size:12px;white-space:nowrap;pointer-events:none;opacity:.55;transition:opacity .4s}
+#dragHint.show{opacity:1}body.can-drag #stage{cursor:grab;touch-action:none}body.can-drag #stage:active{cursor:grabbing}body.clean #dragHint{display:none}
 #btnCap{display:none;position:absolute;top:10px;right:10px;z-index:4;align-items:center;gap:6px;padding:7px 12px 7px 10px;border:0;border-radius:10px;background:#F6A6C1;color:#2A1E26;font:600 12.5px/1 inherit;cursor:pointer;box-shadow:0 6px 18px -6px #0008}
 #btnCap svg{width:18px;height:18px}#btnCap:hover{background:#F9BCD1}body.free #btnCap{display:flex}body.exporting #btnCap{opacity:.5;pointer-events:none}
 body.free #stage{cursor:grab;touch-action:none}body.free #stage:active{cursor:grabbing}
@@ -270,7 +272,7 @@ body.clean #overlay{display:none}
     </nav>
   </header>
   <main id="stageWrap">
-    <div id="stage"><canvas id="overlay"></canvas><button type="button" id="btnCap" title="Capture this view · 4K PNG (Enter)" aria-label="Capture this view as a 4K PNG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.7l1.3-2h5l1.3 2h1.7A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.3" r="3.6"/></svg><span>Capture 4K</span></button><div id="freeHint" hidden><button type="button" class="fh-head" aria-expanded="true"><b>Free view</b><span class="fh-more">controls</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div id="stage"><canvas id="overlay"></canvas><button type="button" id="btnCap" title="Capture this view · 4K PNG (Enter)" aria-label="Capture this view as a 4K PNG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.7l1.3-2h5l1.3 2h1.7A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.3" r="3.6"/></svg><span>Capture 4K</span></button><div id="dragHint" hidden>Drag or swipe to turn the globe · double-click to reset</div><div id="freeHint" hidden><button type="button" class="fh-head" aria-expanded="true"><b>Free view</b><span class="fh-more">controls</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   <dl class="fh-list"><dt>Drag</dt><dd>turn</dd><dt>Right-drag</dt><dd>move</dd><dt>Wheel</dt><dd>zoom</dd><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>walk</dd>
     <dt><kbd>Q</kbd><kbd>E</kbd></dt><dd>down / up</dd><dt><kbd>R</kbd></dt><dd>back to shot</dd><dt><kbd>Enter</kbd></dt><dd>capture 4K</dd><dt><kbd>Esc</kbd></dt><dd>exit</dd></dl></div></div>
     <div id="loader" aria-live="polite"><div class="ld"><div class="pair" aria-hidden="true"><div class="hopper"><svg><use href="#sp-boy"/></svg><i class="shadow"></i></div><div class="hopper"><svg><use href="#sp-girl"/></svg><i class="shadow"></i></div></div><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
@@ -308,6 +310,7 @@ body.clean #overlay{display:none}
     <dt><kbd>G</kbd></dt><dd>Guides (thirds, safe frames, horizon, staging)</dd>
     <dt><kbd>H</kbd></dt><dd>Clean view — picture only (<kbd>Esc</kbd> to leave)</dd>
     <dt><kbd>F</kbd></dt><dd>Fullscreen</dd>
+    <dt>Drag</dt><dd>BG 2 globe shots: turn / tilt the globe (double-click resets)</dd>
     <dt><kbd>C</kbd></dt><dd>Free view: drag to turn, right-drag to move, wheel to zoom, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Q</kbd><kbd>E</kbd> to walk, <kbd>R</kbd> back to the shot, <kbd>Enter</kbd> capture the view as a 4K PNG</dd>
     <dt><kbd>P</kbd></dt><dd>Pixel art (2D game look) on / off</dd>
     <dt><kbd>V</kbd></dt><dd>Value check: black &amp; white view of the FG / MG / BG planes</dd>
@@ -1201,8 +1204,8 @@ function startApp(cfg) {
       OrbitControlsP ||= import('three/addons/controls/OrbitControls.js').then(m => m.OrbitControls);
       const OrbitControls = await OrbitControlsP;
       setPlaying(false); applyTime(state.T); camera.updateMatrixWorld();             // start from the shot's own camera
-      const st = cfg.staging && cfg.staging(api, shotAt(state.T)), dir = camera.getWorldDirection(new THREE.Vector3());
-      let dist = st ? camera.position.distanceTo(new THREE.Vector3(...st.center)) : 12; if (!(dist > 0.5 && dist < 2000)) dist = 12;
+      const st = cfg.staging && cfg.staging(api, shotAt(state.T)), dir = camera.getWorldDirection(new THREE.Vector3()), ft = cfg.freeTarget && cfg.freeTarget(api, shotAt(state.T));
+      let dist = ft ? camera.position.distanceTo(new THREE.Vector3(...ft)) : st ? camera.position.distanceTo(new THREE.Vector3(...st.center)) : 12; if (!(dist > 0.5 && dist < (ft ? 1e6 : 2000))) dist = 12;
       if (camera.fov < 10) { camera.fov = 40; camera.position.addScaledVector(dir, camera.position.distanceTo(new THREE.Vector3(...(st ? st.center : [0, 0, 0]))) - 40); dist = 40; }   // near-ortho strip cams
       camera.up.set(0, 1, 0);
       if (!free.ctl) { free.ctl = new OrbitControls(camera, stage); free.ctl.screenSpacePanning = true; free.ctl.zoomSpeed = 0.8; free.ctl.rotateSpeed = 0.6; free.ctl.maxPolarAngle = Math.PI * 0.495;   // never below the ground
@@ -1224,6 +1227,18 @@ function startApp(cfg) {
     m.normalize().multiplyScalar(sp * dt); camera.position.add(m); free.ctl.target.add(m); free.ctl.update();
   }
   btnFree && (btnFree.onclick = () => setFree(!free.on));
+  /* scene drag (cfg.drag): e.g. turn the globe by dragging / swiping right on the picture, outside free view.
+     cfg.drag = { active(api, shot), move(dxFrac, dyFrac, api), tick(dt, api) → still moving?, reset(api) } */
+  const drag = { on: false, x: 0, y: 0 }, dragHint = $('#dragHint');
+  const dragActive = () => !!cfg.drag && !free.on && !busy && cfg.drag.active(api, shotAt(state.T));
+  stage.addEventListener('pointerdown', e => { if (e.button !== 0 || !dragActive()) return; drag.on = true; drag.x = e.clientX; drag.y = e.clientY; stage.setPointerCapture?.(e.pointerId); });
+  stage.addEventListener('pointermove', e => { if (!drag.on) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    cfg.drag.move(dx / stage.clientWidth, dy / stage.clientHeight, api); invalidate(); });
+  const dragEnd = () => { drag.on = false; };
+  stage.addEventListener('pointerup', dragEnd); stage.addEventListener('pointercancel', dragEnd);
+  stage.addEventListener('dblclick', () => { if (dragActive() && cfg.drag.reset) { cfg.drag.reset(api); invalidate(); } });
+  let dragShown = false;
+  const syncDrag = () => { const on = dragActive(); document.body.classList.toggle('can-drag', on); if (dragHint) { dragHint.hidden = !on; if (on && !dragShown) { dragShown = true; dragHint.classList.add('show'); setTimeout(() => dragHint.classList.remove('show'), 4500); } if (!on) dragShown = false; } };
   /** free view from a given position looking at a target (repeatable angles, tests) */
   api.freeLook = async (pos, target) => { await setFree(true); camera.position.set(...pos); free.ctl.target.set(...target); free.ctl.update(); savePose(); invalidate(); };
   window.addEventListener('keyup', e => { free.keys.delete(e.key.toLowerCase()); if (e.key === 'Shift') free.keys.delete('shift'); });
@@ -1676,6 +1691,7 @@ function startApp(cfg) {
     const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;   // first rAF stamp can be older than performance.now()
     if (state.playing && !busy) { state.T += dt; if (state.T >= TOTAL) state.T = 0; setScrub(); }
     freeWalk(dt);
+    if (cfg.drag) { syncDrag(); if (!drag.on && cfg.drag.tick && cfg.drag.tick(dt, api)) invalidate(); }
     if (!busy && (state.playing || dirty || state.manual)) {
       if (needResize) { needResize = false; resize(); slowAcc = slowN = 0; }
       dirty = false;
@@ -1786,7 +1802,8 @@ function build(api) {
         float c = smoothstep(0.045, 0.0, cells(vW.xz * 0.16, t)) * 0.32 + smoothstep(0.035, 0.0, cells(vW.xz * 0.31 + 3.7, t)) * 0.2;
         vec3 col = uSand * (0.92 + 0.08 * sin(vW.x * 0.3) * sin(vW.z * 0.25)) + vec3(1.0, 1.0, 0.92) * c * uCaus;
         col = mix(col, uFog, smoothstep(uNear, uFar, vD)); gl_FragColor = vec4(col, 1.0); }` });
-  const fg = new THREE.PlaneGeometry(520, 520, 160, 160).rotateX(-Math.PI / 2); { const p = fg.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, floorY(p.getX(i), p.getZ(i))); fg.computeVertexNormals(); }
+  // wide floor (900 × 900), shaped by floorY
+  const fg = new THREE.PlaneGeometry(900, 900, 220, 220).rotateX(-Math.PI / 2); { const p = fg.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, floorY(p.getX(i), p.getZ(i))); fg.computeVertexNormals(); }
   S.floorMat = floorMat; fx(new THREE.Mesh(fg, floorMat), BG, { baseHex: C.sand, normalPass: true });
   // sand ripples drawn as ink dashes
   { const segs = [], cols = [];
@@ -1796,7 +1813,7 @@ function build(api) {
 
   /* ── surface (light ceiling from below) ── */
   setEl('surface');
-  fx(new THREE.Mesh(new THREE.PlaneGeometry(900, 900).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#C8F3F7', side: THREE.DoubleSide, fog: false, transparent: true, opacity: 0.45, depthWrite: false })), BG, { baseHex: '#C8F3F7', occluder: false });   // see-through water surface
+  fx(new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#C8F3F7', side: THREE.DoubleSide, fog: false, transparent: true, opacity: 0.45, depthWrite: false })), BG, { baseHex: '#C8F3F7', occluder: false });   // see-through water surface
   { const segs = [], cols = [];                                   // ripple rings on the surface (ink)
     for (let i = 0; i < 60; i++) { const cx = between(-140, 140), cz = between(-200, 80), r = between(2, 7); for (let k = 0; k < 16; k++) { const a0 = k / 16 * 6.283, a1 = (k + 1) / 16 * 6.283; if (k % 4 === 3) continue;
       segs.push(cx + Math.cos(a0) * r, -0.05, cz + Math.sin(a0) * r * 0.6, cx + Math.cos(a1) * r, -0.05, cz + Math.sin(a1) * r * 0.6); cols.push('#8ED6E3'); } }
@@ -1814,7 +1831,7 @@ function build(api) {
   /* ── reef ── */
   const yAt = (x, z) => floorY(x, z);
   const clear = (x, z, d = 8) => Math.hypot(x - SPOT[0], z - SPOT[1]) > d;
-  const pts = n => { const out = []; let guard = 0; while (out.length < n && guard++ < n * 20) { const x = between(-70, 70) * (rand() < 0.5 ? 1 : 0.6), z = between(-110, 30); if (clear(x, z)) out.push([x, z]); } return out; };
+  const pts = n => { const out = []; let guard = 0; while (out.length < n && guard++ < n * 20) { const x = between(-120, 120) * (rand() < 0.5 ? 1 : 0.6), z = between(-190, 30); if (clear(x, z)) out.push([x, z]); } return out; };
   setEl('ledges');                                                  // Doraemon blue plate-rock ledges
   for (const [x, z] of pts(14)) { const w = between(6, 12), y = floorMin(x, z, w * 0.5, w * 0.35) - 0.3; for (let k = 0; k < 3; k++) B(MG, 'rboxSoft').add([x + k * 0.8, y + 0.6 + k * 1.3, z - k * 0.6], [w * (1 - k * 0.22), 1.3, w * 0.7 * (1 - k * 0.22)], pick(C.ledge)); }
   setEl('plate-coral');
@@ -1880,10 +1897,13 @@ function build(api) {
     fx(new THREE.Points(g, new THREE.PointsMaterial({ color: '#E8FBFF', size: 2, sizeAttenuation: false, transparent: true, opacity: 0.7 })), MG, { occluder: false }); }
 
   /* ── far pastel shell-tower town (Ryugu, simplified, in the haze) ── */
+  setEl('ledges');   // distant reef ridges all around the back: the sea floor goes on to the fog (few, soft, believable)
+  api.range(BG, { arc: [Math.PI, 3.2], d: [230, 300], count: 9, h: [14, 30], col: ['#7FAAD8', '#8FB8DD', '#6E9BD0'], y0: FLOOR - 2, hill: true, depth: 0.7, seed: 301 });
+  api.range(BG, { arc: [Math.PI + 0.3, 2.6], d: [360, 420], count: 7, h: [30, 55], col: ['#A9C9E6', '#B6D3EA'], y0: FLOOR - 3, depth: 0.6, seed: 302 });
   setEl('far-town');
-  for (let i = 0; i < 16; i++) { const x = between(-130, 130), z = between(-230, -170), y = floorY(x, z), h = between(14, 34), r = between(3, 6), col = pick(C.town);
+  for (let i = 0; i < 22; i++) { const x = between(-200, 200), z = between(-330, -250), y = floorY(x, z), h = between(14, 34), r = between(3, 6), col = pick(C.town);
     B(BG, 'rcyl').add([x, y - 1, z], [r, h, r], col); for (let k = 0; k < 3; k++) B(BG, 'cone').add([x, y + h * (0.55 + k * 0.17), z], [r * (1.25 - k * 0.25), r * 0.9, r * (1.25 - k * 0.25)], pick(C.town)); B(BG, 'sphere').add([x, y + h + 2.5, z], r * 0.35, '#FFF3C2'); }
-  for (let i = 0; i < 5; i++) B(BG, 'halfSphere').add([between(-120, 120), FLOOR - 3, between(-260, -200)], [between(18, 30), between(12, 20), between(18, 30)], '#D9F2F6');
+  for (let i = 0; i < 5; i++) B(BG, 'halfSphere').add([between(-200, 200), FLOOR - 3, between(-380, -320)], [between(26, 44), between(16, 28), between(26, 44)], '#D9F2F6');
 
   S.api = api;
 }
@@ -1908,9 +1928,9 @@ function water(api) {                                 // colour of the water aro
   const t = api.clamp(-y / 38, 0, 1), mix = (a, b) => api.rgbToHex(api.hexToRgb(a).map((v, i) => v + (api.hexToRgb(b)[i] - v) * t));
   const fogC = mix('#5FCFE0', '#2F6FB0');
   setSky(mix('#BFF3F5', '#7FD3E8'), fogC, fogC, { baseHex: fogC });            // below the horizon = fog colour (no dark band)
-  scene.fog = S.fog ||= new THREE.Fog(fogC, 12, 170);   // one Fog object, updated in place (a new one every frame re-checks every material)
-  scene.fog.color.set(fogC); scene.fog.near = 12; scene.fog.far = api.lerp(170, 120, t);
-  if (S.floorMat) { S.floorMat.uniforms.uFog.value.set(fogC); S.floorMat.uniforms.uNear.value = 12; S.floorMat.uniforms.uFar.value = api.lerp(170, 120, t); }
+  scene.fog = S.fog ||= new THREE.Fog(fogC, 22, 300);   // one Fog object, updated in place (a new one every frame re-checks every material)
+  scene.fog.color.set(fogC); scene.fog.near = 22; scene.fog.far = api.lerp(300, 220, t);   // see farther: a wide sea
+  if (S.floorMat) { S.floorMat.uniforms.uFog.value.set(fogC); S.floorMat.uniforms.uNear.value = 22; S.floorMat.uniforms.uFar.value = api.lerp(300, 220, t); }
   fxU.depthWarm = t * 0.75; hemi.intensity = api.lerp(2.2, 1.6, t); hemi.color.set('#E9FBFF'); hemi.groundColor.set('#3A7FA8'); sun.intensity = 1.1; sun.position.set(0.2, 1, 0.3);
 }
 /** near-orthographic version of a view (same framing, very far, narrow lens) for track panoramas: no smear, true flat strip.
@@ -1921,8 +1941,8 @@ function farCam(api, p, t, mm) {
   camera.position.copy(Tt).add(dir.multiplyScalar(FAR_D)); camera.up.set(0, 1, 0); camera.lookAt(Tt);
   camera.fov = 2 * Math.atan(d0 * Math.tan(Math.atan(12 / mm)) / FAR_D) * 180 / Math.PI; camera.near = FAR_D - d0 - 60; camera.far = FAR_D + 400;
   const shift = FAR_D - d0;
-  if (scene.fog) { scene.fog.near = 12 + shift; scene.fog.far = 150 + shift; }
-  if (S.floorMat) { S.floorMat.uniforms.uNear.value = 12 + shift; S.floorMat.uniforms.uFar.value = 150 + shift; }
+  if (scene.fog) { scene.fog.near = 22 + shift; scene.fog.far = 260 + shift; }
+  if (S.floorMat) { S.floorMat.uniforms.uNear.value = 22 + shift; S.floorMat.uniforms.uFar.value = 260 + shift; }
 }
 const cam = (api, p, t, mm = 28) => { const { camera } = api; camera.position.set(...p); camera.up.set(0, 1, 0); camera.lookAt(...t); camera.fov = 2 * Math.atan(12 / mm) * 180 / Math.PI; camera.near = 0.1; camera.far = 2000; };
 

@@ -205,19 +205,22 @@ function build(api) {
   const windows = (g, x, z, w, d, y0, rows, rowH) => { const b = B(g, 'box', false); b.idColor = '#203050'; b.idMaxD = 120;
     for (let r = 0; r < rows; r++) { const y = y0 + rowH * (r + 0.55); for (const [sx, sz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) for (const t of [-0.25, 0.25]) {
       if (sz) b.add([x + t * w, y, z + sz * (d / 2 + 0.02)], [w * 0.22, rowH * 0.42, 0.03], C.pane); else b.add([x + sx * (w / 2 + 0.02), y, z + t * d], [0.03, rowH * 0.42, d * 0.22], C.pane); } } };
+  // the island top is a dome (beach + grass ellipsoids), not flat: every building takes the ground height at its own spot,
+  // its base sunk a little, and its walls run down to it (no gap under any building, house, tank or tree)
+  const landY = d => Math.max(-2.6 + 4.6 * Math.sqrt(Math.max(0, 1 - (d / 50) ** 2)), -1.6 + 3.5 * Math.sqrt(Math.max(0, 1 - (d / 45.5) ** 2)));
   for (let i = 0; i < 70; i++) {
     const a = rand() * 6.283, r = footR + 3 + rand() * (42 - footR - 3), x = Math.sin(a) * r, z = Math.cos(a) * r; if (z > -2 && Math.abs(x) < 10) continue;   // keep the jump lane (dome → sea) open
-    const k = rand();
-    if (k < 0.45) { setEl('city'); const w = between(4.6, 6), d = between(4.6, 6), fl = 2 + Math.floor(rand() * (r > 30 ? 4 : 2)), h = fl * 3.1 + 0.5;
+    const k = rand(), yb = landY(r + 3) - 0.3;                                    // lowest ground under the footprint (outer side)
+    if (k < 0.45) { setEl('city'); const w = between(4.6, 6), d = between(4.6, 6), fl = 2 + Math.floor(rand() * (r > 30 ? 4 : 2)), h = fl * 3.1 + 0.5 + (LG - yb);
 
-      B(island, 'rbox').add([x, LG + h / 2, z], [w, h, d], pick(rand() < 0.5 ? C.brick : C.stone)); windows(island, x, z, w, d, LG + 0.4, fl, 3.1);
-      if (rand() < 0.5) { const y = LG + h; for (const [lx, lz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) B(island, 'capsule').add([x + lx, y + 0.7, z + lz], [0.13, 1.4, 0.13], '#9A8A78'); B(island, 'rcyl').add([x, y + 1.4, z], [1, 1.8, 1], pick(C.tank)); B(island, 'cone').add([x, y + 3.1, z], [1.1, 0.9, 1.1], '#8E7563'); } }
-    else if (k < 0.75) { setEl('city'); const w = between(4, 5), d = between(4, 5), h = 3.4, ry = Math.atan2(x, z);
-      B(island, 'rbox').add([x, LG + h / 2, z], [w, h, d], pick(C.wood), [0, ry, 0]); B(island, 'roof').add([x, LG + h - 0.05, z], [w * 1.16, 2.2, d * 1.12], pick(C.roof), [0, ry, 0]); windows(island, x, z, w, d, LG, 1, 2.8); }
-    else { setEl('trees'); tree(island, x, z, 0.9 + rand() * 0.5, LG); }
+      B(island, 'rbox').add([x, yb + h / 2, z], [w, h, d], pick(rand() < 0.5 ? C.brick : C.stone)); windows(island, x, z, w, d, yb + (LG - yb) + 0.4, fl, 3.1);
+      if (rand() < 0.5) { const y = yb + h; for (const [lx, lz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) B(island, 'capsule').add([x + lx, y + 0.7, z + lz], [0.13, 1.4, 0.13], '#9A8A78'); B(island, 'rcyl').add([x, y + 1.4, z], [1, 1.8, 1], pick(C.tank)); B(island, 'cone').add([x, y + 3.1, z], [1.1, 0.9, 1.1], '#8E7563'); } }
+    else if (k < 0.75) { setEl('city'); const w = between(4, 5), d = between(4, 5), h = 3.4 + (LG - yb), ry = Math.atan2(x, z);
+      B(island, 'rbox').add([x, yb + h / 2, z], [w, h, d], pick(C.wood), [0, ry, 0]); B(island, 'roof').add([x, yb + h - 0.05, z], [w * 1.16, 2.2, d * 1.12], pick(C.roof), [0, ry, 0]); windows(island, x, z, w, d, LG, 1, 2.8); }
+    else { setEl('trees'); tree(island, x, z, 0.9 + rand() * 0.5, landY(r) - 0.1); }
   }
   setEl('city');
-  { let y = LG, w = 6.4; [10, 6, 4].forEach(h => { B(island, 'rbox').add([-24, y + h / 2, -18], [w, h, w], '#F1E4CC'); y += h; w *= 0.74; }); B(island, 'halfSphere').add([-24, y, -18], [w * 0.6, w * 0.9, w * 0.6], '#E3C88E'); }   // one modest 1950s tower
+  { let y = landY(Math.hypot(24, 18) + 3) - 0.3, w = 6.4; [10 + (LG - y), 6, 4].forEach(h => { B(island, 'rbox').add([-24, y + h / 2, -18], [w, h, w], '#F1E4CC'); y += h; w *= 0.74; }); B(island, 'halfSphere').add([-24, y, -18], [w * 0.6, w * 0.9, w * 0.6], '#E3C88E'); }   // one modest 1950s tower
 
   /* small round islands nearby (Kirby Everbay map) */
   setEl('islands');
@@ -249,6 +252,9 @@ function globeCam(api, extraSpin = 0) {
   camera.position.copy(dir.multiplyScalar(GLOBE_DIST)); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0); camera.fov = 40; camera.near = 10; camera.far = 30000;
 }
 let turn0 = 0;
+/* the viewer can turn the globe by dragging / swiping in the globe shots: yaw (with a little inertia) + tilt, double-click resets */
+const U = { yaw: 0, tilt: 0, vy: 0, last: 0 };
+const isGlobeShot = shot => shot === shots[2] || shot === shots[3];
 const shots = [
   { name: 'Sc 7–8 · jump & fall (base)', dur: 6, era: 'base',
     update(k, ts, api) { S.spin.rotation.y = turn0; S.cloudSpin.rotation.y = turn0;
@@ -291,8 +297,18 @@ function turntableCam(api) {                       // fixed view: camera where t
 startApp({
   id: 'bg2', title: 'BG 2 · Earth zoom out + Globe 360°', fov: 40, shots, build,
   layers: (api, shot, k) => shot === shots[0] ? [6, 40, 160] : null,            // globe shots: depth comes from the planet itself
+  freeTarget: (api, shot) => isGlobeShot(shot) ? [0, 0, 0] : null,             // free view orbits the globe
+  drag: {
+    active: (api, shot) => isGlobeShot(shot),
+    move(dx, dy, api) { const now = performance.now(), d = dx * Math.PI * 1.4, dt = Math.max(0.008, (now - U.last) / 1000); U.last = now;
+      U.yaw += d; U.vy = api.lerp(U.vy, d / dt, 0.5); U.tilt = api.clamp(U.tilt + dy * 2.2, -0.9, 0.9); },
+    tick(dt) { if (performance.now() - U.last < 60 || Math.abs(U.vy) < 0.02) { if (performance.now() - U.last >= 60) U.vy = 0; return false; } U.yaw += U.vy * dt; U.vy *= Math.pow(0.05, dt); return true; },   // glide after release
+    reset() { U.yaw = U.tilt = U.vy = 0; },
+  },
   eras: ['base', 'e1950'],
   update(T, api, shot, k) {
+    if (isGlobeShot(shot)) { S.spin.rotation.y += U.yaw; S.cloudSpin.rotation.y += U.yaw; S.spin.rotation.x = S.cloudSpin.rotation.x = U.tilt; }   // viewer's drag
+    else S.spin.rotation.x = S.cloudSpin.rotation.x = 0;
     const { THREE, camera, hemi, sun, setSky } = api;
     const alt = camera.position.length() - R, t = api.smooth(40, 1400, alt);
     const mix = (a, b) => api.rgbToHex(api.hexToRgb(a).map((v, i) => v + (api.hexToRgb(b)[i] - v) * t));
