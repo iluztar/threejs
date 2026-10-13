@@ -44,8 +44,20 @@ function build(api) {
     for (let a = -0.75; a <= 0.75; a += bt(0.13, 0.22)) { const r = bt(16, 20), x = Math.sin(a) * r, z = Math.cos(a) * r, k = r0();
       if (k < 0.5) reeds(x, z, bt(1.6, 2.6)); else if (k < 0.8) { rocks(x, z, bt(0.8, 1.3)); reeds(x + 0.8, z, bt(1.2, 2), 4); }
       else for (let i = 0; i < 4; i++) B(parent, 'disc', false).add([x + bt(-1.2, 1.2), 0.03, z + bt(-0.8, 0.8)], [bt(0.5, 0.8), 1, bt(0.5, 0.8)], col(C.lily), [0, bt(0, 6.28), 0]); }
-    for (const sd of [-1, 1]) { const x = sd * bt(4.5, 7.5), z = bt(32, 35); reeds(x, z, bt(3.4, 4.4), 10); rocks(x - sd * 1.6, z + 0.6, bt(1.2, 1.6));
-      api.tree(parent, x - sd * 1.6, 0.35, z + 0.6, 0.75, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col, seed: 1300 + sd }); }
+    /** a small wooden hut on stilts standing in the water (instead of trees in the lake): posts, deck, walls, door, round window, thatch, ladder */
+    const hut = (x, z) => {
+      for (const dx of [-1.25, 1.25]) for (const dz of [-1.05, 1.05]) B(parent, 'capsule').add([x + dx, 0.25, z + dz], [0.24, 0.85, 0.24], col(C.post));   // stilts: −0.6 … 1.1
+      solid(geo.rbox, col(C.deck), parent, { pos: [x, 1.1, z], scale: [3.1, 0.24, 2.7] });
+      solid(geo.rbox, col('#EBCFA6'), parent, { pos: [x, 1.9, z - 0.2], scale: [2.6, 1.4, 2.0] });
+      solid(geo.rbox, col('#9A7258'), parent, { pos: [x - 0.4, 1.75, z + 0.81], scale: [0.62, 1.05, 0.08] });                                       // door toward the dock
+      solid(geo.rcyl, col('#CFEFFF'), parent, { pos: [x + 0.6, 2.05, z + 0.81], scale: [0.26, 0.06, 0.26], rot: [Math.PI / 2, 0, 0] });                // round window
+      solid(geo.cone, col('#D9B06A'), parent, { pos: [x, 2.5, z - 0.2], scale: [2.35, 1.0, 2.05] });                                           // round thatch roof
+      solid(geo.rcyl, col('#C99A55'), parent, { pos: [x, 2.48, z - 0.2], scale: [2.4, 0.12, 2.1] });                                            // eave
+      for (const lx of [-0.35, 0.35]) B(parent, 'capsule').add([x + 0.9 + lx, 0.45, z + 1.55], [0.09, 0.62, 0.09], col(C.post), [0.3, 0, 0]);   // little ladder down to the water
+      for (let k = 0; k < 3; k++) B(parent, 'rbox').add([x + 0.9, 0.05 + k * 0.32, z + 1.62 - k * 0.1], [0.75, 0.06, 0.1], col(C.post)); };
+    for (const sd of [-1, 1]) { const x = sd * bt(4.5, 7.5), z = bt(32, 35);
+      if (sd < 0) { hut(x - 1.4, z - 0.5); reeds(x + 1.8, z + 0.6, bt(2.4, 3.2), 7); }                                                       // left: the hut, a few reeds beside it
+      else { reeds(x, z, bt(3.4, 4.4), 10); rocks(x - 1.6, z + 0.6, bt(1.2, 1.6)); } }                                                       // right: tall reeds + shore rocks
     reeds(4.2, 12, 2.2); rocks(4.9, 12.4, 0.8); reeds(-1.2, 13.8, 1.8, 5);
 
     el('dock');                                                                // round wooden dock, top at y ≈ 0.8 (characters)

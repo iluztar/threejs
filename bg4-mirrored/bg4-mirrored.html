@@ -73,8 +73,14 @@ svg{display:block}
 #stage{position:relative;border-radius:var(--r);overflow:hidden;box-shadow:0 0 0 1px var(--line2),0 24px 60px -24px #000d;background:var(--cream)}
 #stage canvas{display:block}
 #overlay{position:absolute;inset:0;pointer-events:none}
-#freeHint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:4;max-width:calc(100% - 24px);padding:7px 12px;border-radius:10px;background:#1E1D23D9;color:#EDEBF2;font-size:12px;line-height:1.6;text-align:center;pointer-events:none}
-#freeHint b{color:#F6A6C1;margin-right:4px}#freeHint kbd{min-width:18px;padding:0 4px;font-size:10.5px}
+#freeHint{position:absolute;left:12px;bottom:12px;z-index:4;max-width:calc(100% - 24px);border-radius:12px;background:#1E1D23E6;color:#EDEBF2;font-size:12px;box-shadow:0 8px 24px -10px #000a;backdrop-filter:blur(6px)}
+#freeHint .fh-head{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px 7px 12px;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-align:left}
+#freeHint .fh-head b{color:#F6A6C1;font-weight:700}#freeHint .fh-more{color:#A9A6B4;flex:1}
+#freeHint .fh-head svg{width:14px;height:14px;transition:transform .2s;transform:rotate(180deg)}#freeHint.open .fh-head svg{transform:none}
+#freeHint .fh-list{display:none;grid-template-columns:auto auto auto auto;gap:5px 10px;align-items:center;margin:0;padding:2px 12px 10px}
+#freeHint.open .fh-list{display:grid}#freeHint dt{justify-self:end;color:#CFCBDA;white-space:nowrap}#freeHint dd{margin:0;color:#A9A6B4;white-space:nowrap}
+#freeHint kbd{min-width:18px;padding:0 4px;margin-left:2px;font-size:10.5px}
+@media (max-width:640px){#freeHint .fh-list{grid-template-columns:auto auto}#freeHint{font-size:11px}}
 #btnCap{display:none;position:absolute;top:10px;right:10px;z-index:4;align-items:center;gap:6px;padding:7px 12px 7px 10px;border:0;border-radius:10px;background:#F6A6C1;color:#2A1E26;font:600 12.5px/1 inherit;cursor:pointer;box-shadow:0 6px 18px -6px #0008}
 #btnCap svg{width:18px;height:18px}#btnCap:hover{background:#F9BCD1}body.free #btnCap{display:flex}body.exporting #btnCap{opacity:.5;pointer-events:none}
 body.free #stage{cursor:grab;touch-action:none}body.free #stage:active{cursor:grabbing}
@@ -264,7 +270,9 @@ body.clean #overlay{display:none}
     </nav>
   </header>
   <main id="stageWrap">
-    <div id="stage"><canvas id="overlay"></canvas><button type="button" id="btnCap" title="Capture this view · 4K PNG (Enter)" aria-label="Capture this view as a 4K PNG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.7l1.3-2h5l1.3 2h1.7A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.3" r="3.6"/></svg><span>Capture 4K</span></button><div id="freeHint" hidden><b>Free view</b> drag: turn · right-drag / two fingers: move · wheel / pinch: zoom · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk · <kbd>Q</kbd><kbd>E</kbd> down / up · <kbd>R</kbd> back to shot · <kbd>Enter</kbd> capture 4K · <kbd>Esc</kbd> exit</div></div>
+    <div id="stage"><canvas id="overlay"></canvas><button type="button" id="btnCap" title="Capture this view · 4K PNG (Enter)" aria-label="Capture this view as a 4K PNG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.7l1.3-2h5l1.3 2h1.7A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.3" r="3.6"/></svg><span>Capture 4K</span></button><div id="freeHint" hidden><button type="button" class="fh-head" aria-expanded="true"><b>Free view</b><span class="fh-more">controls</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 14l5-5 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+  <dl class="fh-list"><dt>Drag</dt><dd>turn</dd><dt>Right-drag</dt><dd>move</dd><dt>Wheel</dt><dd>zoom</dd><dt><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></dt><dd>walk</dd>
+    <dt><kbd>Q</kbd><kbd>E</kbd></dt><dd>down / up</dd><dt><kbd>R</kbd></dt><dd>back to shot</dd><dt><kbd>Enter</kbd></dt><dd>capture 4K</dd><dt><kbd>Esc</kbd></dt><dd>exit</dd></dl></div></div>
     <div id="loader" aria-live="polite"><div class="ld"><div class="pair" aria-hidden="true"><div class="hopper"><svg><use href="#sp-boy"/></svg><i class="shadow"></i></div><div class="hopper"><svg><use href="#sp-girl"/></svg><i class="shadow"></i></div></div><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
   </main>
   <footer id="bottom">
@@ -480,14 +488,15 @@ const FRAME_FS = /* glsl */`
 const EDGE_FS = /* glsl */`
   uniform sampler2D tNormal; uniform sampler2D tDepth; uniform sampler2D tMask; uniform float uMaskOn;
   uniform vec2 uRes; uniform float uThick; uniform vec3 uColor; uniform float uWobble; uniform float uNear; uniform float uFar;
-  uniform float uFade; uniform float uFadeNear; uniform float uFadeFar;
+  uniform float uFade; uniform float uFadeNear; uniform float uFadeFar; uniform vec2 uThin;
   varying vec2 vUv;
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
     return mix(mix(hash(i), hash(i+vec2(1,0)), f.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y); }
   float lin(float z){ return (2.0 * uNear * uFar) / (uFar + uNear - (z * 2.0 - 1.0) * (uFar - uNear)); }
   void main(){
-    vec2 px = 1.0 / uRes * uThick;
+    float dc = lin(texture2D(tDepth, vUv).r);
+    vec2 px = 1.0 / uRes * uThick * (1.0 - 0.45 * smoothstep(uThin.x, uThin.y, dc));   // far lines thinner (small far shapes are not all ink)
     vec2 w = vec2(vnoise(vUv * uRes / 60.0), vnoise(vUv * uRes / 60.0 + 13.7)) - 0.5;
     vec2 uv = vUv + w * px * uWobble * 2.0;
     vec4 n0 = texture2D(tNormal, uv); float d0 = lin(texture2D(tDepth, uv).r), i0 = 1.0 / max(d0, 1e-4);
@@ -759,6 +768,7 @@ function startApp(cfg) {
     inkBar: new THREE.BoxGeometry(1, 1, 1),
   };
   geo.lathe = lathe;
+  geo.leafLo = geo.sphereLo; geo.leafXlo = geo.sphereXlo;   // leaf clumps: same spheres, own batches (one flat id in the edge pass → one outline per crown)
 
   function register(mesh, hex, outline = true) {
     mesh.userData.baseHex = hex; mesh.userData.el = curEl; mesh.userData.fillMat = mesh.material; reg.fills.push(mesh);
@@ -845,7 +855,7 @@ function startApp(cfg) {
       uDepthWarm: { value: 0 }, uWash: { value: 0 }, uBlack: { value: 0 }, uNoVig: { value: 0 }, uClean: { value: 0 }, uGrey: { value: 0 } },
     vertexShader: QUAD_VS, fragmentShader: FRAME_FS, depthTest: false, depthWrite: false });
   const edgeMat = new THREE.ShaderMaterial({
-    uniforms: { tNormal: { value: rtN.texture }, tDepth: { value: rtN.depthTexture }, tMask: { value: rtM.texture }, uMaskOn: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) }, uThick: { value: 1.1 }, uColor: { value: new THREE.Color(INK) }, uWobble: { value: 0.6 }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uFade: { value: 0 }, uFadeNear: { value: 100 }, uFadeFar: { value: 600 } },
+    uniforms: { tNormal: { value: rtN.texture }, tDepth: { value: rtN.depthTexture }, tMask: { value: rtM.texture }, uMaskOn: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) }, uThick: { value: 1.1 }, uColor: { value: new THREE.Color(INK) }, uWobble: { value: 0.6 }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uFade: { value: 0 }, uFadeNear: { value: 100 }, uFadeFar: { value: 600 }, uThin: { value: new THREE.Vector2(60, 400) } },
     vertexShader: QUAD_VS, fragmentShader: EDGE_FS, depthTest: false, depthWrite: false, transparent: true });
   const quadScene = new THREE.Scene(); const q1 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), frameMat); q1.frustumCulled = false; quadScene.add(q1);
   const edgeScene = new THREE.Scene(); const q2 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edgeMat); q2.frustumCulled = false; edgeScene.add(q2);
@@ -937,6 +947,7 @@ function startApp(cfg) {
     });
     const u = edgeMat.uniforms; u.uMaskOn.value = iso ? 1 : 0; u.uColor.value.copy(colour); u.uThick.value = state.lineW * state.pxScale * 0.5; u.uWobble.value = wobble; u.uNear.value = camera.near; u.uFar.value = camera.far;
     u.uFade.value = fade ? 1 : 0; if (scene.fog) { u.uFadeNear.value = scene.fog.near; u.uFadeFar.value = scene.fog.far; }
+    { const V = flatU.uVal.value; if (V.w > 0) u.uThin.value.set(V.y, V.z * 1.5); else if (scene.fog) u.uThin.value.set(scene.fog.near * 0.3, scene.fog.far * 0.6); else u.uThin.value.set(camera.far * 0.02, camera.far * 0.2); }   // thin from the BG plane on
     renderer.setRenderTarget(target); renderer.clear(); renderer.render(edgeScene, quadCam);
   }
   const pixelBlock = () => Math.max(1, Math.round(state.pixelSize * state.pxScale));   // one art pixel, in output pixels
@@ -1020,6 +1031,9 @@ function startApp(cfg) {
     const LIGHT = hexToRgb('#FFF4C4'), DARK = hexToRgb('#24465A');
     const shade = (hex, f) => { const c = hexToRgb(hex), t = f >= 0 ? LIGHT : DARK, k = Math.abs(f); return rgbToHex(c.map((v, i) => v + (t[i] - v) * k)); };
     const tone = (o, hex, f) => (o.col || (h => h))(shade(hex, f));
+    // leaf clumps of a crown / bush share one flat id in the normal pass: the ink outlines the crown's silhouette (and where
+    // crowns overlap at other depths), not every single clump — the clumps inside are read by the detail shading
+    const Lf = (g, xlo = false, outline = true) => { const b = B(g, xlo ? 'leafXlo' : 'leafLo', outline); b.idColor = '#2E6B45'; return b; };
     api.tree = (g, x, y0, z, s, o = {}) => {
       if (o.seed) sd = o.seed * 7919 % 2147483646 + 1;                                             // same seed → same tree (mirror / loop copies)
       const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], trunk = o.trunk || '#C99B72', kind = o.kind || 'round', far = !!o.far, xfar = o.far === 2;   // far: light LOD (≈ half the clumps) · far 2: very far (7 tiny clumps)
@@ -1036,9 +1050,9 @@ function startApp(cfg) {
       if (xfar) {   // very far: trunk + 1 dark mass + 6 lit clumps on the cheapest sphere
         B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [0.42 * s, 0.95 * s * H, 0.42 * s], tone(o, trunk, -0.08));
         const cy = y0 + (2.85 * H + 0.1) * s, rx = (tall ? 1.35 : 1.7) * s, ry = (tall ? 1.7 : 1.25) * s, base = pk(leaf);
-        B(g, 'sphereXlo', false).add([x, cy - ry * 0.12, z], [rx * 0.8, ry * 0.75, rx * 0.8], tone(o, base, -0.3));
+        Lf(g, true, false).add([x, cy - ry * 0.12, z], [rx * 0.8, ry * 0.75, rx * 0.8], tone(o, base, -0.3));
         for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283 + bt(0, 0.5), e = i < 2 ? 0.75 : bt(-0.2, 0.4), r = bt(0.55, 0.75) * s;
-          B(g, 'sphereXlo').add([x + Math.sin(a) * rx * 0.6 * Math.cos(e), cy + Math.sin(e) * ry * 0.65, z + Math.cos(a) * rx * 0.6 * Math.cos(e)], [r, r * 0.85, r], tone(o, pk(leaf), e > 0.5 ? 0.24 : 0.04)); }
+          Lf(g, true).add([x + Math.sin(a) * rx * 0.6 * Math.cos(e), cy + Math.sin(e) * ry * 0.65, z + Math.cos(a) * rx * 0.6 * Math.cos(e)], [r, r * 0.85, r], tone(o, pk(leaf), e > 0.5 ? 0.24 : 0.04)); }
         return;
       }
       // trunk (wider at the root), root flare, 3 branches reaching into the crown
@@ -1049,24 +1063,24 @@ function startApp(cfg) {
       // crown: ellipsoid of clumps
       const cy = y0 + (2.85 * H + 0.1) * s, rx = (tall ? 1.35 : 1.7) * s, ry = (tall ? 1.7 : 1.25) * s, base = pk(leaf);
       for (let i = 0; i < (far ? 2 : 4); i++) { const a = i / (far ? 2 : 4) * 6.283 + 0.4;                            // dark inner masses (hidden edges: no outline)
-        B(g, 'sphereLo', false).add([x + Math.sin(a) * rx * 0.35, cy - ry * 0.15, z + Math.cos(a) * rx * 0.35], [rx * 0.62, ry * 0.62, rx * 0.62], tone(o, base, -0.32)); }
+        Lf(g, false, false).add([x + Math.sin(a) * rx * 0.35, cy - ry * 0.15, z + Math.cos(a) * rx * 0.35], [rx * 0.62, ry * 0.62, rx * 0.62], tone(o, base, -0.32)); }
       const N = far ? 8 : 13;
       for (let i = 0; i < N; i++) {                                                                                       // lit shell (fibonacci sphere, no bottom)
         const yy = 1 - (i + 0.5) / N * 1.55, rr = Math.sqrt(Math.max(0, 1 - yy * yy)), a = i * 2.39996 + bt(-0.2, 0.2), r = bt(0.42, 0.6) * s;
         const f = yy > 0.45 ? 0.24 : yy > 0 ? 0.08 : -0.16;
-        B(g, 'sphereLo').add([x + Math.sin(a) * rr * rx * 0.82, cy + yy * ry * 0.82, z + Math.cos(a) * rr * rx * 0.82], [r, r * 0.86, r], tone(o, pk(leaf), f)); }
+        Lf(g).add([x + Math.sin(a) * rr * rx * 0.82, cy + yy * ry * 0.82, z + Math.cos(a) * rr * rx * 0.82], [r, r * 0.86, r], tone(o, pk(leaf), f)); }
       const nr = far ? 5 : 12;
       for (let i = 0; i < nr; i++) {                                                                                      // small rim clumps: leafy edge
         const a = i / nr * 6.283 + bt(-0.2, 0.2), e = bt(-0.55, 0.75), r = bt(0.24, 0.36) * s;
-        B(g, 'sphereLo').add([x + Math.sin(a) * rx * Math.cos(e), cy + Math.sin(e) * ry, z + Math.cos(a) * rx * Math.cos(e)], [r, r * 0.85, r], tone(o, base, e > 0.3 ? 0.3 : e < -0.2 ? -0.24 : 0.04)); }
+        Lf(g).add([x + Math.sin(a) * rx * Math.cos(e), cy + Math.sin(e) * ry, z + Math.cos(a) * rx * Math.cos(e)], [r, r * 0.85, r], tone(o, base, e > 0.3 ? 0.3 : e < -0.2 ? -0.24 : 0.04)); }
     };
     api.bush = (g, x, y0, z, s, o = {}) => {
       if (o.seed) sd = o.seed * 7919 % 2147483646 + 1;
       const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], base = pk(leaf);
-      for (let i = 0; i < 3; i++) B(g, 'sphereLo', false).add([x + (i - 1) * 0.7 * s, y0 + 0.4 * s, z + bt(-0.2, 0.2) * s], [0.62 * s, 0.5 * s, 0.6 * s], tone(o, base, -0.28));
+      for (let i = 0; i < 3; i++) Lf(g, false, false).add([x + (i - 1) * 0.7 * s, y0 + 0.4 * s, z + bt(-0.2, 0.2) * s], [0.62 * s, 0.5 * s, 0.6 * s], tone(o, base, -0.28));
       for (let i = 0; i < 9; i++) { const a = fr() * 3.14, u = bt(-1.0, 1.0), r = bt(0.26, 0.4) * s, yy = Math.sin(a) * 0.55;
         const cy = yy < 0.2 ? r * 0.7 : (0.35 + yy) * s;                                            // low clumps sit on the ground, high ones on the masses
-        B(g, 'sphereLo').add([x + u * s, y0 + cy, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
+        Lf(g).add([x + u * s, y0 + cy, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
     };
   }
   /* free view (C): look around the set from anywhere — OrbitControls on the stage + WASD / Q E to walk. The shot still
@@ -1175,6 +1189,11 @@ function startApp(cfg) {
   const toggleHelp = force => { if (!help) return; help.hidden = force !== undefined ? !force : !help.hidden; };
   btnGuides && (btnGuides.onclick = toggleGuides); btnClean && (btnClean.onclick = toggleClean); btnFull && (btnFull.onclick = toggleFull); btnHelp && (btnHelp.onclick = () => toggleHelp());
   const btnFree = $('#btnFree'), freeHint = $('#freeHint');
+  /* free-view controls card: open when free view starts, folds to a small chip after a few seconds; click the chip to open it again */
+  let hintTimer = 0;
+  const setHint = open => { freeHint?.classList.toggle('open', open); freeHint?.querySelector('.fh-head')?.setAttribute('aria-expanded', String(open)); };
+  const showHint = ms => { setHint(true); clearTimeout(hintTimer); if (ms) hintTimer = setTimeout(() => { if (!freeHint.matches(':hover')) setHint(false); }, ms); };
+  if (freeHint) { freeHint.addEventListener('pointerdown', e => e.stopPropagation()); freeHint.querySelector('.fh-head').onclick = () => { clearTimeout(hintTimer); setHint(!freeHint.classList.contains('open')); }; }
   let OrbitControlsP = null;
   async function setFree(on) {
     if (on === free.on || busy) return;
@@ -1190,7 +1209,9 @@ function startApp(cfg) {
         free.ctl.addEventListener('change', () => { if (free.on) { savePose(); invalidate(); } }); }
       free.ctl.target.copy(camera.position).addScaledVector(dir, dist); free.ctl.enabled = true; free.on = true; free.ctl.update(); savePose();
     } else { free.on = false; if (free.ctl) free.ctl.enabled = false; free.keys.clear(); }
-    document.body.classList.toggle('free', free.on); btnFree?.classList.toggle('on', free.on); if (freeHint) freeHint.hidden = !free.on; invalidate();
+    document.body.classList.toggle('free', free.on); btnFree?.classList.toggle('on', free.on);
+    if (freeHint) { freeHint.hidden = !free.on; if (free.on) showHint(6000); }
+    invalidate();
   }
   /** WASD walk (camera-relative, on the ground plane), Q / E down / up, Shift = faster; called every frame */
   function freeWalk(dt) {
@@ -1746,8 +1767,20 @@ function build(api) {
     for (let a = -0.75; a <= 0.75; a += bt(0.13, 0.22)) { const r = bt(16, 20), x = Math.sin(a) * r, z = Math.cos(a) * r, k = r0();
       if (k < 0.5) reeds(x, z, bt(1.6, 2.6)); else if (k < 0.8) { rocks(x, z, bt(0.8, 1.3)); reeds(x + 0.8, z, bt(1.2, 2), 4); }
       else for (let i = 0; i < 4; i++) B(parent, 'disc', false).add([x + bt(-1.2, 1.2), 0.03, z + bt(-0.8, 0.8)], [bt(0.5, 0.8), 1, bt(0.5, 0.8)], col(C.lily), [0, bt(0, 6.28), 0]); }
-    for (const sd of [-1, 1]) { const x = sd * bt(4.5, 7.5), z = bt(32, 35); reeds(x, z, bt(3.4, 4.4), 10); rocks(x - sd * 1.6, z + 0.6, bt(1.2, 1.6));
-      api.tree(parent, x - sd * 1.6, 0.35, z + 0.6, 0.75, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col, seed: 1300 + sd }); }
+    /** a small wooden hut on stilts standing in the water (instead of trees in the lake): posts, deck, walls, door, round window, thatch, ladder */
+    const hut = (x, z) => {
+      for (const dx of [-1.25, 1.25]) for (const dz of [-1.05, 1.05]) B(parent, 'capsule').add([x + dx, 0.25, z + dz], [0.24, 0.85, 0.24], col(C.post));   // stilts: −0.6 … 1.1
+      solid(geo.rbox, col(C.deck), parent, { pos: [x, 1.1, z], scale: [3.1, 0.24, 2.7] });
+      solid(geo.rbox, col('#EBCFA6'), parent, { pos: [x, 1.9, z - 0.2], scale: [2.6, 1.4, 2.0] });
+      solid(geo.rbox, col('#9A7258'), parent, { pos: [x - 0.4, 1.75, z + 0.81], scale: [0.62, 1.05, 0.08] });                                       // door toward the dock
+      solid(geo.rcyl, col('#CFEFFF'), parent, { pos: [x + 0.6, 2.05, z + 0.81], scale: [0.26, 0.06, 0.26], rot: [Math.PI / 2, 0, 0] });                // round window
+      solid(geo.cone, col('#D9B06A'), parent, { pos: [x, 2.5, z - 0.2], scale: [2.35, 1.0, 2.05] });                                           // round thatch roof
+      solid(geo.rcyl, col('#C99A55'), parent, { pos: [x, 2.48, z - 0.2], scale: [2.4, 0.12, 2.1] });                                            // eave
+      for (const lx of [-0.35, 0.35]) B(parent, 'capsule').add([x + 0.9 + lx, 0.45, z + 1.55], [0.09, 0.62, 0.09], col(C.post), [0.3, 0, 0]);   // little ladder down to the water
+      for (let k = 0; k < 3; k++) B(parent, 'rbox').add([x + 0.9, 0.05 + k * 0.32, z + 1.62 - k * 0.1], [0.75, 0.06, 0.1], col(C.post)); };
+    for (const sd of [-1, 1]) { const x = sd * bt(4.5, 7.5), z = bt(32, 35);
+      if (sd < 0) { hut(x - 1.4, z - 0.5); reeds(x + 1.8, z + 0.6, bt(2.4, 3.2), 7); }                                                       // left: the hut, a few reeds beside it
+      else { reeds(x, z, bt(3.4, 4.4), 10); rocks(x - 1.6, z + 0.6, bt(1.2, 1.6)); } }                                                       // right: tall reeds + shore rocks
     reeds(4.2, 12, 2.2); rocks(4.9, 12.4, 0.8); reeds(-1.2, 13.8, 1.8, 5);
 
     el('dock');                                                                // round wooden dock, top at y ≈ 0.8 (characters)
