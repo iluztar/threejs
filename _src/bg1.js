@@ -110,12 +110,8 @@ function build(api) {
 
   /* ── kit ── */
   const blob = (g, x, y, z, r, col, sy = 1) => B(g, 'sphere').add([x, y, z], [r, r * sy, r], col);
-  const treeAt = (g, x, z, s, y0) => {
-    B(g, 'capsule').add([x, y0 + 0.95 * s, z], [0.5 * s, 1.0 * s, 0.5 * s], C.trunk);
-    blob(g, x, y0 + 2.7 * s, z, 1.35 * s, C.green[0]); blob(g, x + 1.0 * s, y0 + 2.3 * s, z + 0.3 * s, 1.05 * s, C.green[1]);
-    blob(g, x - 1.0 * s, y0 + 2.35 * s, z - 0.2 * s, 1.05 * s, C.green[2]); blob(g, x + 0.1 * s, y0 + 3.5 * s, z + 0.2 * s, 0.95 * s, C.green[1]);
-  };
-  const bushAt = (g, x, z, s, y0) => { for (let k = 0; k < 3; k++) blob(g, x + (k - 1) * s * 0.9, y0 + s * 0.35, z + (rand() - 0.5) * 0.5, s * (0.7 + rand() * 0.4), pick(C.green), 0.75); };
+  const treeAt = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk });   // leafy crown, branches (core)
+  const bushAt = (g, x, z, s, y0) => api.bush(g, x, y0, z, s, { leaf: C.green });
   const faceTo = (x, z) => Math.atan2(-x, -z);
   /** windows on 4 sides (outlined near the camera) */
   const windows = (g, x, z, w, d, y0, rows, rowH, ry, glass = C.pane, wide = 0.5) => {

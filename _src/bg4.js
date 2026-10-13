@@ -66,12 +66,9 @@ function build(api) {
     el('trees');
     for (let i = 0; i < 80; i++) { const a = aroundBack(), d = bt(150, 215), x = Math.sin(a) * d, z = Math.cos(a) * d, s = bt(4, 7.5);
       if (r0() < 0.45) {                                                       // round tree (Chiikawa / Kirby)
-        B(parent, 'capsule').add([x, s * 0.5, z], [s * 0.22, s * 0.7, s * 0.22], col(C.trunk));
-        B(parent, 'sphere').add([x, s * 1.35, z], [s * 0.85, s * 0.78, s * 0.85], col(pk(C.tree)));
+        api.tree(parent, x, 0, z, s * 0.48, { leaf: C.tree, trunk: C.trunk, col });
       } else {                                                                  // soft pine: three stacked rounded cones
-        B(parent, 'capsule').add([x, s * 0.3, z], [s * 0.18, s * 0.5, s * 0.18], col(C.trunk));
-        const hex = pk(C.pine);
-        for (let k = 0; k < 3; k++) B(parent, 'cone').add([x, s * (0.45 + k * 0.55), z], [s * (0.8 - k * 0.2), s * 0.9, s * (0.8 - k * 0.2)], col(hex));
+        api.tree(parent, x, 0, z, s * 0.48, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col });
       } }
 
     el('rocks');

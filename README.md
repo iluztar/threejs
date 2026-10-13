@@ -54,6 +54,7 @@ Scene switcher (‹ list ›), title and current shot, the active era, then: gui
 - **Look**
   - *shading*: `flat 2d (chiikawa)` (default), `flat + cel shadow (kirby)`, or `soft 3d toon (old)`
   - *sky bands* (0 = smooth gradient) and *ground tint steps* (0 = smooth fog on the ground, the default)
+  - *detail shading* (on by default): light ramp, leaf clumps, cloud billows and broken bands also in the normal view, plus *light / shadow contrast* and *leaf / cloud detail*
   - drawn lines on/off, *line px @1080* (2.4 px, the same width everywhere), extra silhouette
   - *preview quality*: `auto` is sharp and lowers the resolution only if frames stay slow, `high` is always sharp, `low` is fastest. Exports always render at full 4K.
 - **Depth / value structure**: every BG is built as stacked planes, FG (dark shapes at the frame edges) → MG (characters, action) → BG → far (lightest). *FG · MG · BG value planes* pulls the colour picture to those values; *Plane contrast*; *Value check* (`V`) shows the frame in black & white, and the colour version reads the same.

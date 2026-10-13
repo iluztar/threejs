@@ -495,7 +495,7 @@ const EDGE_FS = /* glsl */`
     gl_FragColor = vec4(uColor, e);
   }`;
 
-/* pixel art shading, inside every flat fill (uPix = 1): the base colour becomes a 5-step ramp (cool deep shadow →
+/* detail shading, inside every flat fill (uPix = 1; on by default, also feeds the pixel art mode): the base colour becomes a 5-step ramp (cool deep shadow →
    shadow → base → warm light → highlight) lit by the scene sun, with world-anchored detail so it does not swim:
    - greens (leaves, bushes, grass): clumps of leaves, each lit on its own + dark lines between clumps (Kirby / SNES look)
      · upward ground: scattered grass tufts instead
@@ -539,10 +539,10 @@ const PIXEL_SHADE = /* glsl */`
       s -= tuft * 0.45 * uPixDetail; s += step(v.x, 0.16) * step(r, 0.1) * 0.3 * uPixDetail;
     } else if (green) {
       // leaves: clumps lit on their own, dark line between clumps
-      float cs = pxCell(vFlatS * 0.26, minC * 4.0); vec3 c; vec2 v = pxVor(vFlatW / cs, c);
+      float cs = pxCell(vFlatS * 0.45, minC * 4.0); vec3 c; vec2 v = pxVor(vFlatW / cs, c);
       vec3 bump = normalize(vFlatW / cs - c), bv = normalize(mat3(viewMatrix) * bump), nn = normalize(mix(n, bv, 0.7 * uPixDetail));
       s = mix(lit, dot(nn, uSunV) * 0.5 + 0.5, 0.65) + (pxH3(c).z - 0.5) * 0.12 * uPixDetail;
-      line = (1.0 - smoothstep(0.05, 0.11, v.y - v.x)) * uPixDetail;
+      line = (1.0 - smoothstep(0.05, 0.11, v.y - v.x)) * uPixDetail * (1.0 - smoothstep(0.42, 0.62, s));   // leaf shadows only on the shade side
     } else if (white) {
       // clouds / snow: soft billows, pale blue shade, never dark
       float cs = pxCell(vFlatS * 0.5, minC * 7.0); vec3 c; vec2 v = pxVor(vFlatW / cs, c);
@@ -553,7 +553,7 @@ const PIXEL_SHADE = /* glsl */`
     } else {
       // mountains, walls, wood…: broken bands + streaks
       float cs = pxCell(vFlatS * 0.18, minC * 5.0);
-      s += (pxN3(vFlatW / cs) - 0.5) * 0.22 * uPixDetail + (pxN3(vFlatW / (cs * 0.35) * vec3(1.0, 3.0, 1.0)) - 0.5) * 0.08 * uPixDetail;
+      s += (pxN3(vFlatW / cs) - 0.5) * 0.13 * uPixDetail + (pxN3(vFlatW / (cs * 0.35) * vec3(1.0, 3.0, 1.0)) - 0.5) * 0.08 * uPixDetail;
     }
     s = 0.5 + (s - 0.5) * uPixContrast + pxBayer(ap) * 0.09 * uPixDither;
     vec3 col = pxRamp(b, s);
@@ -856,7 +856,7 @@ function startApp(cfg) {
     playing: true, T: 0, eraMode: 'auto', nextEra: 'e1945', waveType: 'wave', manual: null,
     outlines: false, edges: true, lineW: 2.4, pxScale: 1, lineColour: 'ink', lineWobble: 0.25, glbMode: 'instanced', whiteBg: false,
     shading: 'flat', skyBands: 4, fogSteps: 0, quality: 'auto', meshDetail: 'medium',
-    valueLayers: true, valueStrength: 1, valueCheck: false,
+    detailShade: true, valueLayers: true, valueStrength: 1, valueCheck: false,
     pixel: false, pixelSize: 5, pixelLevels: 0, pixelDither: 0.5, pixelContrast: 1.2, pixelDetail: 1,   // pixel art (2D game look) — size in px at 1080p, so exports match the preview
     ov: { thirds: false, safe: false, horizon: false, vp: false, staging: false }, exportMode: 'pano', elVis: {}, eraShown: 'base', eraNow: 'base',
   };
@@ -929,7 +929,7 @@ function startApp(cfg) {
   function renderPass(pass, iso = null) {
     const lc = lineColour();
     renderer.setClearColor(0x000000, 0); lineSizes();
-    flatU.uPix.value = state.pixel && pass === 'final' ? 1 : 0; flatU.uPixBlock.value = pixelBlock(); flatU.uPixContrast.value = state.pixelContrast; flatU.uPixDetail.value = state.pixelDetail; flatU.uPixDither.value = state.pixelDither;   // pixel art: no film grain / paper / vignette (they turn into noisy blocks)
+    flatU.uPix.value = (state.pixel || state.detailShade) && pass === 'final' ? 1 : 0; flatU.uPixBlock.value = state.pixel ? pixelBlock() : Math.max(2, 3 * state.pxScale); flatU.uPixContrast.value = state.pixelContrast; flatU.uPixDetail.value = state.pixelDetail; flatU.uPixDither.value = state.pixel ? state.pixelDither : 0;   // pixel art: no film grain / paper / vignette (they turn into noisy blocks)
     if (pass === 'final') {
       for (const k of reg.ink) k.userData.lineMat.color.copy(lc);
       if (state.edges) edgesInto(rtL, iso, new THREE.Color(INK), 0, true);
@@ -1001,6 +1001,52 @@ function startApp(cfg) {
       /** big leaves fanning out of (x, y) — house plants, ferns */
       leaves(x, y, s, cols, n = 7) { for (let i = 0; i < n; i++) { const a = bt(-1.2, 1.2), L = s * bt(0.6, 1); B(F(), 'sphere').add([x + Math.sin(a) * L * 0.55, y + Math.cos(a) * L * 0.55, -0.97 - i * 0.003], [s * 0.13, L * 0.5, 0.03], pk(cols), [0, 0, -a]); } },
       box(x, y, w, h, col, rot = 0) { B(F(), 'rbox').add([x, y, -0.98], [w, h, 0.05], col, [0, 0, rot]); },
+    };
+  }
+  /* leafy trees + bushes (shared by every BG): simplified but believable — tapered trunk with branches into the crown,
+     a crown built from many leaf clumps (dark inner masses, a lit shell, small clumps on the rim for a leafy edge),
+     clumps lighter on top / toward the sun and darker underneath, so a tree never reads as one flat ball.
+     s = size (round tree ≈ 4.4 s tall), o = { leaf: [hex], trunk: hex, kind: 'round' | 'pine' | 'tall', col: hex → hex (era / mirror tint) } */
+  {
+    let sd = 4242; const fr = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; }, bt = (a, b) => a + fr() * (b - a), pk = a => a[Math.floor(fr() * a.length)];
+    const LIGHT = hexToRgb('#FFF4C4'), DARK = hexToRgb('#24465A');
+    const shade = (hex, f) => { const c = hexToRgb(hex), t = f >= 0 ? LIGHT : DARK, k = Math.abs(f); return rgbToHex(c.map((v, i) => v + (t[i] - v) * k)); };
+    const tone = (o, hex, f) => (o.col || (h => h))(shade(hex, f));
+    api.tree = (g, x, y0, z, s, o = {}) => {
+      const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], trunk = o.trunk || '#C99B72', kind = o.kind || 'round';
+      if (kind === 'pine') {
+        B(g, 'capsule').add([x, y0 + 1.1 * s, z], [0.32 * s, 1.1 * s, 0.32 * s], tone(o, trunk, -0.15));
+        const hex = pk(leaf), tiers = 4;
+        for (let t = 0; t < tiers; t++) { const k = t / (tiers - 1), y = y0 + (1.0 + t * 0.95) * s, r = (1.55 - k * 0.95) * s, f = -0.32 + k * 0.42;
+          B(g, 'cone').add([x, y, z], [r, 1.35 * s, r], tone(o, hex, f));
+          const n = 7 - t; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + bt(0, 0.6), rr = r * 0.92;          // drooping needle tips = jagged skirt
+            B(g, 'cone').add([x + Math.sin(a) * rr, y + 0.12 * s, z + Math.cos(a) * rr], [0.32 * s, 0.6 * s, 0.32 * s], tone(o, hex, f - 0.12), [Math.cos(a) * 2.3, 0, -Math.sin(a) * 2.3]); } }
+        return;
+      }
+      const tall = kind === 'tall', H = tall ? 1.35 : 1;
+      // trunk (wider at the root), root flare, 3 branches reaching into the crown
+      B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [0.42 * s, 0.95 * s * H, 0.42 * s], tone(o, trunk, -0.08));
+      B(g, 'sphereLo').add([x, y0 + 0.08 * s, z], [0.5 * s, 0.22 * s, 0.5 * s], tone(o, trunk, -0.2));
+      for (let i = 0; i < 3; i++) { const a = i / 3 * 6.283 + bt(0, 1), lean = 0.75;
+        B(g, 'capsule').add([x + Math.sin(a) * 0.45 * s, y0 + (1.85 * H + 0.25) * s, z + Math.cos(a) * 0.45 * s], [0.15 * s, 0.6 * s, 0.15 * s], tone(o, trunk, -0.12), [Math.cos(a) * lean, 0, -Math.sin(a) * lean]); }
+      // crown: ellipsoid of clumps
+      const cy = y0 + (2.85 * H + 0.1) * s, rx = (tall ? 1.35 : 1.7) * s, ry = (tall ? 1.7 : 1.25) * s, base = pk(leaf);
+      for (let i = 0; i < 4; i++) { const a = i / 4 * 6.283 + 0.4;                                                      // dark inner masses
+        B(g, 'sphereLo').add([x + Math.sin(a) * rx * 0.35, cy - ry * 0.15, z + Math.cos(a) * rx * 0.35], [rx * 0.62, ry * 0.62, rx * 0.62], tone(o, base, -0.32)); }
+      const N = 13;
+      for (let i = 0; i < N; i++) {                                                                                       // lit shell (fibonacci sphere, no bottom)
+        const yy = 1 - (i + 0.5) / N * 1.55, rr = Math.sqrt(Math.max(0, 1 - yy * yy)), a = i * 2.39996 + bt(-0.2, 0.2), r = bt(0.42, 0.6) * s;
+        const f = yy > 0.45 ? 0.24 : yy > 0 ? 0.08 : -0.16;
+        B(g, 'sphereLo').add([x + Math.sin(a) * rr * rx * 0.82, cy + yy * ry * 0.82, z + Math.cos(a) * rr * rx * 0.82], [r, r * 0.86, r], tone(o, pk(leaf), f)); }
+      for (let i = 0; i < 12; i++) {                                                                                      // small rim clumps: leafy edge
+        const a = i / 12 * 6.283 + bt(-0.2, 0.2), e = bt(-0.55, 0.75), r = bt(0.24, 0.36) * s;
+        B(g, 'sphereLo').add([x + Math.sin(a) * rx * Math.cos(e), cy + Math.sin(e) * ry, z + Math.cos(a) * rx * Math.cos(e)], [r, r * 0.85, r], tone(o, base, e > 0.3 ? 0.3 : e < -0.2 ? -0.24 : 0.04)); }
+    };
+    api.bush = (g, x, y0, z, s, o = {}) => {
+      const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], base = pk(leaf);
+      for (let i = 0; i < 3; i++) B(g, 'sphereLo').add([x + (i - 1) * 0.7 * s, y0 + 0.4 * s, z + bt(-0.2, 0.2) * s], [0.62 * s, 0.5 * s, 0.6 * s], tone(o, base, -0.28));
+      for (let i = 0; i < 9; i++) { const a = fr() * 3.14, u = bt(-1.15, 1.15), r = bt(0.26, 0.4) * s, yy = Math.sin(a) * 0.55;
+        B(g, 'sphereLo').add([x + u * s, y0 + (0.35 + yy) * s, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
     };
   }
   let refreshGui = () => {};
@@ -1474,6 +1520,9 @@ function startApp(cfg) {
   const gui = wrap(pane);
   const fLook = gui.addFolder('Look', true);
   fLook.add(state, 'shading', { 'Flat 2D (Chiikawa)': 'flat', 'Flat + cel shadow (Kirby)': 'cel', 'Soft 3D toon (old look)': 'toon' }).name('Style').onChange(setShading);
+  fLook.add(state, 'detailShade').name('Detail shading (light ramp, leaf clumps, cloud billows)');
+  fLook.add(state, 'pixelContrast', 0.6, 2, 0.05).name('Light / shadow contrast');
+  fLook.add(state, 'pixelDetail', 0, 1, 0.05).name('Leaf / cloud detail');
   fLook.add(state, 'skyBands', 0, 8, 1).name('Sky bands').onChange(v => { if (state.shading !== 'toon') skyMat.uniforms.uBands.value = v; });
   fLook.add(state, 'fogSteps', 0, 8, 1).name('Ground tint steps').onChange(v => flatU.uFogSteps.value = v);
   fLook.add(state, 'edges').name('Ink lines'); fLook.add(state, 'lineW', 1, 6, 0.1).name('Line width (px at 1080p)'); fLook.add(state, 'outlines').name('Extra outline');
@@ -1484,8 +1533,6 @@ function startApp(cfg) {
   const fPix = gui.addFolder('Pixel art (2D game)', true);
   fPix.add(state, 'pixel').name('Pixel art (P)').onChange(() => setShading(state.shading));
   fPix.add(state, 'pixelSize', 2, 16, 1).name('Pixel size (px at 1080p)');
-  fPix.add(state, 'pixelContrast', 0.6, 2, 0.05).name('Light / shadow contrast');
-  fPix.add(state, 'pixelDetail', 0, 1, 0.05).name('Leaf / cloud detail');
   fPix.add(state, 'pixelDither', 0, 1, 0.05).name('Dither between tones');
   fPix.add(state, 'pixelLevels', 0, 32, 1).name('Posterize (0 = off)');
   fLook.add(state, 'quality', { 'Auto (sharp, lowers if slow)': 'auto', 'High (always sharp)': 'high', 'Low (fastest)': 'low' }).name('Preview quality').onChange(() => { autoScale = 1; resize(); });

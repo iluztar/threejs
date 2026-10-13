@@ -95,6 +95,12 @@ Every frame reads as stacked planes, like a multiplane / 2D game parallax layout
 - Each scene defines its plane distances (`layers(api, shot)` → [FG end, MG end, BG end] in view distance). The colour version is pulled to the same values: every plane keeps its hues and inner shading but is squeezed around its value (FG only darker, a touch cooler; MG mid; BG / far only lighter and mixed with the haze / fog colour).
 - Settings → *Depth / value structure*: planes on/off, plane contrast, **Value check (B&W, key `V`)** to see the frame in black & white. The colour picture must read exactly like that grey picture.
 
+# DETAIL SHADING (default, also without pixel art)
+The normal (non-pixel) view is never plain flat colour either: every fill gets the same light ramp and detail as the pixel art mode below (5 tones from the sun, leaf clumps with leaf shadows on the shade side, cloud billows, broken bands on mountains / walls), only without the pixel grid and dither. Settings → *Look* → *Detail shading*, *Light / shadow contrast*, *Leaf / cloud detail*.
+
+# TREES: SIMPLIFIED BUT BELIEVABLE (shared `api.tree` / `api.bush`)
+No flat lollipop trees. Every tree has a trunk that is wider at the root, a root flare and 2–3 branches reaching into the crown; the crown is built from many leaf clumps — dark inner masses, a lit shell (lighter on top, darker underneath) and small clumps on the rim so the silhouette is leafy, not a smooth ball. Pines are stacked tiers with drooping needle tips (jagged skirt), lighter toward the top. Bushes: dark inner masses + lit clumps.
+
 # PIXEL ART MODE (2D game look, key `P`)
 Optional look for every BG (Settings → *Pixel art*). Not "plain 3D made blocky": each fill gets real pixel-art shading and detail before the picture is snapped to the pixel grid.
 - Light ramp of 5 values per colour (cool deep shadow → shadow → base → warm light → highlight), lit by the scene sun, adjustable light / shadow contrast; ordered dither only at the steps between tones.
