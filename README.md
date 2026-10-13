@@ -42,6 +42,7 @@ The baked .glb of BG 1 is the biggest file: ≈ 93 MB at medium detail, ≈ 51 M
 | `G` | Guides: rule of thirds, title/action safe, horizon, staging box |
 | `H` | Clean view (picture only), `Esc` to leave |
 | `F` | Fullscreen |
+| `C` | Free view: drag to turn, right-drag to move, wheel to zoom, `W` `A` `S` `D` / `Q` `E` to walk, `R` back to the shot camera, `Esc` to leave |
 | `P` | Pixel art (2D game look) on / off |
 | `V` | Value check: black & white view of the FG / MG / BG planes |
 | `?` | Shortcut list |
@@ -82,6 +83,8 @@ For heavy scenes (BG 1 city), set *3D detail* (Settings → Export options) to `
 ---
 
 ## Performance
+- Detail shading costs ≈ 10 % of a frame: its cell pattern checks 8 cells (not 27), and far trees (city rings, lake shores, the run strip) use a light LOD with about half the leaf clumps; hidden inner leaf masses draw no outline.
+- Free view loads `OrbitControls` only when it is opened.
 - Minified Three.js, with all modules fetched in parallel (`modulepreload`). JSZip, `GLTFExporter` and `STLExporter` load only when an export needs them.
 - Frames are drawn only while playing or after something changes, so an idle page costs almost nothing.
 - Preview renders at the screen pixel ratio (up to 2) with 4× MSAA; in `auto` it lowers the resolution once if frames stay below ~25 fps.

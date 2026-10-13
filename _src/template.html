@@ -73,6 +73,10 @@ svg{display:block}
 #stage{position:relative;border-radius:var(--r);overflow:hidden;box-shadow:0 0 0 1px var(--line2),0 24px 60px -24px #000d;background:var(--cream)}
 #stage canvas{display:block}
 #overlay{position:absolute;inset:0;pointer-events:none}
+#freeHint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:4;max-width:calc(100% - 24px);padding:7px 12px;border-radius:10px;background:#1E1D23D9;color:#EDEBF2;font-size:12px;line-height:1.6;text-align:center;pointer-events:none}
+#freeHint b{color:#F6A6C1;margin-right:4px}#freeHint kbd{min-width:18px;padding:0 4px;font-size:10.5px}
+body.free #stage{cursor:grab;touch-action:none}body.free #stage:active{cursor:grabbing}
+@media (max-width:640px){#freeHint{font-size:10.5px;bottom:6px}}
 #loader{position:absolute;inset:0;display:grid;place-items:center;z-index:5;transition:opacity .4s ease;pointer-events:none}
 body.ready #loader{opacity:0}
 body.exporting #loader{opacity:1;background:#121115e6;backdrop-filter:blur(6px)}   /* the canvas is resized to 4K while exporting: cover it */
@@ -211,13 +215,14 @@ body.clean #overlay{display:none}
     <nav class="tools" aria-label="View">
       <button class="ib" id="btnGuides" title="Guides (G)" aria-label="Toggle guides"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M9 5v14M15 5v14M3 10h18M3 14h18" opacity=".7"/></svg></button>
       <button class="ib" id="btnClean" title="Clean view (H)" aria-label="Clean view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg></button>
+      <button class="ib" id="btnFree" title="Free view (C): look from any angle" aria-label="Free view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><ellipse cx="12" cy="12" rx="8.5" ry="3.4"/><path d="M12 3.5v17"/></svg></button>
       <button class="ib" id="btnFull" title="Fullscreen (F)" aria-label="Fullscreen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
       <button class="ib" id="btnSettings" title="Settings (S)" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2.2"/><circle cx="10" cy="17" r="2.2"/></svg></button>
       <button class="ib" id="btnHelp" title="Shortcuts (?)" aria-label="Keyboard shortcuts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.3"/><circle cx="12" cy="16.9" r=".6" fill="currentColor"/></svg></button>
     </nav>
   </header>
   <main id="stageWrap">
-    <div id="stage"><canvas id="overlay"></canvas></div>
+    <div id="stage"><canvas id="overlay"></canvas><div id="freeHint" hidden><b>Free view</b> drag: turn · right-drag / two fingers: move · wheel / pinch: zoom · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> walk · <kbd>Q</kbd><kbd>E</kbd> down / up · <kbd>R</kbd> back to shot · <kbd>Esc</kbd> exit</div></div>
     <div id="loader" aria-live="polite"><div class="ld"><div class="pair" aria-hidden="true"><div class="hopper"><svg><use href="#sp-boy"/></svg><i class="shadow"></i></div><div class="hopper"><svg><use href="#sp-girl"/></svg><i class="shadow"></i></div></div><div id="ldText">Loading scene…<small>Three.js loads from the CDN the first time (internet needed once).</small></div></div></div>
   </main>
   <footer id="bottom">
@@ -253,6 +258,7 @@ body.clean #overlay{display:none}
     <dt><kbd>G</kbd></dt><dd>Guides (thirds, safe frames, horizon, staging)</dd>
     <dt><kbd>H</kbd></dt><dd>Clean view — picture only (<kbd>Esc</kbd> to leave)</dd>
     <dt><kbd>F</kbd></dt><dd>Fullscreen</dd>
+    <dt><kbd>C</kbd></dt><dd>Free view: drag to turn, right-drag to move, wheel to zoom, <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / <kbd>Q</kbd><kbd>E</kbd> to walk, <kbd>R</kbd> back to the shot</dd>
     <dt><kbd>P</kbd></dt><dd>Pixel art (2D game look) on / off</dd>
     <dt><kbd>V</kbd></dt><dd>Value check: black &amp; white view of the FG / MG / BG planes</dd>
     <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next scene</dd>
