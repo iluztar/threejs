@@ -197,7 +197,7 @@ function build(api) {
     else { B(island, 'capsule').add([x, y + 1.6, z], [0.16, 1.6, 0.16], '#8C93A3'); B(island, 'sphere').add([x, y + 3.3, z], 0.36, '#FFF3C2'); } }
   for (const [x, z, s] of [[-4.2, 3, 1.15], [4.0, 9.5, 1.25]]) api.tree(island, x, domeY(Math.hypot(x, z)), z, s, { leaf: C.green, trunk: C.trunk, kind: 'tall' });
   // 1950s city ring on the island
-  const tree = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk });
+  const tree = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk, far: true });   // city / islands: light LOD
   const windows = (g, x, z, w, d, y0, rows, rowH) => { const b = B(g, 'box', false); b.idColor = '#203050'; b.idMaxD = 120;
     for (let r = 0; r < rows; r++) { const y = y0 + rowH * (r + 0.55); for (const [sx, sz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) for (const t of [-0.25, 0.25]) {
       if (sz) b.add([x + t * w, y, z + sz * (d / 2 + 0.02)], [w * 0.22, rowH * 0.42, 0.03], C.pane); else b.add([x + sx * (w / 2 + 0.02), y, z + t * d], [0.03, rowH * 0.42, d * 0.22], C.pane); } } };

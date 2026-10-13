@@ -192,9 +192,10 @@ const PIXEL_SHADE = /* glsl */`
     return mix(mix(mix(pxH3(i).x, pxH3(i + vec3(1,0,0)).x, f.x), mix(pxH3(i + vec3(0,1,0)).x, pxH3(i + vec3(1,1,0)).x, f.x), f.y),
                mix(mix(pxH3(i + vec3(0,0,1)).x, pxH3(i + vec3(1,0,1)).x, f.x), mix(pxH3(i + vec3(0,1,1)).x, pxH3(i + vec3(1,1,1)).x, f.x), f.y), f.z); }
   // voronoi: x = F1, y = F2 (distances), c = nearest cell centre
-  vec2 pxVor(vec3 p, out vec3 c){ vec3 i = floor(p), f = fract(p); float f1 = 9.0, f2 = 9.0; c = i;
-    for (int z = -1; z <= 1; z++) for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
-      vec3 g = vec3(x, y, z), o = pxH3(i + g) * 0.8 + 0.1, r = g + o - f; float d = dot(r, r);
+  // 2×2×2 cells on the near side of each axis (8 taps instead of 27): cheap enough for every fill, jitter kept ≤ 0.4 so it stays exact enough
+  vec2 pxVor(vec3 p, out vec3 c){ vec3 i = floor(p), f = fract(p), s0 = step(0.5, f) - 1.0; float f1 = 9.0, f2 = 9.0; c = i;
+    for (int z = 0; z <= 1; z++) for (int y = 0; y <= 1; y++) for (int x = 0; x <= 1; x++) {
+      vec3 g = s0 + vec3(x, y, z), o = pxH3(i + g) * 0.4 + 0.3, r = g + o - f; float d = dot(r, r);
       if (d < f1) { f2 = f1; f1 = d; c = i + g + o; } else if (d < f2) f2 = d; }
     return vec2(sqrt(f1), sqrt(f2)); }
   float pxBayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
@@ -640,7 +641,8 @@ export function startApp(cfg) {
 
   /* value structure planes (cfg.layers(api, shot) → [fg, mg, far] view distances): FG darkest → sky lightest */
   function setLayers(shot) {
-    const L = state.valueLayers && cfg.layers ? cfg.layers(api, shot) : null, u = flatU.uVal.value;
+    let L = state.valueLayers && cfg.layers ? cfg.layers(api, shot) : null; const u = flatU.uVal.value;
+    if (L && free.on && free.ctl) { const d = Math.max(2, camera.position.distanceTo(free.ctl.target)); L = [d * 0.4, d * 1.8, d * 6]; }   // free view: planes around what you look at
     if (L) u.set(L[0], L[1], L[2], state.valueStrength); else u.set(0, 0, 0, 0);
     flatU.uHaze.value.copy(scene.fog ? scene.fog.color : skyMat.uniforms.uHorizon.value);
   }
@@ -661,13 +663,13 @@ export function startApp(cfg) {
     const shade = (hex, f) => { const c = hexToRgb(hex), t = f >= 0 ? LIGHT : DARK, k = Math.abs(f); return rgbToHex(c.map((v, i) => v + (t[i] - v) * k)); };
     const tone = (o, hex, f) => (o.col || (h => h))(shade(hex, f));
     api.tree = (g, x, y0, z, s, o = {}) => {
-      const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], trunk = o.trunk || '#C99B72', kind = o.kind || 'round';
+      const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], trunk = o.trunk || '#C99B72', kind = o.kind || 'round', far = !!o.far;   // far: light LOD (≈ half the clumps)
       if (kind === 'pine') {
         B(g, 'capsule').add([x, y0 + 1.1 * s, z], [0.32 * s, 1.1 * s, 0.32 * s], tone(o, trunk, -0.15));
         const hex = pk(leaf), tiers = 4;
         for (let t = 0; t < tiers; t++) { const k = t / (tiers - 1), y = y0 + (1.0 + t * 0.95) * s, r = (1.55 - k * 0.95) * s, f = -0.32 + k * 0.42;
           B(g, 'cone').add([x, y, z], [r, 1.35 * s, r], tone(o, hex, f));
-          const n = 7 - t; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + bt(0, 0.6), rr = r * 0.92;          // drooping needle tips = jagged skirt
+          const n = far ? 0 : 7 - t; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + bt(0, 0.6), rr = r * 0.92;          // drooping needle tips = jagged skirt
             B(g, 'cone').add([x + Math.sin(a) * rr, y + 0.12 * s, z + Math.cos(a) * rr], [0.32 * s, 0.6 * s, 0.32 * s], tone(o, hex, f - 0.12), [Math.cos(a) * 2.3, 0, -Math.sin(a) * 2.3]); } }
         return;
       }
@@ -675,33 +677,39 @@ export function startApp(cfg) {
       // trunk (wider at the root), root flare, 3 branches reaching into the crown
       B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [0.42 * s, 0.95 * s * H, 0.42 * s], tone(o, trunk, -0.08));
       B(g, 'sphereLo').add([x, y0 + 0.08 * s, z], [0.5 * s, 0.22 * s, 0.5 * s], tone(o, trunk, -0.2));
-      for (let i = 0; i < 3; i++) { const a = i / 3 * 6.283 + bt(0, 1), lean = 0.75;
+      for (let i = 0; i < (far ? 1 : 3); i++) { const a = i / 3 * 6.283 + bt(0, 1), lean = 0.75;
         B(g, 'capsule').add([x + Math.sin(a) * 0.45 * s, y0 + (1.85 * H + 0.25) * s, z + Math.cos(a) * 0.45 * s], [0.15 * s, 0.6 * s, 0.15 * s], tone(o, trunk, -0.12), [Math.cos(a) * lean, 0, -Math.sin(a) * lean]); }
       // crown: ellipsoid of clumps
       const cy = y0 + (2.85 * H + 0.1) * s, rx = (tall ? 1.35 : 1.7) * s, ry = (tall ? 1.7 : 1.25) * s, base = pk(leaf);
-      for (let i = 0; i < 4; i++) { const a = i / 4 * 6.283 + 0.4;                                                      // dark inner masses
-        B(g, 'sphereLo').add([x + Math.sin(a) * rx * 0.35, cy - ry * 0.15, z + Math.cos(a) * rx * 0.35], [rx * 0.62, ry * 0.62, rx * 0.62], tone(o, base, -0.32)); }
-      const N = 13;
+      for (let i = 0; i < (far ? 2 : 4); i++) { const a = i / (far ? 2 : 4) * 6.283 + 0.4;                            // dark inner masses (hidden edges: no outline)
+        B(g, 'sphereLo', false).add([x + Math.sin(a) * rx * 0.35, cy - ry * 0.15, z + Math.cos(a) * rx * 0.35], [rx * 0.62, ry * 0.62, rx * 0.62], tone(o, base, -0.32)); }
+      const N = far ? 8 : 13;
       for (let i = 0; i < N; i++) {                                                                                       // lit shell (fibonacci sphere, no bottom)
         const yy = 1 - (i + 0.5) / N * 1.55, rr = Math.sqrt(Math.max(0, 1 - yy * yy)), a = i * 2.39996 + bt(-0.2, 0.2), r = bt(0.42, 0.6) * s;
         const f = yy > 0.45 ? 0.24 : yy > 0 ? 0.08 : -0.16;
         B(g, 'sphereLo').add([x + Math.sin(a) * rr * rx * 0.82, cy + yy * ry * 0.82, z + Math.cos(a) * rr * rx * 0.82], [r, r * 0.86, r], tone(o, pk(leaf), f)); }
-      for (let i = 0; i < 12; i++) {                                                                                      // small rim clumps: leafy edge
-        const a = i / 12 * 6.283 + bt(-0.2, 0.2), e = bt(-0.55, 0.75), r = bt(0.24, 0.36) * s;
+      const nr = far ? 5 : 12;
+      for (let i = 0; i < nr; i++) {                                                                                      // small rim clumps: leafy edge
+        const a = i / nr * 6.283 + bt(-0.2, 0.2), e = bt(-0.55, 0.75), r = bt(0.24, 0.36) * s;
         B(g, 'sphereLo').add([x + Math.sin(a) * rx * Math.cos(e), cy + Math.sin(e) * ry, z + Math.cos(a) * rx * Math.cos(e)], [r, r * 0.85, r], tone(o, base, e > 0.3 ? 0.3 : e < -0.2 ? -0.24 : 0.04)); }
     };
     api.bush = (g, x, y0, z, s, o = {}) => {
       const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], base = pk(leaf);
-      for (let i = 0; i < 3; i++) B(g, 'sphereLo').add([x + (i - 1) * 0.7 * s, y0 + 0.4 * s, z + bt(-0.2, 0.2) * s], [0.62 * s, 0.5 * s, 0.6 * s], tone(o, base, -0.28));
+      for (let i = 0; i < 3; i++) B(g, 'sphereLo', false).add([x + (i - 1) * 0.7 * s, y0 + 0.4 * s, z + bt(-0.2, 0.2) * s], [0.62 * s, 0.5 * s, 0.6 * s], tone(o, base, -0.28));
       for (let i = 0; i < 9; i++) { const a = fr() * 3.14, u = bt(-1.15, 1.15), r = bt(0.26, 0.4) * s, yy = Math.sin(a) * 0.55;
         B(g, 'sphereLo').add([x + u * s, y0 + (0.35 + yy) * s, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
     };
   }
+  /* free view (C): look around the set from anywhere — OrbitControls on the stage + WASD / Q E to walk. The shot still
+     animates (eras, water, props); only the camera pose is ours. Single-frame exports use this view; panoramas keep the shot. */
+  const free = { on: false, ctl: null, pos: new THREE.Vector3(), quat: new THREE.Quaternion(), fov: 40, keys: new Set() };
+  const savePose = () => { free.pos.copy(camera.position); free.quat.copy(camera.quaternion); free.fov = camera.fov; };
   let refreshGui = () => {};
   function applyTime(T) {
     const s = shotAt(T), k = Math.min(1, (T - s.t0) / s.dur);
     fxU.four = 0; fxU.depthWarm = 0; fxU.wash = 0; fxU.black = 0; fxU.quad = [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]];
     s.update(k, T - s.t0, api);
+    if (free.on) { camera.position.copy(free.pos); camera.quaternion.copy(free.quat); camera.fov = free.fov; camera.near = 0.05; camera.far = Math.max(camera.far, 6000); }
     if (cfg.update) cfg.update(T, api, s, k);
     setLayers(s);
     let A = s.era, Bk = s.era, type = 'none', p = 0;
@@ -797,11 +805,50 @@ export function startApp(cfg) {
   const toggleFull = () => { const el = document.documentElement; if (document.fullscreenElement) document.exitFullscreen(); else el.requestFullscreen?.(); };
   const toggleHelp = force => { if (!help) return; help.hidden = force !== undefined ? !force : !help.hidden; };
   btnGuides && (btnGuides.onclick = toggleGuides); btnClean && (btnClean.onclick = toggleClean); btnFull && (btnFull.onclick = toggleFull); btnHelp && (btnHelp.onclick = () => toggleHelp());
+  const btnFree = $('#btnFree'), freeHint = $('#freeHint');
+  let OrbitControlsP = null;
+  async function setFree(on) {
+    if (on === free.on || busy) return;
+    if (on) {
+      OrbitControlsP ||= import('three/addons/controls/OrbitControls.js').then(m => m.OrbitControls);
+      const OrbitControls = await OrbitControlsP;
+      setPlaying(false); applyTime(state.T); camera.updateMatrixWorld();             // start from the shot's own camera
+      const st = cfg.staging && cfg.staging(api, shotAt(state.T)), dir = camera.getWorldDirection(new THREE.Vector3());
+      let dist = st ? camera.position.distanceTo(new THREE.Vector3(...st.center)) : 12; if (!(dist > 0.5 && dist < 2000)) dist = 12;
+      if (camera.fov < 10) { camera.fov = 40; camera.position.addScaledVector(dir, camera.position.distanceTo(new THREE.Vector3(...(st ? st.center : [0, 0, 0]))) - 40); dist = 40; }   // near-ortho strip cams
+      camera.up.set(0, 1, 0);
+      if (!free.ctl) { free.ctl = new OrbitControls(camera, stage); free.ctl.screenSpacePanning = true; free.ctl.zoomSpeed = 0.8; free.ctl.rotateSpeed = 0.6; free.ctl.maxPolarAngle = Math.PI * 0.495;   // never below the ground
+        free.ctl.addEventListener('change', () => { if (free.on) { savePose(); invalidate(); } }); }
+      free.ctl.target.copy(camera.position).addScaledVector(dir, dist); free.ctl.enabled = true; free.on = true; free.ctl.update(); savePose();
+    } else { free.on = false; if (free.ctl) free.ctl.enabled = false; free.keys.clear(); }
+    document.body.classList.toggle('free', free.on); btnFree?.classList.toggle('on', free.on); if (freeHint) freeHint.hidden = !free.on; invalidate();
+  }
+  /** WASD walk (camera-relative, on the ground plane), Q / E down / up, Shift = faster; called every frame */
+  function freeWalk(dt) {
+    if (!free.on || !free.keys.size || !free.ctl) return;
+    const f = camera.getWorldDirection(new THREE.Vector3()); f.y = 0; if (f.lengthSq() < 1e-6) f.set(0, 0, -1); f.normalize();
+    const r = new THREE.Vector3().crossVectors(f, new THREE.Vector3(0, 1, 0)), m = new THREE.Vector3(), K = free.keys;
+    if (K.has('w')) m.add(f); if (K.has('s')) m.sub(f); if (K.has('d')) m.add(r); if (K.has('a')) m.sub(r); if (K.has('e')) m.y += 1; if (K.has('q')) m.y -= 1;
+    if (!m.lengthSq()) return;
+    const sp = Math.max(1.5, camera.position.distanceTo(free.ctl.target)) * 0.9 * (K.has('shift') ? 3 : 1);
+    m.normalize().multiplyScalar(sp * dt); camera.position.add(m); free.ctl.target.add(m); free.ctl.update();
+  }
+  btnFree && (btnFree.onclick = () => setFree(!free.on));
+  window.addEventListener('keyup', e => { free.keys.delete(e.key.toLowerCase()); if (e.key === 'Shift') free.keys.delete('shift'); });
+  window.addEventListener('blur', () => free.keys.clear());
   help?.addEventListener('click', e => { if (e.target === help || e.target.closest('[data-close]')) toggleHelp(false); });
   window.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey || e.altKey || busy) return;
     const tag = (e.target.tagName || '').toLowerCase(); if (tag === 'input' && e.target.type !== 'range' || tag === 'select' || tag === 'textarea' || e.target.closest?.('.tp-dfwv')) return;
     const k = e.key;
+    if (free.on) {   // free view: WASD / Q E walk, R back to the shot camera; these keys do nothing else meanwhile
+      const lk = k.toLowerCase();
+      if ('wasdqe'.includes(lk) && lk.length === 1) { e.preventDefault(); free.keys.add(lk); if (e.shiftKey) free.keys.add('shift'); return; }
+      if (k === 'Shift') { free.keys.add('shift'); return; }
+      if (lk === 'r') { setFree(false).then(() => setFree(true)); return; }
+      if (k === 'Escape') { setFree(false); return; }
+    }
+    if (k === 'c' || k === 'C') { setFree(!free.on); return; }
     if (k === ' ') { e.preventDefault(); setPlaying(!state.playing); }
     else if (k === 'ArrowRight' || k === 'ArrowLeft') { e.preventDefault(); setPlaying(false); seek(state.T + (k === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 1 : 1 / 24)); }
     else if (k === 'Home') { seek(0); }
@@ -1216,6 +1263,7 @@ export function startApp(cfg) {
   function frame(now) {
     const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;   // first rAF stamp can be older than performance.now()
     if (state.playing && !busy) { state.T += dt; if (state.T >= TOTAL) state.T = 0; setScrub(); }
+    freeWalk(dt);
     if (!busy && (state.playing || dirty || state.manual)) {
       if (needResize) { needResize = false; resize(); slowAcc = slowN = 0; }
       dirty = false;
