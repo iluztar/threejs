@@ -93,6 +93,13 @@ const opts = { light: 'auto' };
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines } = api;
+  /* FG frame for the street run (Sc 7): hedge bottom-left, lamp post + bush on the right edge, leaves from the top-left */
+  setEl('foreground');
+  { const K = api.frameKit, leaf = ['#6FAE6A', '#5E9E62', '#7CBF70'];
+    K.canopy(-1.55, -0.92, 0.5, leaf, 12); K.tufts(-1.85, -0.9, -1.04, 0.2, leaf, 12);
+    K.branch(1.62, -1.1, 1.62, 1.1, 0.03, '#6F7686'); B(G.FRAME, 'sphere').add([1.62, 0.62, -0.97], [0.1, 0.1, 0.03], '#FFF3C2');
+    K.canopy(1.45, -0.95, 0.36, leaf, 9); K.branch(-1.95, 1.1, -1.25, 0.86, 0.035, '#8A6450'); K.canopy(-1.5, 0.98, 0.34, leaf, 10); }
+  G.FRAME.userData.D = 1.2;
   const { SKY, BG, MG, FG } = G;
   geo.box = new THREE.BoxGeometry(1, 1, 1);
   const roofShape = new THREE.Shape([new THREE.Vector2(-0.5, 0), new THREE.Vector2(0.5, 0), new THREE.Vector2(0, 0.5)]);
@@ -277,6 +284,8 @@ function turntableCam(api) {                       // fixed view: camera where t
 
 startApp({
   id: 'bg2', title: 'BG 2 · Earth zoom out + Globe 360°', fov: 40, shots, build,
+  frame: (api, shot, k) => shot === shots[0] && k < 0.4,                         // FG frame only while they run on the street
+  layers: (api, shot, k) => shot === shots[0] ? [3, 40, 160] : null,            // globe shots: depth comes from the planet itself
   eras: ['base', 'e1950'],
   update(T, api, shot, k) {
     const { THREE, camera, hemi, sun, setSky } = api;

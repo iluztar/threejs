@@ -36,6 +36,10 @@ function build(api) {
       B(arch, 'capsule').add([s * 4.2, 2.6, z], [0.55, 4.6, 0.55], C.trunk, [0, 0, -s * 0.18]); B(arch, 'sphere').add([s * 3.4, 6.4, z], [3, 2.4, 2.6], pk(C.green)); B(arch, 'sphere').add([0, 7.6, z], [3.2, 1.8, 2.6], pk(C.green)); }
     setEl('bushes');
     for (let i = 0; i < 3; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3.4, 9), z = -bt(0, L); for (let k = 0; k < 3; k++) B(g, 'sphere').add([x + (k - 1) * 0.7, 0.4, z + bt(-0.3, 0.3)], [bt(0.6, 0.9), bt(0.5, 0.7), 0.7], pk(C.green)); }
+    setEl('foreground');                                               // FG plane: big bushes right at the path edge — they sweep past the lens
+    { const s = m % 2 ? 1 : -1, x = s * bt(2.9, 3.4), z = -bt(1, L - 1), k = bt(1.1, 1.6);
+      for (let j = 0; j < 4; j++) B(g, 'sphere').add([x + s * j * 0.45, 0.45 * k + j * 0.12, z + (j - 1.5) * 0.8], [0.85 * k, 0.75 * k, 0.8 * k], pk(['#6FAE6A', '#5E9E62', '#7CBF70']));
+      for (let j = -2; j <= 2; j++) B(g, 'cone').add([x - s * 0.9, 0, z + j * 0.25], [0.1, bt(0.5, 0.8), 0.1], '#5E9E62', [0, 0, j * 0.25]); }
     setEl('lamps');
     if (m % 2 === 0) { const s = m % 4 === 0 ? 1 : -1; B(g, 'capsule').add([s * 3.1, 1.6, -L / 2], [0.16, 3, 0.16], C.lamp); B(g, 'sphere').add([s * 3.1, 3.4, -L / 2], 0.42, C.bulb); }
     setEl('fences');
@@ -98,6 +102,7 @@ const shots = [
 
 startApp({
   id: 'bg6', title: 'BG 6 · Forward pathway — Scene 22', fov: 40, shots, build,
+  layers: (api, shot) => shot === shots[2] ? null : [7, 40, 200],                // FG bushes < 7 < MG path & trees < 40 < BG tunnel < 200 < far Fuji / clouds
   eras: ['colour', 'warp'],
   update(T, api) { const { hemi, sun, setSky, scene, THREE } = api; if (S.warpMat) S.warpMat.uniforms.uTime.value = T;
     setSky('#7FC4EE', '#EAF6FB', '#EAF6FB', { baseHex: '#9FD3F0' }); hemi.intensity = 2.2; hemi.color.set('#FFFFFF'); hemi.groundColor.set('#C9D9A8'); sun.intensity = 1.0; sun.position.set(-0.5, 1, 0.6);

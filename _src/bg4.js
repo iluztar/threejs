@@ -20,6 +20,14 @@ const S = {}; const opts = { fold: 0 };
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines, hexToRgb, rgbToHex } = api;
+  /* FG frame: a pine bough over the top-left corner, reeds bottom-left, shore rocks + reeds + lily bottom-right.
+     All FG pieces are cut by the frame edge, so they need no mirrored copy. */
+  setEl('foreground');
+  { const K = api.frameKit, pine = ['#4F8E6A', '#579B74', '#5FA57C'], rock = ['#A9A4C2', '#B5B0CC'];
+    K.branch(-1.95, 1.15, -0.95, 0.88, 0.035, '#8A6450'); K.canopy(-1.45, 0.98, 0.42, pine, 13); K.canopy(-0.95, 0.88, 0.18, pine, 5);
+    K.reeds(-1.85, -1.3, -1.08, 0.75, '#5E9E62', '#9A7258', 9); K.tufts(-1.85, -1.1, -1.04, 0.2, ['#6FAE6A', '#5E9E62'], 10);
+    K.rocks(1.5, -1.12, 0.4, rock, 3); K.reeds(1.15, 1.8, -1.06, 0.6, '#5E9E62', '#9A7258', 8); }
+  G.FRAME.userData.D = 3;
   const { SKY, BG, MG, FG } = G;
   const mixHex = (h, t, k) => { const a = hexToRgb(h), b = hexToRgb(t); return rgbToHex(a.map((v, i) => v + (b[i] - v) * k)); };
   const darken = h => { const c = hexToRgb(h), t = [0.36, 0.45, 0.66]; return rgbToHex(c.map((v, i) => (v + (t[i] - v) * 0.2) * 0.88)); };
@@ -141,6 +149,8 @@ const shots = [
 
 startApp({
   id: 'bg4', title: 'BG 4 · Mirrored background — mountain lake', fov: 40, shots, build,
+  frame: (api, shot) => shot !== shots[4],                                       // the 4-box mirrors the frame: no FG there
+  layers: api => { const d = api.camera.position.length(); return [Math.max(4, d * 0.35), d * 1.6, d * 6]; },
   eras: ['e1960', 'e1970', 'e1945', 'e1980', 'e1990', 'colour'],
   update(T, api) { if (S.waterMat) S.waterMat.uniforms.uTime.value = T; const { hemi, sun, scene, THREE } = api; hemi.intensity = 2.2; hemi.color.set('#FFFFFF'); hemi.groundColor.set('#D8D2EE'); sun.intensity = 0.9; sun.position.set(-0.6, 1, 0.8);
     if (!scene.fog) scene.fog = new THREE.Fog('#E6F0FA', 260, 1500); },
