@@ -293,6 +293,8 @@ body.clean #overlay{display:none}
     <dt><kbd>G</kbd></dt><dd>Guides (thirds, safe frames, horizon, staging)</dd>
     <dt><kbd>H</kbd></dt><dd>Clean view — picture only (<kbd>Esc</kbd> to leave)</dd>
     <dt><kbd>F</kbd></dt><dd>Fullscreen</dd>
+    <dt><kbd>P</kbd></dt><dd>Pixel art (2D game look) on / off</dd>
+    <dt><kbd>V</kbd></dt><dd>Value check: black &amp; white view of the FG / MG / BG planes</dd>
     <dt><kbd>[</kbd> <kbd>]</kbd></dt><dd>Previous / next scene</dd>
   </dl>
   <p>Background only — no characters. Every export renders at full 4K quality.</p>
@@ -404,7 +406,7 @@ const FRAME_FS = /* glsl */`
   uniform vec3 uPalA[5]; uniform vec4 uA1; uniform vec4 uA2; uniform vec4 uA3; uniform vec4 uA4;
   uniform vec3 uPalB[5]; uniform vec4 uB1; uniform vec4 uB2; uniform vec4 uB3; uniform vec4 uB4;
   uniform int uTrType; uniform float uTr; uniform float uFour; uniform vec3 uQuad[4];
-  uniform float uDepthWarm; uniform float uWash; uniform float uBlack; uniform float uNoVig;
+  uniform float uDepthWarm; uniform float uWash; uniform float uBlack; uniform float uNoVig; uniform float uClean; uniform float uGrey;
   varying vec2 vUv;
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
@@ -424,9 +426,9 @@ const FRAME_FS = /* glsl */`
     }
     c = mix(c, p4.rgb, p4.a);
     float asp = uRes.x / uRes.y;
-    if (p3.a > 0.0) { float pn = vnoise(uv * vec2(asp, 1.0) * 220.0) * 0.6 + vnoise(uv * vec2(asp, 1.0) * 37.0) * 0.4; c *= 1.0 - p3.a * 0.09 * (pn - 0.5) * 2.0; }
-    c += (hash(uv * uRes + fract(uTime) * 91.0) - 0.5) * p1.z;
-    vec2 q = uv - 0.5; q.x *= asp * 0.75; c *= 1.0 - p1.w * dot(q, q) * 1.5 * (1.0 - uNoVig);
+    if (p3.a > 0.0 && uClean < 0.5) { float pn = vnoise(uv * vec2(asp, 1.0) * 220.0) * 0.6 + vnoise(uv * vec2(asp, 1.0) * 37.0) * 0.4; c *= 1.0 - p3.a * 0.09 * (pn - 0.5) * 2.0; }
+    c += (hash(uv * uRes + fract(uTime) * 91.0) - 0.5) * p1.z * (1.0 - uClean);
+    vec2 q = uv - 0.5; q.x *= asp * 0.75; c *= 1.0 - p1.w * dot(q, q) * 1.5 * (1.0 - max(uNoVig, uClean));
     c *= 1.0 + p2.w * (hash(vec2(floor(uTime * 12.0), 3.1)) - 0.5);
     return c;
   }
@@ -463,6 +465,7 @@ const FRAME_FS = /* glsl */`
     c.r *= 1.0 - uDepthWarm * 0.5; c.g *= 1.0 - uDepthWarm * 0.12;
     c = mix(c, vec3(0.96, 0.94, 0.9), uWash * 0.55); c = mix(vec3(luma(c)), c, 1.0 - uWash * 0.6);
     c *= 1.0 - uBlack;
+    if (uGrey > 0.5) c = vec3(luma(c));                                   // value check: read the FG / MG / BG planes in grey
     gl_FragColor = vec4(c, src.a);
   }`;
 
@@ -490,6 +493,92 @@ const EDGE_FS = /* glsl */`
     e *= 1.0 - uFade * 0.7 * smoothstep(uFadeNear, uFadeFar, d0);
     if (uMaskOn > 0.5) { float mk = 0.0; for (int i = 0; i < 4; i++) mk = max(mk, texture2D(tMask, uv + o[i] * 1.5).a); mk = max(mk, texture2D(tMask, uv).a); e *= mk; }
     gl_FragColor = vec4(uColor, e);
+  }`;
+
+/* detail shading, inside every flat fill (uPix = 1; on by default, also feeds the pixel art mode): the base colour becomes a 5-step ramp (cool deep shadow →
+   shadow → base → warm light → highlight) lit by the scene sun, with world-anchored detail so it does not swim:
+   - greens (leaves, bushes, grass): clumps of leaves, each lit on its own + dark lines between clumps (Kirby / SNES look)
+     · upward ground: scattered grass tufts instead
+   - near-white (clouds, snow): soft billows with pale blue shade, no lines (calm sky look)
+   - everything else (mountains, walls, wood…): painterly broken bands
+   Detail cells never get smaller than ~4 art pixels (fwidth), and snap to powers of 2. */
+const PIXEL_SHADE = /* glsl */`
+  uniform float uPix; uniform float uPixBlock; uniform float uPixContrast; uniform float uPixDetail; uniform float uPixDither;
+  vec3 pxH3(vec3 p){ p = fract(p * vec3(0.1031, 0.1030, 0.0973)); p += dot(p, p.yxz + 33.33); return fract((p.xxy + p.yxx) * p.zyx); }
+  float pxN3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(pxH3(i).x, pxH3(i + vec3(1,0,0)).x, f.x), mix(pxH3(i + vec3(0,1,0)).x, pxH3(i + vec3(1,1,0)).x, f.x), f.y),
+               mix(mix(pxH3(i + vec3(0,0,1)).x, pxH3(i + vec3(1,0,1)).x, f.x), mix(pxH3(i + vec3(0,1,1)).x, pxH3(i + vec3(1,1,1)).x, f.x), f.y), f.z); }
+  // voronoi: x = F1, y = F2 (distances), c = nearest cell centre
+  vec2 pxVor(vec3 p, out vec3 c){ vec3 i = floor(p), f = fract(p); float f1 = 9.0, f2 = 9.0; c = i;
+    for (int z = -1; z <= 1; z++) for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+      vec3 g = vec3(x, y, z), o = pxH3(i + g) * 0.8 + 0.1, r = g + o - f; float d = dot(r, r);
+      if (d < f1) { f2 = f1; f1 = d; c = i + g + o; } else if (d < f2) f2 = d; }
+    return vec2(sqrt(f1), sqrt(f2)); }
+  float pxBayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
+  float pxBayer(vec2 p){ return pxBayer2(0.5 * p) * 0.25 + pxBayer2(p) - 0.5; }
+  float pxCell(float want, float minC){ return max(want, exp2(ceil(log2(max(minC, 1e-6))))); }
+  vec3 pxRamp(vec3 b, float s){
+    float k = floor(clamp(s, 0.0, 0.999) * 5.0);
+    vec3 deep = b * vec3(0.40, 0.45, 0.66), sh = b * vec3(0.66, 0.71, 0.88);
+    vec3 lt = min(mix(b, vec3(1.0, 0.95, 0.72), 0.2) * 1.16, vec3(1.0)), hi = min(mix(b, vec3(1.0, 1.0, 0.86), 0.5) * 1.22, vec3(1.0));
+    return k < 0.5 ? deep : k < 1.5 ? sh : k < 2.5 ? b : k < 3.5 ? lt : hi; }
+  vec3 pixelShade(vec3 b){
+    vec3 n = normalize(vFlatN), nw = normalize(vFlatNW); if (!gl_FrontFacing) { n = -n; nw = -nw; }
+    vec3 sb = pow(max(b, 0.0), vec3(1.0 / 2.2));
+    float mx = max(sb.r, max(sb.g, sb.b)), mn = min(sb.r, min(sb.g, sb.b)), sat = mx > 0.0 ? (mx - mn) / mx : 0.0;
+    bool green = sb.g >= sb.r && sb.g >= sb.b * 0.92 && sat > 0.22 && mx > 0.12, white = sat < 0.16 && mx > 0.8;
+    float minC = length(fwidth(vFlatW)) * uPixBlock;                 // one art pixel, in world units
+    float lit = dot(n, uSunV) * 0.5 + 0.5, s = lit, line = 0.0;
+    vec2 ap = floor(gl_FragCoord.xy / uPixBlock);                     // art-pixel grid (dither)
+    if (green && nw.y > 0.8 && vFlatS > 0.0 && minC * 6.0 > vFlatS * 0.04) {
+      // ground: grass tufts — small dark strokes + a few light ones
+      float cs = pxCell(0.0, minC * 6.0); vec3 q = vFlatW / cs * vec3(1.0, 0.0, 1.0), c; vec2 v = pxVor(q + vec3(0.0, 0.5, 0.0), c);
+      vec3 d = q - c; float r = pxH3(c * 1.7).y;
+      float tuft = step(abs(d.x) * 1.6 + max(d.z, 0.0) * 0.6, 0.22) * step(-0.26, d.z) * step(0.62, r);   // little upright tuft
+      s = 0.5 + (step(0.55, pxN3(vFlatW / (cs * 9.0))) - 0.5) * 0.22 * uPixDetail;                     // light / dark grass patches
+      s -= tuft * 0.45 * uPixDetail; s += step(v.x, 0.16) * step(r, 0.1) * 0.3 * uPixDetail;
+    } else if (green) {
+      // leaves: clumps lit on their own, dark line between clumps
+      float cs = pxCell(vFlatS * 0.45, minC * 4.0); vec3 c; vec2 v = pxVor(vFlatW / cs, c);
+      vec3 bump = normalize(vFlatW / cs - c), bv = normalize(mat3(viewMatrix) * bump), nn = normalize(mix(n, bv, 0.7 * uPixDetail));
+      s = mix(lit, dot(nn, uSunV) * 0.5 + 0.5, 0.65) + (pxH3(c).z - 0.5) * 0.12 * uPixDetail;
+      line = (1.0 - smoothstep(0.05, 0.11, v.y - v.x)) * uPixDetail * (1.0 - smoothstep(0.42, 0.62, s));   // leaf shadows only on the shade side
+    } else if (white) {
+      // clouds / snow: soft billows, pale blue shade, never dark
+      float cs = pxCell(vFlatS * 0.5, minC * 7.0); vec3 c; vec2 v = pxVor(vFlatW / cs, c);
+      vec3 bv = normalize(mat3(viewMatrix) * normalize(vFlatW / cs - c)), nn = normalize(mix(n, bv, 0.45 * uPixDetail));
+      float cl = mix(lit, dot(nn, uSunV) * 0.5 + 0.5, 0.6) + pxBayer(ap) * 0.12 * uPixDither;
+      cl = 0.5 + (cl - 0.5) * uPixContrast;
+      return cl < 0.38 ? b * vec3(0.74, 0.83, 0.97) : cl < 0.6 ? b * vec3(0.87, 0.93, 1.0) : b;
+    } else {
+      // mountains, walls, wood…: broken bands + streaks
+      float cs = pxCell(vFlatS * 0.18, minC * 5.0);
+      s += (pxN3(vFlatW / cs) - 0.5) * 0.13 * uPixDetail + (pxN3(vFlatW / (cs * 0.35) * vec3(1.0, 3.0, 1.0)) - 0.5) * 0.08 * uPixDetail;
+    }
+    s = 0.5 + (s - 0.5) * uPixContrast + pxBayer(ap) * 0.09 * uPixDither;
+    vec3 col = pxRamp(b, s);
+    return mix(col, s > 0.6 ? pxRamp(b, 0.3) : b * vec3(0.22, 0.26, 0.42), line);   // lit side: soft inner line, shadow side: dark
+  }`;
+
+/* pixel art (2D game look): snap the finished picture to a block grid in image space (global coords, so tiles and
+   panorama slices line up), keep thin ink lines as one block (darkest of 4×4 taps), posterize colours, hard alpha. Input is already sRGB. */
+const PIXEL_FS = /* glsl */`
+  uniform sampler2D tSrc; uniform vec2 uRes; uniform vec4 uTile; uniform float uSize; uniform float uLevels; uniform float uDither;
+  varying vec2 vUv;
+  float luma(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
+  float ink(vec4 s){ return luma(s.rgb) * s.a + (1.0 - s.a); }   // darkness over white: works for colour and transparent lineart
+  float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
+  float bayer(vec2 p){ return bayer2(0.5 * p) * 0.25 + bayer2(p) - 0.5; }   // 4×4 ordered dither, −0.5…0.5
+  vec4 at(vec2 g){ return texture2D(tSrc, clamp((g / uRes - uTile.xy) / uTile.zw, 0.0, 1.0)); }
+  void main(){
+    vec2 g = (uTile.xy + vUv * uTile.zw) * uRes, b = floor(g / uSize), o = b * uSize;
+    vec4 c = at(o + 0.5 * uSize), best = c; float ci = ink(c), bi = ci, nd = 0.0;
+    for (int y = 0; y < 4; y++) for (int x = 0; x < 4; x++) { vec4 s = at(o + (vec2(x, y) + 0.5) * 0.25 * uSize); float si = ink(s);
+      if (si < bi) { bi = si; best = s; } nd += step(si, ci - 0.18); }
+    if (ci - bi > 0.18 && nd >= 3.0) c = best;                     // a line crosses this block → the block becomes the line
+    vec3 rgb = c.rgb;
+    if (uLevels > 1.5) { float n = uLevels - 1.0; rgb = floor(clamp(rgb, 0.0, 1.0) * n + 0.5 + bayer(b) * uDither) / n; }
+    gl_FragColor = vec4(clamp(rgb, 0.0, 1.0), step(0.5, c.a));
   }`;
 
 const SKY_VS = /* glsl */`varying vec3 vDir; void main(){ vDir = normalize((modelMatrix * vec4(position, 0.0)).xyz); gl_Position = projectionMatrix * viewMatrix * vec4((modelMatrix * vec4(position,1.0)).xyz, 1.0); gl_Position.z = gl_Position.w; }`;
@@ -527,6 +616,10 @@ function startApp(cfg) {
   const camera = new THREE.PerspectiveCamera(cfg.fov || 40, 16 / 9, 0.1, 5000);
   const groups = {};
   for (const n of ['SKY', 'BG', 'MG', 'FG']) { const g = new THREE.Group(); g.name = n; groups[n] = g; scene.add(g); }
+  /* foreground frame: a rig that follows the camera. Children are authored in FRAME units — x −1.78…1.78 (16:9), y −1…1,
+     z −1 = at depth fgRig.userData.D — and squashed in depth like cut-out cards, so the framing holds whatever the lens.
+     Scenes set userData.D (> camera.near) and userData.on per shot; panorama strips leave it out (it frames one view). */
+  const fgRig = new THREE.Group(); fgRig.name = 'FG_FRAME'; fgRig.userData = { D: 0, on: true }; scene.add(fgRig); groups.FRAME = fgRig;
   const hemi = new THREE.HemisphereLight(0xffffff, 0x8a7f72, 1.8);
   const sun = new THREE.DirectionalLight(0xffffff, 1.4); sun.position.set(-0.4, 1, 0.55);
   scene.add(hemi, sun, sun.target);
@@ -550,18 +643,32 @@ function startApp(cfg) {
      - big flat fx pieces (ground, roads) keep per-pixel fog, but quantised into a few painted steps
      - light colour / strength of the scene (hemi + sun) becomes one flat tint, so mood presets still work
      - optional single cel shadow (Kirby) on the side away from the sun */
-  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 0 } };
-  const FLAT_FS_HEAD = 'uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; varying vec3 vFlatN;\n';
-  function flatPatch(mat, perObjectFog) {
+  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 0 },
+    uPix: { value: 0 }, uPixBlock: { value: 6 }, uPixContrast: { value: 1.3 }, uPixDetail: { value: 1 }, uPixDither: { value: 0.5 },
+    uVal: { value: new THREE.Vector4(0, 0, 0, 0) }, uValT: { value: new THREE.Vector4(0.04, 0.36, 0.6, 0.76) }, uHaze: { value: new THREE.Color(1, 1, 1) } };
+  const FLAT_FS_HEAD = 'uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; uniform vec4 uVal; uniform vec4 uValT; uniform vec3 uHaze; varying vec3 vFlatN; varying vec3 vFlatW; varying vec3 vFlatNW; varying float vFlatS; varying float vFlatD;\n' + PIXEL_SHADE;
+  function flatPatch(mat, perObjectFog, rig = false) {
     mat.onBeforeCompile = sh => {
       Object.assign(sh.uniforms, flatU);
-      sh.vertexShader = 'varying vec3 vFlatN;\n' + sh.vertexShader
-        .replace('#include <begin_vertex>', `#include <begin_vertex>
-          { vec3 fn = normal;
+      sh.vertexShader = (rig ? '#define FLAT_RIG\n' : '') + 'varying vec3 vFlatN; varying vec3 vFlatW; varying vec3 vFlatNW; varying float vFlatS; varying float vFlatD;\n' + sh.vertexShader
+        .replace('#include <project_vertex>', `#include <project_vertex>
+          ${perObjectFog ? `{ vec4 dO = vec4(0.0, 0.0, 0.0, 1.0);
             #ifdef USE_INSTANCING
-              fn = mat3(instanceMatrix) * fn;
+              dO = instanceMatrix * dO;
             #endif
-            vFlatN = normalize(normalMatrix * fn); }`)
+            vFlatD = -(modelViewMatrix * dO).z; }` : 'vFlatD = -mvPosition.z;'}`)
+        .replace('#include <begin_vertex>', `#include <begin_vertex>
+          { vec3 fn = normal; vec4 fw = vec4(transformed, 1.0); mat3 wm = mat3(modelMatrix);
+            #ifdef USE_INSTANCING
+              fn = mat3(instanceMatrix) * fn; fw = instanceMatrix * fw; wm = wm * mat3(instanceMatrix);
+            #endif
+            vFlatN = normalize(normalMatrix * fn);
+            vFlatW = (modelMatrix * fw).xyz; vFlatNW = normalize(mat3(modelMatrix) * fn);       // pixel art: world-anchored detail
+            vFlatS = (length(wm[0]) + length(wm[1]) + length(wm[2])) / 3.0;
+            #ifdef FLAT_RIG
+              vFlatW = fw.xyz; vFlatS = (length(wm[0]) + length(wm[1])) * 0.5 / max(1e-4, length(mat3(modelMatrix)[0]));   // camera frame: detail sticks to the card
+            #endif
+          }`)
         .replace('#include <fog_vertex>', perObjectFog ? `#ifdef USE_FOG
             vec4 fogO = vec4(0.0, 0.0, 0.0, 1.0);
             #ifdef USE_INSTANCING
@@ -571,8 +678,18 @@ function startApp(cfg) {
           #endif` : '#include <fog_vertex>');
       sh.fragmentShader = (perObjectFog ? '' : '#define FLAT_FOG_STEPS\n') + FLAT_FS_HEAD + sh.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
+          if (uPix > 0.5) diffuseColor.rgb = pixelShade(diffuseColor.rgb);
           diffuseColor.rgb *= uTint;
-          if (uCel > 0.5) { vec3 n = normalize(vFlatN); n = gl_FrontFacing ? n : -n; diffuseColor.rgb *= mix(uShade, vec3(1.0), step(0.05, dot(n, uSunV))); }`)
+          if (uVal.w > 0.0) {   // value structure: every plane is pulled to its own value (FG dark → far light), hue + inner shading kept
+            vec3 cv = diffuseColor.rgb; float T = uValT.y, side = 0.0, ex = 0.65;   // side: −1 only darker, 1 only lighter, 0 both
+            if (vFlatD < uVal.x) { T = uValT.x; side = -1.0; ex = 0.45; cv *= vec3(0.92, 0.94, 1.08); }   // FG: darkest, a touch cooler
+            else if (vFlatD > uVal.z) { T = uValT.w; side = 1.0; ex = 0.45; cv = mix(cv, uHaze, 0.45); } // far: lightest, mostly haze
+            else if (vFlatD > uVal.y) { T = uValT.z; side = 1.0; ex = 0.5; cv = mix(cv, uHaze, 0.25); }  // BG
+            float Lc = max(dot(cv, vec3(0.2126, 0.7152, 0.0722)), 1e-4), Ln = T * pow(Lc / T, ex);       // squeeze the plane around its value
+            Ln = side < -0.5 ? min(Ln, Lc) : side > 0.5 ? max(Ln, Lc) : Ln;
+            cv = min(cv * (Ln / Lc), vec3(1.0));
+            diffuseColor.rgb = mix(diffuseColor.rgb, cv, uVal.w); }
+          if (uCel > 0.5 && uPix < 0.5) { vec3 n = normalize(vFlatN); n = gl_FrontFacing ? n : -n; diffuseColor.rgb *= mix(uShade, vec3(1.0), step(0.05, dot(n, uSunV))); }`)
         .replace('#include <fog_fragment>', `#ifdef USE_FOG
             #ifdef FOG_EXP2
               float fogF = 1.0 - exp(-fogDensity * fogDensity * vFogDepth * vFogDepth);
@@ -585,21 +702,23 @@ function startApp(cfg) {
             gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);
           #endif`);
     };
-    mat.customProgramCacheKey = () => 'flat2d' + (perObjectFog ? 'o' : 'p');
+    mat.customProgramCacheKey = () => 'flat2d' + (perObjectFog ? 'o' : 'p') + (rig ? 'r' : '');
     return mat;
   }
   const flatCache = new Map();
   /** unlit twin of a toon material (cached per source material + fog mode) */
-  function flatOf(m, perObjectFog) {
-    const k = m.uuid + perObjectFog; if (flatCache.has(k)) return flatCache.get(k);
+  function flatOf(m, perObjectFog, rig = false) {
+    const k = m.uuid + perObjectFog + rig; if (flatCache.has(k)) return flatCache.get(k);
     const b = new THREE.MeshBasicMaterial({ color: m.color, map: m.map, alphaMap: m.alphaMap, alphaTest: m.alphaTest, transparent: m.transparent, opacity: m.opacity, side: m.side,
       vertexColors: m.vertexColors, fog: m.fog, depthWrite: m.depthWrite, depthTest: m.depthTest, polygonOffset: m.polygonOffset, polygonOffsetFactor: m.polygonOffsetFactor, polygonOffsetUnits: m.polygonOffsetUnits });
-    flatPatch(b, perObjectFog); flatCache.set(k, b); return b;
+    flatPatch(b, perObjectFog, rig); flatCache.set(k, b); return b;
   }
   /** shading: 'flat' (default) | 'cel' (flat + one shadow) | 'toon' (the old soft 3D look) */
   function setShading(mode) {
+    if (state.pixel && mode === 'toon') mode = 'flat';   // pixel art shades the unlit flat twins itself
     flatU.uCel.value = mode === 'cel' ? 1 : 0;
-    for (const m of reg.fills) { const t = m.userData.toonMat || (m.userData.toonMat = m.userData.fillMat); if (t && t.isMeshToonMaterial) m.userData.fillMat = mode === 'toon' ? t : flatOf(t, true); }
+    const inRig = o => { for (let p = o.parent; p; p = p.parent) if (p === groups.FRAME) return true; return false; };
+    for (const m of reg.fills) { const t = m.userData.toonMat || (m.userData.toonMat = m.userData.fillMat); if (t && t.isMeshToonMaterial) m.userData.fillMat = mode === 'toon' ? t : flatOf(t, true, inRig(m)); }
     for (const f of reg.fx) { const t = f.userData.toonMat || (f.userData.toonMat = f.userData.fillMat); if (t && t.isMeshToonMaterial) f.userData.fillMat = mode === 'toon' ? t : flatOf(t, false); }
     skyMat.uniforms.uBands.value = mode === 'toon' ? 0 : state.skyBands;
     setPass('final');
@@ -704,7 +823,7 @@ function startApp(cfg) {
   /* render targets + full-screen passes */
   // colour stays half float (linear light); normals / ids, lines and masks are fine in 8 bit (half the memory + bandwidth)
   const mkRT = (depthTex = false, half = false) => { const t = new THREE.WebGLRenderTarget(4, 4, { type: half ? THREE.HalfFloatType : THREE.UnsignedByteType }); if (depthTex) t.depthTexture = new THREE.DepthTexture(4, 4); return t; };
-  const rt = mkRT(false, true), rtN = mkRT(true), rtL = mkRT(), rtM = mkRT();
+  const rt = mkRT(false, true), rtN = mkRT(true), rtL = mkRT(), rtM = mkRT(), rtP = mkRT();
   const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const pal5 = () => Array.from({ length: 5 }, () => new THREE.Vector3());
   const v4 = () => new THREE.Vector4();
@@ -713,13 +832,17 @@ function startApp(cfg) {
       uPalA: { value: pal5() }, uA1: { value: v4() }, uA2: { value: v4() }, uA3: { value: v4() }, uA4: { value: v4() },
       uPalB: { value: pal5() }, uB1: { value: v4() }, uB2: { value: v4() }, uB3: { value: v4() }, uB4: { value: v4() },
       uTrType: { value: 0 }, uTr: { value: 0 }, uFour: { value: 0 }, uQuad: { value: [0, 1, 2, 3].map(() => new THREE.Vector3(1, 1, 1)) },
-      uDepthWarm: { value: 0 }, uWash: { value: 0 }, uBlack: { value: 0 }, uNoVig: { value: 0 } },
+      uDepthWarm: { value: 0 }, uWash: { value: 0 }, uBlack: { value: 0 }, uNoVig: { value: 0 }, uClean: { value: 0 }, uGrey: { value: 0 } },
     vertexShader: QUAD_VS, fragmentShader: FRAME_FS, depthTest: false, depthWrite: false });
   const edgeMat = new THREE.ShaderMaterial({
     uniforms: { tNormal: { value: rtN.texture }, tDepth: { value: rtN.depthTexture }, tMask: { value: rtM.texture }, uMaskOn: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) }, uThick: { value: 1.1 }, uColor: { value: new THREE.Color(INK) }, uWobble: { value: 0.6 }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uFade: { value: 0 }, uFadeNear: { value: 100 }, uFadeFar: { value: 600 } },
     vertexShader: QUAD_VS, fragmentShader: EDGE_FS, depthTest: false, depthWrite: false, transparent: true });
   const quadScene = new THREE.Scene(); const q1 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), frameMat); q1.frustumCulled = false; quadScene.add(q1);
   const edgeScene = new THREE.Scene(); const q2 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edgeMat); q2.frustumCulled = false; edgeScene.add(q2);
+  const pixelMat = new THREE.ShaderMaterial({
+    uniforms: { tSrc: { value: rtP.texture }, uRes: { value: new THREE.Vector2(1, 1) }, uTile: { value: new THREE.Vector4(0, 0, 1, 1) }, uSize: { value: 6 }, uLevels: { value: 12 }, uDither: { value: 0 } },
+    vertexShader: QUAD_VS, fragmentShader: PIXEL_FS, depthTest: false, depthWrite: false });
+  const pixelScene = new THREE.Scene(); const q3 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), pixelMat); q3.frustumCulled = false; pixelScene.add(q3);
 
   function setGrade(slot, key) {
     const e = ERAS[key] || ERAS.base, u = frameMat.uniforms, P = u['uPal' + slot].value;
@@ -733,6 +856,8 @@ function startApp(cfg) {
     playing: true, T: 0, eraMode: 'auto', nextEra: 'e1945', waveType: 'wave', manual: null,
     outlines: false, edges: true, lineW: 2.4, pxScale: 1, lineColour: 'ink', lineWobble: 0.25, glbMode: 'instanced', whiteBg: false,
     shading: 'flat', skyBands: 4, fogSteps: 0, quality: 'auto', meshDetail: 'medium',
+    detailShade: true, valueLayers: true, valueStrength: 1, valueCheck: false,
+    pixel: false, pixelSize: 5, pixelLevels: 0, pixelDither: 0.5, pixelContrast: 1.2, pixelDetail: 1,   // pixel art (2D game look) — size in px at 1080p, so exports match the preview
     ov: { thirds: false, safe: false, horizon: false, vp: false, staging: false }, exportMode: 'pano', elVis: {}, eraShown: 'base', eraNow: 'base',
   };
   const fxU = { four: 0, quad: [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]], depthWarm: 0, wash: 0, black: 0 };
@@ -777,7 +902,7 @@ function startApp(cfg) {
   function sizeTargets(w, h, exporting = false) {
     const samples = exporting || MOBILE || !renderer.capabilities.isWebGL2 ? 0 : 4;
     if (rt.samples !== samples) { rt.dispose(); rt.samples = samples; }
-    for (const t of [rt, rtN, rtL, rtM]) t.setSize(w, h);
+    for (const t of [rt, rtN, rtL, rtM, rtP]) t.setSize(w, h);
     rtN.depthTexture.image.width = w; rtN.depthTexture.image.height = h;
     frameMat.uniforms.uRes.value.set(w, h); edgeMat.uniforms.uRes.value.set(w, h);
   }
@@ -799,10 +924,12 @@ function startApp(cfg) {
     u.uFade.value = fade ? 1 : 0; if (scene.fog) { u.uFadeNear.value = scene.fog.near; u.uFadeFar.value = scene.fog.far; }
     renderer.setRenderTarget(target); renderer.clear(); renderer.render(edgeScene, quadCam);
   }
+  const pixelBlock = () => Math.max(1, Math.round(state.pixelSize * state.pxScale));   // one art pixel, in output pixels
   /** Render one pass of the current frame into the canvas. iso = one element (holdout export). */
   function renderPass(pass, iso = null) {
     const lc = lineColour();
     renderer.setClearColor(0x000000, 0); lineSizes();
+    flatU.uPix.value = (state.pixel || state.detailShade) && pass === 'final' ? 1 : 0; flatU.uPixBlock.value = state.pixel ? pixelBlock() : Math.max(2, 3 * state.pxScale); flatU.uPixContrast.value = state.pixelContrast; flatU.uPixDetail.value = state.pixelDetail; flatU.uPixDither.value = state.pixel ? state.pixelDither : 0;   // pixel art: no film grain / paper / vignette (they turn into noisy blocks)
     if (pass === 'final') {
       for (const k of reg.ink) k.userData.lineMat.color.copy(lc);
       if (state.edges) edgesInto(rtL, iso, new THREE.Color(INK), 0, true);
@@ -820,8 +947,27 @@ function startApp(cfg) {
       noFog(() => { setPass('linefill', iso); renderer.autoClear = false; renderer.clearDepth(); renderer.render(scene, camera); renderer.autoClear = true; });
       frameMat.uniforms.uMode.value = 1;
     }
-    renderer.setRenderTarget(null); renderer.clear(); renderer.render(quadScene, quadCam);
+    frameMat.uniforms.uClean.value = state.pixel ? 1 : 0; frameMat.uniforms.uGrey.value = state.valueCheck && pass === 'final' ? 1 : 0;
+    if (state.pixel) {   // graded picture → rtP, then snapped to the pixel grid on the way to the canvas
+      renderer.setRenderTarget(rtP); renderer.clear(); renderer.render(quadScene, quadCam);
+      const u = pixelMat.uniforms; u.uRes.value.copy(frameMat.uniforms.uRes.value); u.uTile.value.copy(frameMat.uniforms.uTile.value);
+      u.uSize.value = pixelBlock(); u.uLevels.value = state.pixelLevels; u.uDither.value = state.pixelDither;
+      renderer.setRenderTarget(null); renderer.clear(); renderer.render(pixelScene, quadCam);
+    } else { renderer.setRenderTarget(null); renderer.clear(); renderer.render(quadScene, quadCam); }
     setPass('final');
+  }
+
+  function placeRig() {
+    const D = fgRig.userData.D; fgRig.visible = !!D && fgRig.userData.on !== false && !inPano; if (!fgRig.visible) return;
+    const t = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * D;
+    fgRig.position.copy(camera.position); fgRig.quaternion.copy(camera.quaternion); fgRig.scale.set(t, t, D); fgRig.updateMatrixWorld(true);
+  }
+  let inPano = false;
+  /* value structure planes (cfg.layers(api, shot) → [fg, mg, far] view distances): FG darkest → sky lightest */
+  function setLayers(shot) {
+    const L = state.valueLayers && cfg.layers ? cfg.layers(api, shot) : null, u = flatU.uVal.value;
+    if (L) u.set(L[0], L[1], L[2], state.valueStrength); else u.set(0, 0, 0, 0);
+    flatU.uHaze.value.copy(scene.fog ? scene.fog.color : skyMat.uniforms.uHorizon.value);
   }
 
   /* timeline */
@@ -830,12 +976,87 @@ function startApp(cfg) {
   const ease = k => k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
   const api = { MOBILE, THREE, scene, camera, groups, renderer, geo, toon, solid, Batch, B, buildBatches, fx, setSky, sun, hemi, ease, state, fxU, mapColour, hexToRgb, rgbToHex, register, mergeGeometries, setEl, inkLines, idMat, INK,
     lerp: (a, b, k) => a + (b - a) * k, clamp: (v, a, b) => Math.min(b, Math.max(a, v)), smooth: (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); } };
+  /* foreground frame kit (FRAME units, see fgRig): big dark shapes at the frame edges — the FG plane of every BG.
+     Rule: keep the middle (staging / character area) clear; FG touches at least one frame edge and is cut by it. */
+  {
+    let sd = 7; const fr = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; }, bt = (a, b) => a + fr() * (b - a), pk = a => a[Math.floor(fr() * a.length)];
+    const F = () => groups.FRAME;
+    api.frameKit = {
+      /** leafy canopy: a cloud of clumps around (x, y) */
+      canopy(x, y, r, cols, n = 11) { for (let i = 0; i < n; i++) { const a = fr() * 6.283, d = r * Math.sqrt(fr()) * 0.75; B(F(), 'sphere').add([x + Math.cos(a) * d * 1.3, y + Math.sin(a) * d * 0.8, -1 - fr() * 0.08], [r * bt(0.32, 0.5), r * bt(0.26, 0.4), 0.06], pk(cols)); } },
+      /** straight limb from (x0, y0) to (x1, y1), width w */
+      branch(x0, y0, x1, y1, w, col) { const dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy); B(F(), 'capsule').add([(x0 + x1) / 2, (y0 + y1) / 2, -1.02], [w, L / 2, 0.05], col, [0, 0, Math.atan2(dy, dx) - Math.PI / 2]); },
+      /** pile of rounded rocks sitting on y */
+      rocks(x, y, s, cols, n = 3) { for (let i = 0; i < n; i++) { const w = s * bt(0.5, 1) * (1 - i * 0.2); B(F(), 'sphere').add([x + (i - (n - 1) / 2) * s * 0.75 + bt(-0.1, 0.1) * s, y + w * 0.35, -0.98 + i * 0.01], [w, w * 0.62, 0.06], pk(cols)); } },
+      /** fallen log lying across the bottom edge */
+      log(x, y, len, w, col, ring) { B(F(), 'capsule').add([x, y, -0.99], [w, len / 2, 0.05], col, [0, 0, Math.PI / 2 + bt(-0.12, 0.12)]); if (ring) B(F(), 'sphere').add([x + len / 2 + w * 0.3, y, -0.97], [w * 0.4, w * 0.48, 0.02], ring); },
+      /** grass tufts / reeds along the bottom edge from x0 to x1 */
+      tufts(x0, x1, y, h, cols, n = 14) { for (let i = 0; i < n; i++) { const x = bt(x0, x1), k = bt(0.5, 1); B(F(), 'cone').add([x, y, -0.97 - fr() * 0.04], [h * 0.09 * k, h * k, 0.03], pk(cols), [0, 0, bt(-0.35, 0.35)]); } },
+      reeds(x0, x1, y, h, col, tip, n = 7) { for (let i = 0; i < n; i++) { const x = bt(x0, x1), k = bt(0.6, 1); B(F(), 'capsule').add([x, y + h * k * 0.5, -0.96], [0.022, h * k * 0.5, 0.02], col, [0, 0, bt(-0.12, 0.12)]); if (tip) B(F(), 'capsule').add([x, y + h * k, -0.95], [0.045, 0.07, 0.03], tip); } },
+      /** branching coral / kelp: stems with round knobs */
+      coral(x, y, s, cols, n = 6) { const col = pk(cols); for (let i = 0; i < n; i++) { const a = bt(-0.9, 0.9), L = s * bt(0.5, 1); const ex = x + Math.sin(a) * L, ey = y + Math.cos(a) * L;
+        api.frameKit.branch(x, y, ex, ey, s * 0.07, col); B(F(), 'sphere').add([ex, ey, -0.96], [s * 0.14, s * 0.14, 0.03], col); } },
+      kelp(x, y, h, col, n = 6) { let px = x, py = y; for (let i = 0; i < n; i++) { const nx = px + bt(-0.06, 0.06), ny = py + h / n; api.frameKit.branch(px, py, nx, ny, 0.035, col);
+        B(F(), 'sphere').add([nx + (i % 2 ? 0.06 : -0.06), ny - h / n * 0.4, -0.97], [0.07, 0.035, 0.02], col, [0, 0, i % 2 ? -0.5 : 0.5]); px = nx; py = ny; } },
+      /** big leaves fanning out of (x, y) — house plants, ferns */
+      leaves(x, y, s, cols, n = 7) { for (let i = 0; i < n; i++) { const a = bt(-1.2, 1.2), L = s * bt(0.6, 1); B(F(), 'sphere').add([x + Math.sin(a) * L * 0.55, y + Math.cos(a) * L * 0.55, -0.97 - i * 0.003], [s * 0.13, L * 0.5, 0.03], pk(cols), [0, 0, -a]); } },
+      box(x, y, w, h, col, rot = 0) { B(F(), 'rbox').add([x, y, -0.98], [w, h, 0.05], col, [0, 0, rot]); },
+    };
+  }
+  /* leafy trees + bushes (shared by every BG): simplified but believable — tapered trunk with branches into the crown,
+     a crown built from many leaf clumps (dark inner masses, a lit shell, small clumps on the rim for a leafy edge),
+     clumps lighter on top / toward the sun and darker underneath, so a tree never reads as one flat ball.
+     s = size (round tree ≈ 4.4 s tall), o = { leaf: [hex], trunk: hex, kind: 'round' | 'pine' | 'tall', col: hex → hex (era / mirror tint) } */
+  {
+    let sd = 4242; const fr = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; }, bt = (a, b) => a + fr() * (b - a), pk = a => a[Math.floor(fr() * a.length)];
+    const LIGHT = hexToRgb('#FFF4C4'), DARK = hexToRgb('#24465A');
+    const shade = (hex, f) => { const c = hexToRgb(hex), t = f >= 0 ? LIGHT : DARK, k = Math.abs(f); return rgbToHex(c.map((v, i) => v + (t[i] - v) * k)); };
+    const tone = (o, hex, f) => (o.col || (h => h))(shade(hex, f));
+    api.tree = (g, x, y0, z, s, o = {}) => {
+      const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], trunk = o.trunk || '#C99B72', kind = o.kind || 'round';
+      if (kind === 'pine') {
+        B(g, 'capsule').add([x, y0 + 1.1 * s, z], [0.32 * s, 1.1 * s, 0.32 * s], tone(o, trunk, -0.15));
+        const hex = pk(leaf), tiers = 4;
+        for (let t = 0; t < tiers; t++) { const k = t / (tiers - 1), y = y0 + (1.0 + t * 0.95) * s, r = (1.55 - k * 0.95) * s, f = -0.32 + k * 0.42;
+          B(g, 'cone').add([x, y, z], [r, 1.35 * s, r], tone(o, hex, f));
+          const n = 7 - t; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + bt(0, 0.6), rr = r * 0.92;          // drooping needle tips = jagged skirt
+            B(g, 'cone').add([x + Math.sin(a) * rr, y + 0.12 * s, z + Math.cos(a) * rr], [0.32 * s, 0.6 * s, 0.32 * s], tone(o, hex, f - 0.12), [Math.cos(a) * 2.3, 0, -Math.sin(a) * 2.3]); } }
+        return;
+      }
+      const tall = kind === 'tall', H = tall ? 1.35 : 1;
+      // trunk (wider at the root), root flare, 3 branches reaching into the crown
+      B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [0.42 * s, 0.95 * s * H, 0.42 * s], tone(o, trunk, -0.08));
+      B(g, 'sphereLo').add([x, y0 + 0.08 * s, z], [0.5 * s, 0.22 * s, 0.5 * s], tone(o, trunk, -0.2));
+      for (let i = 0; i < 3; i++) { const a = i / 3 * 6.283 + bt(0, 1), lean = 0.75;
+        B(g, 'capsule').add([x + Math.sin(a) * 0.45 * s, y0 + (1.85 * H + 0.25) * s, z + Math.cos(a) * 0.45 * s], [0.15 * s, 0.6 * s, 0.15 * s], tone(o, trunk, -0.12), [Math.cos(a) * lean, 0, -Math.sin(a) * lean]); }
+      // crown: ellipsoid of clumps
+      const cy = y0 + (2.85 * H + 0.1) * s, rx = (tall ? 1.35 : 1.7) * s, ry = (tall ? 1.7 : 1.25) * s, base = pk(leaf);
+      for (let i = 0; i < 4; i++) { const a = i / 4 * 6.283 + 0.4;                                                      // dark inner masses
+        B(g, 'sphereLo').add([x + Math.sin(a) * rx * 0.35, cy - ry * 0.15, z + Math.cos(a) * rx * 0.35], [rx * 0.62, ry * 0.62, rx * 0.62], tone(o, base, -0.32)); }
+      const N = 13;
+      for (let i = 0; i < N; i++) {                                                                                       // lit shell (fibonacci sphere, no bottom)
+        const yy = 1 - (i + 0.5) / N * 1.55, rr = Math.sqrt(Math.max(0, 1 - yy * yy)), a = i * 2.39996 + bt(-0.2, 0.2), r = bt(0.42, 0.6) * s;
+        const f = yy > 0.45 ? 0.24 : yy > 0 ? 0.08 : -0.16;
+        B(g, 'sphereLo').add([x + Math.sin(a) * rr * rx * 0.82, cy + yy * ry * 0.82, z + Math.cos(a) * rr * rx * 0.82], [r, r * 0.86, r], tone(o, pk(leaf), f)); }
+      for (let i = 0; i < 12; i++) {                                                                                      // small rim clumps: leafy edge
+        const a = i / 12 * 6.283 + bt(-0.2, 0.2), e = bt(-0.55, 0.75), r = bt(0.24, 0.36) * s;
+        B(g, 'sphereLo').add([x + Math.sin(a) * rx * Math.cos(e), cy + Math.sin(e) * ry, z + Math.cos(a) * rx * Math.cos(e)], [r, r * 0.85, r], tone(o, base, e > 0.3 ? 0.3 : e < -0.2 ? -0.24 : 0.04)); }
+    };
+    api.bush = (g, x, y0, z, s, o = {}) => {
+      const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], base = pk(leaf);
+      for (let i = 0; i < 3; i++) B(g, 'sphereLo').add([x + (i - 1) * 0.7 * s, y0 + 0.4 * s, z + bt(-0.2, 0.2) * s], [0.62 * s, 0.5 * s, 0.6 * s], tone(o, base, -0.28));
+      for (let i = 0; i < 9; i++) { const a = fr() * 3.14, u = bt(-1.15, 1.15), r = bt(0.26, 0.4) * s, yy = Math.sin(a) * 0.55;
+        B(g, 'sphereLo').add([x + u * s, y0 + (0.35 + yy) * s, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
+    };
+  }
   let refreshGui = () => {};
   function applyTime(T) {
     const s = shotAt(T), k = Math.min(1, (T - s.t0) / s.dur);
     fxU.four = 0; fxU.depthWarm = 0; fxU.wash = 0; fxU.black = 0; fxU.quad = [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]];
     s.update(k, T - s.t0, api);
     if (cfg.update) cfg.update(T, api, s, k);
+    fgRig.userData.on = cfg.frame ? !!cfg.frame(api, s, k) : true;
+    setLayers(s);
     let A = s.era, Bk = s.era, type = 'none', p = 0;
     if (s.trans) { A = s.trans.from || s.era; Bk = s.trans.to; type = s.trans.type; const [a, b] = s.trans.at || [0, 1]; p = ease(Math.min(1, Math.max(0, (k - a) / (b - a)))); }
     if (state.eraMode !== 'auto') { A = Bk = state.eraMode; type = 'none'; p = 0; }
@@ -848,7 +1069,7 @@ function startApp(cfg) {
     u.uFour.value = fxU.four; u.uDepthWarm.value = fxU.depthWarm; u.uWash.value = fxU.wash; u.uBlack.value = fxU.black; fxU.quad.forEach((q, i) => u.uQuad.value[i].set(...q));
     u.uTime.value = T;
     if (scene.fog) { hullMat.uniforms.uFogColor.value.copy(scene.fog.color); hullMat.uniforms.uFogNear.value = scene.fog.near; hullMat.uniforms.uFogFar.value = scene.fog.far; hullMat.uniforms.uFogOn.value = 1; } else hullMat.uniforms.uFogOn.value = 0;
-    camera.updateProjectionMatrix();
+    camera.updateProjectionMatrix(); camera.updateMatrixWorld(); placeRig();
     for (const m of reg.fills) if (m.isInstancedMesh && m.userData.bsVer !== m.instanceMatrix.version) { m.computeBoundingSphere(); m.userData.bsVer = m.instanceMatrix.version; }
     return s;
   }
@@ -941,6 +1162,8 @@ function startApp(cfg) {
     else if (k === 'g' || k === 'G') toggleGuides();
     else if (k === 'h' || k === 'H') toggleClean();
     else if (k === 'f' || k === 'F') toggleFull();
+    else if (k === 'v' || k === 'V') { state.valueCheck = !state.valueCheck; refreshGui(); }
+    else if (k === 'p' || k === 'P') { state.pixel = !state.pixel; setShading(state.shading); refreshGui(); }
     else if (k === '?' || k === '/') toggleHelp();
     else if (k === 'e' || k === 'E') toggleMenu();
     else if (k === 's' || k === 'S') toggleSettings();
@@ -995,12 +1218,13 @@ function startApp(cfg) {
     const ppu = spec.pxPerUnit(frameH, api);
     let total = Math.abs(spec.to - spec.from) * ppu, scale = 1;
     if (total > MAX_SIDE) { scale = MAX_SIDE / total; total = MAX_SIDE; }
-    const slice = Math.max(16, Math.min(256, Math.floor(frameW / 8))), M = 12, n = Math.ceil(total / slice);
+    const slice = Math.max(16, Math.min(256, Math.floor(frameW / 8))), M = state.pixel ? Math.max(12, Math.ceil(state.pixelSize * H / 1080)) : 12, n = Math.ceil(total / slice);
     const PW = along ? frameW : n * slice, PH = along ? n * slice : frameH;
     const out = document.createElement('canvas'); out.width = PW; out.height = PH; const c2 = out.getContext('2d');
     if (pass === 'lineart' && state.whiteBg) { c2.fillStyle = '#fff'; c2.fillRect(0, 0, PW, PH); }
     const era = state.eraShown, u = frameMat.uniforms, dir = Math.sign(spec.to - spec.from) || 1, du = slice / ppu / scale * dir;
-    withExportSize(along ? frameW : slice + 2 * M, along ? slice + 2 * M : frameH, () => {
+    inPano = true; fgRig.visible = false;
+    try { withExportSize(along ? frameW : slice + 2 * M, along ? slice + 2 * M : frameH, () => {
       u.uRes.value.set(PW, PH);
       for (let i = 0; i < n; i++) {
         spec.setup(spec.from + (i + 0.5) * du, api);
@@ -1012,7 +1236,7 @@ function startApp(cfg) {
         if (along) c2.drawImage(renderer.domElement, 0, M, frameW, slice, 0, p0, frameW, slice);
         else c2.drawImage(renderer.domElement, M, 0, slice, frameH, p0, 0, slice, frameH);
       }
-    });
+    }); } finally { inPano = false; placeRig(); }
     return out;
   }
   const curPano = () => state.exportMode === 'pano' ? shotAt(state.T).pano || null : null;
@@ -1296,9 +1520,21 @@ function startApp(cfg) {
   const gui = wrap(pane);
   const fLook = gui.addFolder('Look', true);
   fLook.add(state, 'shading', { 'Flat 2D (Chiikawa)': 'flat', 'Flat + cel shadow (Kirby)': 'cel', 'Soft 3D toon (old look)': 'toon' }).name('Style').onChange(setShading);
+  fLook.add(state, 'detailShade').name('Detail shading (light ramp, leaf clumps, cloud billows)');
+  fLook.add(state, 'pixelContrast', 0.6, 2, 0.05).name('Light / shadow contrast');
+  fLook.add(state, 'pixelDetail', 0, 1, 0.05).name('Leaf / cloud detail');
   fLook.add(state, 'skyBands', 0, 8, 1).name('Sky bands').onChange(v => { if (state.shading !== 'toon') skyMat.uniforms.uBands.value = v; });
   fLook.add(state, 'fogSteps', 0, 8, 1).name('Ground tint steps').onChange(v => flatU.uFogSteps.value = v);
   fLook.add(state, 'edges').name('Ink lines'); fLook.add(state, 'lineW', 1, 6, 0.1).name('Line width (px at 1080p)'); fLook.add(state, 'outlines').name('Extra outline');
+  const fVal = gui.addFolder('Depth / value structure', true);
+  fVal.add(state, 'valueLayers').name('FG · MG · BG value planes');
+  fVal.add(state, 'valueStrength', 0, 1, 0.05).name('Plane contrast');
+  fVal.add(state, 'valueCheck').name('Value check (grey, V)');
+  const fPix = gui.addFolder('Pixel art (2D game)', true);
+  fPix.add(state, 'pixel').name('Pixel art (P)').onChange(() => setShading(state.shading));
+  fPix.add(state, 'pixelSize', 2, 16, 1).name('Pixel size (px at 1080p)');
+  fPix.add(state, 'pixelDither', 0, 1, 0.05).name('Dither between tones');
+  fPix.add(state, 'pixelLevels', 0, 32, 1).name('Posterize (0 = off)');
   fLook.add(state, 'quality', { 'Auto (sharp, lowers if slow)': 'auto', 'High (always sharp)': 'high', 'Low (fastest)': 'low' }).name('Preview quality').onChange(() => { autoScale = 1; resize(); });
   const fEra = gui.addFolder('Era');
   const briefEras = cfg.eras || ERA_KEYS;                      // only the eras in this BG's brief
@@ -1407,6 +1643,14 @@ const opts = { caustics: true };
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines, mergeGeometries } = api;
+  /* FG frame (darkest plane): kelp + branch coral on the left edge, plate rocks + fan coral + sea grass bottom-right.
+     MG = the reef and Poki's sand patch, BG = far ledges and shell towers, far = the fog wall. */
+  setEl('foreground');
+  { const K = api.frameKit, kelp = '#4F9A5E', coral = ['#C94F8C', '#B65FC9'], rock = ['#5F8CC4', '#6E9BD0'];
+    K.kelp(-1.68, -1.1, 1.7, kelp, 7); K.kelp(-1.45, -1.1, 1.1, kelp, 5); K.coral(-1.25, -1.08, 0.4, coral, 7); K.rocks(-1.55, -1.12, 0.32, rock, 2);
+    K.rocks(1.45, -1.1, 0.42, rock, 3); K.coral(1.15, -0.95, 0.36, ['#E06AA8', '#D7559B'], 6); K.coral(1.7, -0.7, 0.5, ['#F49AB0', '#E98FC0'], 8);
+    K.tufts(0.85, 1.85, -1.04, 0.24, ['#6FB36A', '#7DBF6E'], 12); K.kelp(1.88, -1.1, 1.4, kelp, 6); }
+  G.FRAME.userData.D = 4;
   const { SKY, BG, MG, FG } = G;
   geo.fish = mergeGeometries([new THREE.SphereGeometry(0.5, 16, 12).scale(1, 0.62, 0.36), new THREE.ConeGeometry(0.32, 0.46, 3).rotateZ(Math.PI / 2).scale(1, 1, 0.35).translate(-0.6, 0, 0)]);
   geo.brain = (() => { const g = new THREE.SphereGeometry(1, 40, 30), p = g.attributes.position, v = new THREE.Vector3();
@@ -1582,6 +1826,8 @@ const shots = [
 
 startApp({
   id: 'bg3', title: 'BG 3 · Underwater (1960s)', fov: 46, shots, build,
+  frame: (api, shot) => shot !== shots[0],                                       // no FG frame above the water
+  layers: api => api.camera.position.y < 0 ? [6, 40, 110] : null,
   eras: ['e1960', 'e1970'],
   update(T, api) { animate(T, api); water(api); },
   staging: () => ({ center: [SPOT[0], floorY(SPOT[0], SPOT[1]), SPOT[1]], size: [2.4, 2.2, 2.4] }),

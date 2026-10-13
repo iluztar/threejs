@@ -34,8 +34,14 @@ Two rings of lavender triangle ridges (#B9B6D4 / #D3D0E6). Dynamic, outlined whi
 - Team test pastels: #F4E3C1 #F7D2C4 #CFE8D5 #D9D3EE #CDE4F2 #FBEAB0 · greens #A6D6A0 #B8E2A9 #93CF95 · dome #F6EFD4 · ground #EBE5C9 · ink #8A6B64.
 - 1960s grade: #1F3A68 #3E7CB1 #F2C14E #D94A38 #F4F1E8 (posterised, flat).
 
+## Depth planes (FG · MG · BG · far)
+- FG (< 4.5 from the lens, darkest): camera-locked frame — rock pile + fallen log cut by the bottom-left corner, grass tufts + stump bottom-right, an overhanging leafy branch from the top-right corner. The centre (characters) stays clear.
+- MG (< 60): the dome with its rocks, logs, tufts and flowers, the park trees and the characters' spot.
+- BG (< 240): the city rings, landmark tower.
+- far: lavender ridges and clouds, lightest.
+
 ## Elements in the ZIP
-sky · ground · river · dome · rocks · logs · grass · flowers · city · houses · trees · landmark · poles · cars · street · hills · clouds
+foreground · sky · ground · river · dome · rocks · logs · grass · flowers · city · houses · trees · landmark · poles · cars · street · hills · clouds
 
 ## References read on the board
 Snow's 360° diagram and quick 3D mockup (dome layout only; ignore the 2 spheres) · the team's city test · Kirby Cappy Town / Waddle Dee Town / Downtown Grassland · Doraemon city views (Tamagawa riverbank, Nobita's town from above) · We Bare Bears SF plates (simple blocks, muted colour) · aerial photos of Osaka, Hong Kong, Singapore and Venice (how a city stacks into depth, rivers, waterfronts) · Chiikawa field and Kirby pixel scenes (simple style).
@@ -84,6 +90,42 @@ Snow's 360° diagram and quick 3D mockup (dome layout only; ignore the 2 spheres
 - Clouds are never generic: mix big cumulus, medium clusters and small puffs (4–8 puffs each, bigger in the middle, flat bottoms like Chiikawa clouds) at varied distances and heights, each one placed so it stays whole inside the frame.
 - Any camera move must have a clear lane: the camera never passes through a building or tree.
 - Nothing is plain or empty. Even simple surfaces carry small, simple details: hills get rocks, fallen logs, stumps and dead branches, grass clumps, flowers and Chiikawa-style dashes; cities get windows, rooftop props, street furniture, cars; walls and floors get props.
+
+# DEPTH STRUCTURE: FOREGROUND · MIDGROUND · BACKGROUND (required in every BG)
+Every frame reads as stacked planes, like a multiplane / 2D game parallax layout:
+- **Foreground (FG)**: big, simple, dark shapes right in front of the lens, always cut by a frame edge and never covering the middle (staging / character area). Examples: rocks, a fallen log, stumps and grass tufts on the hill (BG 1); hedge, lamp post and leaves on the street (BG 2); kelp, branch coral and plate rocks on the sea floor (BG 3); a pine bough, reeds and shore rocks (BG 4); a house plant, a stack of books, a hanging plant in the room and a row of bushes / rocks / tall grass on the front edge of the run strip (BG 5); big bushes right at the path edge that sweep past the lens (BG 6).
+- **Midground (MG)**: where the characters stand and the action happens; the most readable, most detailed plane.
+- **Background (BG)** and **far**: city, ridges, mountains, sky; lighter and closer to the haze colour with every step back.
+- Implementation: a camera-locked FG frame rig (children authored in frame units: x −1.78…1.78, y −1…1, z −1 = depth `D`, squashed in depth like cut-out cards, so the framing holds for any lens) for shots where the camera orbits or moves little; world-space FG (rows of bushes / rocks that the camera passes) for tracking, dolly and side-strip shots so they really parallax. Panorama strips leave the camera-locked frame out. FG is its own element (`foreground`) in the element ZIP.
+
+# VALUE STRUCTURE (read it in black & white first)
+- Reference: grey value thumbnails (forest, canyon, alley, ruins). FG darkest, MG mid grey, BG light grey, far + sky lightest; each plane is close to ONE value, so the planes separate at a glance even without colour.
+- Each scene defines its plane distances (`layers(api, shot)` → [FG end, MG end, BG end] in view distance). The colour version is pulled to the same values: every plane keeps its hues and inner shading but is squeezed around its value (FG only darker, a touch cooler; MG mid; BG / far only lighter and mixed with the haze / fog colour).
+- Settings → *Depth / value structure*: planes on/off, plane contrast, **Value check (B&W, key `V`)** to see the frame in black & white. The colour picture must read exactly like that grey picture.
+
+# DETAIL SHADING (default, also without pixel art)
+The normal (non-pixel) view is never plain flat colour either: every fill gets the same light ramp and detail as the pixel art mode below (5 tones from the sun, leaf clumps with leaf shadows on the shade side, cloud billows, broken bands on mountains / walls), only without the pixel grid and dither. Settings → *Look* → *Detail shading*, *Light / shadow contrast*, *Leaf / cloud detail*.
+
+# TREES: SIMPLIFIED BUT BELIEVABLE (shared `api.tree` / `api.bush`)
+No flat lollipop trees. Every tree has a trunk that is wider at the root, a root flare and 2–3 branches reaching into the crown; the crown is built from many leaf clumps — dark inner masses, a lit shell (lighter on top, darker underneath) and small clumps on the rim so the silhouette is leafy, not a smooth ball. Pines are stacked tiers with drooping needle tips (jagged skirt), lighter toward the top. Bushes: dark inner masses + lit clumps.
+
+# PIXEL ART MODE (2D game look, key `P`)
+Optional look for every BG (Settings → *Pixel art*). Not "plain 3D made blocky": each fill gets real pixel-art shading and detail before the picture is snapped to the pixel grid.
+- Light ramp of 5 values per colour (cool deep shadow → shadow → base → warm light → highlight), lit by the scene sun, adjustable light / shadow contrast; ordered dither only at the steps between tones.
+- **Clouds and mountains: like the calm Kirby pixel scene** (blue sky, puffy layered cumulus with pale-blue shade and no dark lines, blue-grey mountains with soft broken bands and streaks).
+- **Leaves, trees, bushes and grass: like the SNES Kirby forest, more contrast**: leaf clumps each lit on their own, dark inner lines between clumps on the shadow side (soft lines on the lit side), grass tufts and light / dark patches on the ground.
+- Lineart inside objects as well as around them; ink lines stay one art pixel wide; film grain, paper and vignette are off in this mode.
+- Detail never gets smaller than a few art pixels and is anchored to the world (no swimming); the pixel grid is in image space, so 4K tiles and long panoramas line up.
+- Pixel size is given in px at 1080p, so exports match the preview.
+
+# STORYBOARD (Poki & Poka intro, 00:00–01:13) → which BG covers it
+- Sc 1–2 · text scroll intro, Poki & Poka drop from off screen (BG only "text scroll", not one of these files).
+- Sc 3–4 · **BG 1** world reveal: camera rotates fast → slow 180° around them, then the full 360° reveals the 1960s style. Sc 5 truck out, the scene turns 1945 black & white as they wander; Sc 6 pan track, colour slowly comes back.
+- Sc 7–9 · **BG 2**: camera goes behind, they jump over the edge, fall (separating, reaching for each other), a red wave line turns everything 1950s.
+- Sc 10 · **BG 3**: still falling into the sea (1960s); Poki spins, a crack opens to the next era.
+- Sc 11–18 · **BG 4**: keeps falling, red wave → 1970s until they drop on the mirrored platform (Sc 12 medium), Sc 13 B&W close-up (confused, scared), Sc 14 medium, they run looking for each other, Sc 15 the wave rotates 360° → 1980s, Sc 16 wide → 1990s, Sc 17–18 four-box mirrored BG with a colour per side, BG in both spaces, they jump off screen.
+- Sc 19–20 · **BG 5**: run / walk cycle in front of coloured backgrounds showing their hobbies / places (four-box comps).
+- Sc 21–24 · **BG 6**: slow truck out into BG fade, dolly zoom on the path, they jump toward the screen, last warp hole, black at 01:13.
 
 # PROJECT CONTEXT: "Sirpeltric" (SirPeltric Studio)
 One continuous camera journey through anime history. Each background carries the scene into the next era:

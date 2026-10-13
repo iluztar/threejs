@@ -110,12 +110,8 @@ function build(api) {
 
   /* ── kit ── */
   const blob = (g, x, y, z, r, col, sy = 1) => B(g, 'sphere').add([x, y, z], [r, r * sy, r], col);
-  const treeAt = (g, x, z, s, y0) => {
-    B(g, 'capsule').add([x, y0 + 0.95 * s, z], [0.5 * s, 1.0 * s, 0.5 * s], C.trunk);
-    blob(g, x, y0 + 2.7 * s, z, 1.35 * s, C.green[0]); blob(g, x + 1.0 * s, y0 + 2.3 * s, z + 0.3 * s, 1.05 * s, C.green[1]);
-    blob(g, x - 1.0 * s, y0 + 2.35 * s, z - 0.2 * s, 1.05 * s, C.green[2]); blob(g, x + 0.1 * s, y0 + 3.5 * s, z + 0.2 * s, 0.95 * s, C.green[1]);
-  };
-  const bushAt = (g, x, z, s, y0) => { for (let k = 0; k < 3; k++) blob(g, x + (k - 1) * s * 0.9, y0 + s * 0.35, z + (rand() - 0.5) * 0.5, s * (0.7 + rand() * 0.4), pick(C.green), 0.75); };
+  const treeAt = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk });   // leafy crown, branches (core)
+  const bushAt = (g, x, z, s, y0) => api.bush(g, x, y0, z, s, { leaf: C.green });
   const faceTo = (x, z) => Math.atan2(-x, -z);
   /** windows on 4 sides (outlined near the camera) */
   const windows = (g, x, z, w, d, y0, rows, rowH, ry, glass = C.pane, wide = 0.5) => {
@@ -273,6 +269,16 @@ function build(api) {
     }
   }
 
+  /* ── FG frame (value plane 1, darkest): rocks + log cut by the bottom-left corner, tufts + stump bottom-right,
+     an overhanging branch from the top-right corner. MG = dome, characters, park; BG = city; far = ridges + clouds. ── */
+  setEl('foreground');
+  { const K = api.frameKit, leaf = ['#6FAE6A', '#5E9E62', '#7CBF70'], rock = ['#9C97B4', '#A7A2BE'], grass = ['#6FAE6A', '#5E9E62', '#86C27A'];
+    K.rocks(-1.62, -1.08, 0.36, rock, 3); K.log(-1.05, -0.98, 0.9, 0.11, '#9A7258', '#E3C49C'); K.tufts(-1.8, -0.7, -1.04, 0.22, grass, 16);
+    K.tufts(0.9, 1.85, -1.04, 0.3, grass, 18); B(G.FRAME, 'rcyl').add([1.5, -1.05, -0.99], [0.16, 0.14, 0.04], '#9A7258');
+    K.branch(1.95, 1.15, 1.05, 0.78, 0.045, '#8A6450'); K.branch(1.4, 0.95, 1.2, 1.12, 0.025, '#8A6450');
+    K.canopy(1.55, 0.98, 0.42, leaf, 12); K.canopy(1.0, 0.82, 0.2, leaf, 5); }
+  G.FRAME.userData.D = 2.5;
+
   setLandmark(opts.landmark); setLight(api, opts.light);
 }
 
@@ -316,6 +322,7 @@ startApp({
   eras: ['e1960', 'e1945', 'base'],                // brief: Sc 3–4 1960s → Sc 5 1945 B&W → Sc 6 colour
   update(T, api) { if (landmarks._clouds) landmarks._clouds.rotation.y = T * 0.004; },
   staging: () => ({ center: [0, 0, 0], size: [2.6, 1.3, 1.4] }),
+  layers: () => [4.5, 60, 240],                    // view distance: FG frame < 4.5 < MG dome & park < 60 < BG city < 240 < far ridges / clouds
   guiTitle: 'BG 1 · City',
   gui(f, api) {
     f.add(opts, 'landmark', { 'Art Deco spire tower': 'deco', 'Observation needle (1962)': 'needle' }).name('Landmark').onChange(setLandmark);

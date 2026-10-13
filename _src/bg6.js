@@ -31,11 +31,15 @@ function build(api) {
     setEl('trees');
     for (const s of [-1, 1]) { const x = s * bt(5.5, 7), z = -bt(2, 10), k = bt(1.1, 1.5);
       const round = new THREE.Group(), pine = new THREE.Group(), arch = new THREE.Group(); g.add(round, pine, arch); (S.styles = S.styles || []).push({ round, pine, arch });
-      B(round, 'capsule').add([x, 1.3 * k, z], [0.6 * k, 1.5 * k, 0.6 * k], C.trunk); B(round, 'sphere').add([x, 3.7 * k, z], 1.9 * k, pk(C.green)); B(round, 'sphere').add([x + 1.2 * k * s, 3.1 * k, z + 0.4], 1.4 * k, pk(C.green)); B(round, 'sphere').add([x - 1.1 * k * s, 3.2 * k, z - 0.3], 1.4 * k, pk(C.green));
-      B(pine, 'capsule').add([x, 1.0 * k, z], [0.45 * k, 1.2 * k, 0.45 * k], C.trunk); for (let t = 0; t < 3; t++) B(pine, 'cone').add([x, (1.6 + t * 1.5) * k, z], [(2.2 - t * 0.55) * k, 2.4 * k, (2.2 - t * 0.55) * k], pk(C.pine));
+      api.tree(round, x, 0, z, 1.27 * k, { leaf: C.green, trunk: C.trunk, kind: r() < 0.3 ? 'tall' : 'round' });
+      api.tree(pine, x, 0, z, 1.35 * k, { leaf: C.pine, trunk: C.trunk, kind: 'pine' });
       B(arch, 'capsule').add([s * 4.2, 2.6, z], [0.55, 4.6, 0.55], C.trunk, [0, 0, -s * 0.18]); B(arch, 'sphere').add([s * 3.4, 6.4, z], [3, 2.4, 2.6], pk(C.green)); B(arch, 'sphere').add([0, 7.6, z], [3.2, 1.8, 2.6], pk(C.green)); }
     setEl('bushes');
-    for (let i = 0; i < 3; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3.4, 9), z = -bt(0, L); for (let k = 0; k < 3; k++) B(g, 'sphere').add([x + (k - 1) * 0.7, 0.4, z + bt(-0.3, 0.3)], [bt(0.6, 0.9), bt(0.5, 0.7), 0.7], pk(C.green)); }
+    for (let i = 0; i < 3; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3.4, 9), z = -bt(0, L); api.bush(g, x, 0, z, bt(0.8, 1.1), { leaf: C.green }); }
+    setEl('foreground');                                               // FG plane: big bushes right at the path edge — they sweep past the lens
+    { const s = m % 2 ? 1 : -1, x = s * bt(2.9, 3.4), z = -bt(1, L - 1), k = bt(1.1, 1.6);
+      for (let j = 0; j < 4; j++) B(g, 'sphere').add([x + s * j * 0.45, 0.45 * k + j * 0.12, z + (j - 1.5) * 0.8], [0.85 * k, 0.75 * k, 0.8 * k], pk(['#6FAE6A', '#5E9E62', '#7CBF70']));
+      for (let j = -2; j <= 2; j++) B(g, 'cone').add([x - s * 0.9, 0, z + j * 0.25], [0.1, bt(0.5, 0.8), 0.1], '#5E9E62', [0, 0, j * 0.25]); }
     setEl('lamps');
     if (m % 2 === 0) { const s = m % 4 === 0 ? 1 : -1; B(g, 'capsule').add([s * 3.1, 1.6, -L / 2], [0.16, 3, 0.16], C.lamp); B(g, 'sphere').add([s * 3.1, 3.4, -L / 2], 0.42, C.bulb); }
     setEl('fences');
@@ -98,6 +102,7 @@ const shots = [
 
 startApp({
   id: 'bg6', title: 'BG 6 · Forward pathway — Scene 22', fov: 40, shots, build,
+  layers: (api, shot) => shot === shots[2] ? null : [7, 40, 200],                // FG bushes < 7 < MG path & trees < 40 < BG tunnel < 200 < far Fuji / clouds
   eras: ['colour', 'warp'],
   update(T, api) { const { hemi, sun, setSky, scene, THREE } = api; if (S.warpMat) S.warpMat.uniforms.uTime.value = T;
     setSky('#7FC4EE', '#EAF6FB', '#EAF6FB', { baseHex: '#9FD3F0' }); hemi.intensity = 2.2; hemi.color.set('#FFFFFF'); hemi.groundColor.set('#C9D9A8'); sun.intensity = 1.0; sun.position.set(-0.5, 1, 0.6);

@@ -23,6 +23,14 @@ const HOBBIES = ['drawing', 'music', 'games', 'plants', 'crafts'];
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines, state } = api;
+  /* FG frame for the room shots: a big house plant bottom-left, a stack of books + cushion bottom-right, a hanging plant top-right */
+  setEl('foreground');
+  { const K = api.frameKit, leaf = ['#5E9E62', '#6FAE6A', '#4F8E5A'];
+    K.box(-1.5, -1.0, 0.36, 0.3, '#C9785E'); K.leaves(-1.5, -0.86, 0.75, leaf, 9);
+    K.box(1.5, -1.02, 0.5, 0.1, '#5B86C9', 0.03); K.box(1.47, -0.93, 0.44, 0.09, '#E8836B', -0.04); K.box(1.52, -0.85, 0.4, 0.08, '#F2D17B', 0.02);
+    B(G.FRAME, 'sphere').add([1.02, -1.06, -0.97], [0.34, 0.16, 0.04], '#E79BB0');
+    K.branch(1.55, 1.1, 1.55, 0.8, 0.008, '#8A6450'); K.box(1.55, 0.78, 0.18, 0.12, '#D9A877'); K.leaves(1.55, 0.7, -0.45, leaf, 7); }
+  G.FRAME.userData.D = 1.0;
   const { SKY, BG, MG, FG } = G;
 
   /* ═════ A · the room (10 × 8 × 5) ═════ */
@@ -124,13 +132,18 @@ function build(api) {
     solid(geo.rbox, C.woodDark, g, { pos: [26, 1.6, -2.95], scale: [1.6, 3.2, 0.1] }); solid(geo.rbox, C.wood, g, { pos: [37, 0.5, -2], scale: [3, 0.25, 0.9] });
     setEl('strip-trees');
     for (let i = 0; i < 22; i++) { const x = bt(0, LOOP), z = bt(-14, -3), s = bt(1, 1.8); if (x > 60 && x < 122 && z < -6) continue;
-      B(g, 'capsule').add([x, s * 1.1, z], [0.5 * s, 1.2 * s, 0.5 * s], C.trunk); B(g, 'sphere').add([x, s * 2.9, z], 1.4 * s, pk(C.green)); B(g, 'sphere').add([x + s, s * 2.5, z], 1.05 * s, pk(C.green)); }
+      api.tree(g, x, 0, z, s, { leaf: C.green, trunk: C.trunk }); }
     setEl('strip-field');
     for (let i = 0; i < 90; i++) { const x = bt(124, 178), z = bt(-12, 6); for (let k = -1; k <= 1; k++) B(g, 'cone').add([x + k * 0.2, 0, z], [0.14, bt(0.7, 1.2), 0.14], pk(C.wheat), [0, 0, k * 0.25]); }
     setEl('strip-fences');
     for (let x = 2; x < LOOP; x += 3) { if (x > 64 && x < 120) continue; B(g, 'capsule').add([x, 0.6, 3], [0.18, 1, 0.18], C.wood); B(g, 'rbox').add([x + 1.5, 0.75, 3], [3, 0.16, 0.1], C.wood); }
     setEl('strip-flowers');
     for (let i = 0; i < 70; i++) { const x = bt(0, LOOP), z = bt(-2, 8); if (x > 124) continue; B(g, 'sphereLo').add([x, 0.3, z], [0.22, 0.12, 0.22], pk(['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0'])); B(g, 'capsule').add([x, 0.12, z], [0.05, 0.24, 0.05], '#7CBF70'); }
+    setEl('strip-foreground');                                         // FG plane: bushes, rocks and tall grass on the front edge, cut by the frame bottom
+    for (let x = 1; x < LOOP; x += bt(3, 6)) { const z = bt(16, 18), kind = r();   // in front of the ground edge (z 15)
+      if (kind < 0.45) for (let k = 0; k < 3; k++) B(g, 'sphere').add([x + (k - 1) * 0.9, -1.5 + bt(0, 0.3), z], [bt(0.9, 1.3), bt(0.8, 1.1), 0.8], pk(['#5E9E62', '#6FAE6A', '#4F8E5A']));
+      else if (kind < 0.65) B(g, 'sphere').add([x, -1.4, z], [bt(0.8, 1.2), bt(0.6, 0.8), 0.8], pk(['#8E89A8', '#9C97B4']));
+      else for (let k = -2; k <= 2; k++) B(g, 'cone').add([x + k * 0.22, -0.9, z], [0.12, bt(0.9, 1.5), 0.12], pk(['#5E9E62', '#6FAE6A']), [0, 0, k * 0.22]); }
     setEl('strip-clouds');
     for (let i = 0; i < 9; i++) { const x = bt(0, LOOP), y = bt(11.5, 14), s = bt(0.8, 1.6), n = 3 + Math.floor(r() * 4); for (let k = 0; k < n; k++) B(g, 'sphereLo').add([x + (k - n / 2) * s * 0.9, y + (k % 2) * s * 0.3, -40], [s, s * 0.8, s * 0.6], '#FFFFFF'); }
   }
@@ -155,6 +168,8 @@ const shots = [
 
 startApp({
   id: 'bg5', title: 'BG 5 · Hobby background (full colour)', fov: 40, shots, build,
+  frame: (api, shot) => shot !== shots[2],                                       // the run strip has its own FG row
+  layers: (api, shot) => shot === shots[2] ? [FAR_D - 12, FAR_D + 8, FAR_D + 22] : [1.6, 9, 30],
   eras: ['colour'],
   update(T, api, shot) { const { hemi, sun, setSky, scene } = api;
     setSky('#8FCBF0', '#FFF1D9', '#FFF1D9', { baseHex: '#A9D6F2' });

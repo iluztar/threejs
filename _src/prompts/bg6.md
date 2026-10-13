@@ -17,8 +17,13 @@
 - In the default *long panorama* format the colour / lineart / base buttons export the side strip below. Switch *PNG format* to *Single 4K frame* to export forward frames of the push / dolly zoom (and the per-element ZIP as multiplane layers).
 - **Panorama:** a long strip of the **path module rows seen from the side** (near-orthographic side camera tracking along the path, one full loop of 18 modules), so the tree, fence and flower rows can be painted once and reused for the loop. The warp tunnel exports as 4K frames (a push-in has no sideways travel).
 
+## Depth planes (FG · MG · BG · far)
+- FG (< 7, darkest): big bushes right at the path edge in every module, so they sweep past the lens during the truck-out and the dolly zoom (world space, real parallax).
+- MG (< 40): the path, lamps, fences, near trees.
+- BG (< 200): the tree tunnel; far: Fuji and clouds, lightest. The warp hole has no planes.
+
 ## Elements in the ZIP
-sky · ground · path · trees · bushes · lamps · fences · flowers · grass · rocks · logs · dashes · mountain · clouds · warp
+foreground · sky · ground · path · trees · bushes · lamps · fences · flowers · grass · rocks · logs · dashes · mountain · clouds · warp
 
 ## Palettes
 - Full colour #2E5E3A #6BA368 #F2D17B #4F8FC0 #F6EFE0 · WBB pathways #454F4C #859395 #434F38 #A1A971 #4D443B #9FA368 · grey warp / 1945 #111111 #3A3A3A #6E6E6E #A8A8A8 #E8E4DA.

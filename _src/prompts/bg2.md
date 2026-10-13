@@ -15,8 +15,13 @@
 - **Space**: deep navy-teal, never pitch black; soft round stars (Points); the **Moon** as a cute cream sphere with a few soft crater discs (Doraemon *Moon Exploration* 2019).
 - Sky colour blends with altitude: Kirby sky blue near the ground → navy in space.
 
+## Depth planes (FG · MG · BG · far)
+- FG (street run of Sc 7 only, darkest): camera-locked frame — hedge bottom-left, lamp post + bush on the right edge, leaves from the top-left corner. Off for the fall and the globe.
+- MG (< 40): the street, the dome top, the characters' lane.
+- BG (< 160): houses, coast; far: sea and sky. Globe shots use the planet's own depth (no planes).
+
 ## Elements in the ZIP
-sky · sea · land · night-lights · clouds · atmosphere · stars · moon · island · boats · dome · rocks · grass · flowers · city · trees · islands
+foreground · sky · sea · land · night-lights · clouds · atmosphere · stars · moon · island · boats · dome · rocks · grass · flowers · city · trees · islands
 
 ## Palettes
 - 1950s: #2F4A5C #6E9C9A #D9C7A0 #C0704B #F2E6CF.

@@ -42,6 +42,8 @@ The baked .glb of BG 1 is the biggest file: ≈ 93 MB at medium detail, ≈ 51 M
 | `G` | Guides: rule of thirds, title/action safe, horizon, staging box |
 | `H` | Clean view (picture only), `Esc` to leave |
 | `F` | Fullscreen |
+| `P` | Pixel art (2D game look) on / off |
+| `V` | Value check: black & white view of the FG / MG / BG planes |
 | `?` | Shortcut list |
 
 ### Header
@@ -52,8 +54,11 @@ Scene switcher (‹ list ›), title and current shot, the active era, then: gui
 - **Look**
   - *shading*: `flat 2d (chiikawa)` (default), `flat + cel shadow (kirby)`, or `soft 3d toon (old)`
   - *sky bands* (0 = smooth gradient) and *ground tint steps* (0 = smooth fog on the ground, the default)
+  - *detail shading* (on by default): light ramp, leaf clumps, cloud billows and broken bands also in the normal view, plus *light / shadow contrast* and *leaf / cloud detail*
   - drawn lines on/off, *line px @1080* (2.4 px, the same width everywhere), extra silhouette
   - *preview quality*: `auto` is sharp and lowers the resolution only if frames stay slow, `high` is always sharp, `low` is fastest. Exports always render at full 4K.
+- **Depth / value structure**: every BG is built as stacked planes, FG (dark shapes at the frame edges) → MG (characters, action) → BG → far (lightest). *FG · MG · BG value planes* pulls the colour picture to those values; *Plane contrast*; *Value check* (`V`) shows the frame in black & white, and the colour version reads the same.
+- **Pixel art (2D game)** (`P`): pixel-art shading (5-tone light ramp, leaf clumps with inner lines, grass tufts, soft cloud billows, broken bands on mountains / walls), then the picture snaps to an art-pixel grid. *Pixel size* (px at 1080p, so exports match), *light / shadow contrast*, *leaf / cloud detail*, *dither between tones*, *posterize*. Exports (PNG, panorama, ZIP) use it too; 3D files do not.
 - **Export options**: image format (long panorama or a single 4K frame), lineart colour, hand wobble, lineart on white, `.glb` mode, 3D detail (baked .glb, .obj, .stl).
 - **Elements**: show/hide each element (sky, clouds, hills, city…). Hidden elements are left out of every export.
 - **Guides** and a per-scene folder (landmark, light preset, props…).

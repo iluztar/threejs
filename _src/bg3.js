@@ -26,6 +26,14 @@ const opts = { caustics: true };
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines, mergeGeometries } = api;
+  /* FG frame (darkest plane): kelp + branch coral on the left edge, plate rocks + fan coral + sea grass bottom-right.
+     MG = the reef and Poki's sand patch, BG = far ledges and shell towers, far = the fog wall. */
+  setEl('foreground');
+  { const K = api.frameKit, kelp = '#4F9A5E', coral = ['#C94F8C', '#B65FC9'], rock = ['#5F8CC4', '#6E9BD0'];
+    K.kelp(-1.68, -1.1, 1.7, kelp, 7); K.kelp(-1.45, -1.1, 1.1, kelp, 5); K.coral(-1.25, -1.08, 0.4, coral, 7); K.rocks(-1.55, -1.12, 0.32, rock, 2);
+    K.rocks(1.45, -1.1, 0.42, rock, 3); K.coral(1.15, -0.95, 0.36, ['#E06AA8', '#D7559B'], 6); K.coral(1.7, -0.7, 0.5, ['#F49AB0', '#E98FC0'], 8);
+    K.tufts(0.85, 1.85, -1.04, 0.24, ['#6FB36A', '#7DBF6E'], 12); K.kelp(1.88, -1.1, 1.4, kelp, 6); }
+  G.FRAME.userData.D = 4;
   const { SKY, BG, MG, FG } = G;
   geo.fish = mergeGeometries([new THREE.SphereGeometry(0.5, 16, 12).scale(1, 0.62, 0.36), new THREE.ConeGeometry(0.32, 0.46, 3).rotateZ(Math.PI / 2).scale(1, 1, 0.35).translate(-0.6, 0, 0)]);
   geo.brain = (() => { const g = new THREE.SphereGeometry(1, 40, 30), p = g.attributes.position, v = new THREE.Vector3();
@@ -201,6 +209,8 @@ const shots = [
 
 startApp({
   id: 'bg3', title: 'BG 3 · Underwater (1960s)', fov: 46, shots, build,
+  frame: (api, shot) => shot !== shots[0],                                       // no FG frame above the water
+  layers: api => api.camera.position.y < 0 ? [6, 40, 110] : null,
   eras: ['e1960', 'e1970'],
   update(T, api) { animate(T, api); water(api); },
   staging: () => ({ center: [SPOT[0], floorY(SPOT[0], SPOT[1]), SPOT[1]], size: [2.4, 2.2, 2.4] }),
