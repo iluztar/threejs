@@ -23,14 +23,6 @@ const HOBBIES = ['drawing', 'music', 'games', 'plants', 'crafts'];
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines, state } = api;
-  /* FG frame for the room shots: a big house plant bottom-left, a stack of books + cushion bottom-right, a hanging plant top-right */
-  setEl('foreground');
-  { const K = api.frameKit, leaf = ['#5E9E62', '#6FAE6A', '#4F8E5A'];
-    K.box(-1.5, -1.0, 0.36, 0.3, '#C9785E'); K.leaves(-1.5, -0.86, 0.75, leaf, 9);
-    K.box(1.5, -1.02, 0.5, 0.1, '#5B86C9', 0.03); K.box(1.47, -0.93, 0.44, 0.09, '#E8836B', -0.04); K.box(1.52, -0.85, 0.4, 0.08, '#F2D17B', 0.02);
-    B(G.FRAME, 'sphere').add([1.02, -1.06, -0.97], [0.34, 0.16, 0.04], '#E79BB0');
-    K.branch(1.55, 1.1, 1.55, 0.8, 0.008, '#8A6450'); K.box(1.55, 0.78, 0.18, 0.12, '#D9A877'); K.leaves(1.55, 0.7, -0.45, leaf, 7); }
-  G.FRAME.userData.D = 1.0;
   const { SKY, BG, MG, FG } = G;
 
   /* ═════ A · the room (10 × 8 × 5) ═════ */
@@ -83,6 +75,17 @@ function build(api) {
   setEl('plants');
   for (const [x, z, s] of [[4.4, 2.8, 1], [-2.8, -3.4, 0.8], [2.2, -3.5, 0.7]]) { solid(geo.rcyl, '#D9805E', room, { pos: [x, 0, z], scale: [0.35 * s, 0.6 * s, 0.35 * s] });
     for (let k = 0; k < 4; k++) B(room, 'sphere').add([x + between(-0.25, 0.25) * s, (0.8 + k * 0.18) * s, z + between(-0.25, 0.25) * s], 0.3 * s, pick(C.green)); }
+  /* FG plane (darkest): objects at the open front edge of the room (z 3.4–4.2), cut by the frame as the camera pans:
+     a big potted plant front-left, a hanging plant from the beam front-left, a floor plant + stool front-right (frames the hero shot too) */
+  setEl('foreground');
+  { const leaf = ['#5E9E62', '#6FAE6A', '#4F8E5A'];
+    const plant = (x, z, pot, h, n) => { solid(geo.rcyl, pot, room, { pos: [x, 0, z], scale: [0.36, 0.55, 0.36] });
+      for (let i = 0; i < n; i++) { const a = i / n * 6.283 + between(0, 0.5), t = between(0.35, 0.9);
+        B(room, 'sphereLo').add([x + Math.sin(a) * 0.3 * h, 0.55 + h * 0.45, z + Math.cos(a) * 0.3 * h], [0.15, h * 0.5, 0.05], pick(leaf), [Math.cos(a) * t, a, -Math.sin(a) * t]); } };
+    plant(-2.75, 3.85, '#C9785E', 1.5, 12); plant(3.35, 3.95, '#E9C49A', 1.2, 10);
+    solid(geo.rcyl, C.woodDark, room, { pos: [-1.6, 0, 4.1], scale: [0.3, 0.55, 0.3] }); solid(geo.rcyl, C.pink, room, { pos: [-1.6, 0.55, 4.1], scale: [0.36, 0.1, 0.36] });
+    B(room, 'capsule').add([-2.2, 4.65, 3.6], [0.02, 0.55, 0.02], C.woodDark); solid(geo.rcyl, '#D9A877', room, { pos: [-2.2, 3.85, 3.6], scale: [0.26, 0.3, 0.26] });
+    for (let i = 0; i < 9; i++) { const a = i / 9 * 6.283, L = between(0.5, 0.95); B(room, 'sphereLo').add([-2.2 + Math.sin(a) * 0.3, 3.95 - L * 0.45, 3.6 + Math.cos(a) * 0.3], [0.1, L * 0.5, 0.05], pick(leaf), [Math.cos(a) * 0.35, a, -Math.sin(a) * 0.35]); } }
   setEl('wall-decor');
   solid(geo.rcyl, C.white, room, { pos: [-2.9, 3.8, -3.98], scale: [0.45, 0.08, 0.45], rot: [Math.PI / 2, 0, 0] });                       // clock
   solid(geo.rbox, '#F7D2C4', room, { pos: [4.98, 3.2, 0.8], scale: [0.06, 1.1, 1.4] }); solid(geo.rbox, '#CDE4F2', room, { pos: [4.98, 3.4, -1.2], scale: [0.06, 0.8, 0.8] });   // pictures
@@ -168,8 +171,7 @@ const shots = [
 
 startApp({
   id: 'bg5', title: 'BG 5 · Hobby background (full colour)', fov: 40, shots, build,
-  frame: (api, shot) => shot !== shots[2],                                       // the run strip has its own FG row
-  layers: (api, shot) => shot === shots[2] ? [FAR_D - 12, FAR_D + 8, FAR_D + 22] : [1.6, 9, 30],
+  layers: (api, shot) => shot === shots[2] ? [FAR_D - 12, FAR_D + 8, FAR_D + 22] : [4.6, 10, 30],
   eras: ['colour'],
   update(T, api, shot) { const { hemi, sun, setSky, scene } = api;
     setSky('#8FCBF0', '#FFF1D9', '#FFF1D9', { baseHex: '#A9D6F2' });

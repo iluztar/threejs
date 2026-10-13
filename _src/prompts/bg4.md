@@ -22,7 +22,7 @@
 - **Panorama:** each shot exports a long strip. The camera does a slow pan across the mirror world (about 150°), stitched into one wide painting in that shot's era. The 4-box shot exports its single source panorama (the split is done in compositing).
 
 ## Depth planes (FG · MG · BG · far)
-- FG (< 0.35 × camera distance, darkest): camera-locked frame — a pine bough over the top-left corner, reeds bottom-left, shore rocks + reeds bottom-right. Every FG piece is cut by the frame edge, so it needs no mirrored copy. Off in the 4-box (it would be mirrored into the middle).
+- FG (darkest): reed islets, lily clusters and shore rocks in the water at r 16–20 in front of the dock (≤ 2.6 high), taller reeds + rocks + a small pine at the sides of the wide shot, two clumps the platform dolly passes. Built inside the world, so the reflection mirrors them too.
 - MG (< 1.6 × distance): the dock, lily pads, the near water.
 - BG (< 6 × distance): shore hills and trees; far: mountains, clouds and their reflection, lightest.
 

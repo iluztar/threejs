@@ -14,7 +14,7 @@
 - **Panorama:** the strip is a side view (near-orthographic camera, 5,000 units away), so the export is one flat strip of exactly one loop (180 units ≈ 9,700 px at 2160 px tall) that tiles seamlessly; each element (ground, lake, mountains, trees, field, fences, flowers, clouds, the hobby place) is its own PNG for parallax.
 
 ## Depth planes (FG · MG · BG · far)
-- Room (FG < 1.6, darkest): camera-locked frame — a big house plant bottom-left, a stack of books + cushion bottom-right, a hanging plant top-right. MG < 9: the hobby spot and furniture; BG: walls, window, beams.
+- Room (FG < 4.6, darkest): real objects at the open front edge of the room — a big potted plant front-left, a stool, a hanging plant from the beam, a floor plant front-right. MG < 10: the hobby spot and furniture; BG: walls, window, beams.
 - Run strip: a world-space FG row on the front edge (bushes, rocks, tall grass, cut by the frame bottom, loops with the strip), MG: the run lane, fences, flowers, the studio front; BG: trees, lake; far: mountains and clouds.
 
 ## Elements in the ZIP

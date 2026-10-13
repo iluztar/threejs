@@ -20,14 +20,6 @@ const S = {}; const opts = { fold: 0 };
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines, hexToRgb, rgbToHex } = api;
-  /* FG frame: a pine bough over the top-left corner, reeds bottom-left, shore rocks + reeds + lily bottom-right.
-     All FG pieces are cut by the frame edge, so they need no mirrored copy. */
-  setEl('foreground');
-  { const K = api.frameKit, pine = ['#4F8E6A', '#579B74', '#5FA57C'], rock = ['#A9A4C2', '#B5B0CC'];
-    K.branch(-1.95, 1.15, -0.95, 0.88, 0.035, '#8A6450'); K.canopy(-1.45, 0.98, 0.42, pine, 13); K.canopy(-0.95, 0.88, 0.18, pine, 5);
-    K.reeds(-1.85, -1.3, -1.08, 0.75, '#5E9E62', '#9A7258', 9); K.tufts(-1.85, -1.1, -1.04, 0.2, ['#6FAE6A', '#5E9E62'], 10);
-    K.rocks(1.5, -1.12, 0.4, rock, 3); K.reeds(1.15, 1.8, -1.06, 0.6, '#5E9E62', '#9A7258', 8); }
-  G.FRAME.userData.D = 3;
   const { SKY, BG, MG, FG } = G;
   const mixHex = (h, t, k) => { const a = hexToRgb(h), b = hexToRgb(t); return rgbToHex(a.map((v, i) => v + (b[i] - v) * k)); };
   const darken = h => { const c = hexToRgb(h), t = [0.36, 0.45, 0.66]; return rgbToHex(c.map((v, i) => (v + (t[i] - v) * 0.2) * 0.88)); };
@@ -40,6 +32,21 @@ function build(api) {
     const bt = (a, b) => a + r0() * (b - a), pk = a => a[Math.floor(r0() * a.length)];
     /** angle around the lake: most things sit behind the dock (−z, where every shot looks), fewer at the sides */
     const aroundBack = () => Math.PI + (r0() + r0() + r0() - 1.5) * 1.6;
+
+    /* FG plane (darkest): reed islets and shore rocks standing in the water close to the cameras, mirrored like the rest.
+       Ring at r 16–20 in front of the dock, kept under the line to the dock (≤ 2.6 high); taller reeds + a rock with a pine
+       at the sides of the wide shot; two clumps the platform dolly passes. */
+    el('foreground');
+    const reeds = (x, z, h, n = 7) => { for (let i = 0; i < n; i++) { const px = x + bt(-0.7, 0.7), pz = z + bt(-0.5, 0.5), k = bt(0.6, 1);
+      B(parent, 'capsule').add([px, h * k * 0.5 - 0.3, pz], [0.07, h * k * 0.5, 0.07], col('#6FAE6A'), [bt(-0.1, 0.1), 0, bt(-0.12, 0.12)]);
+      if (r0() < 0.5) B(parent, 'capsule').add([px, h * k - 0.25, pz], [0.13, 0.28, 0.13], col('#9A7258')); } };
+    const rocks = (x, z, s) => { for (let i = 0; i < 3; i++) { const w = s * bt(0.6, 1) * (1 - i * 0.2); B(parent, 'sphereLo').add([x + (i - 1) * s * 0.7, w * 0.15, z + bt(-0.3, 0.3)], [w, w * 0.55, w * 0.8], col(pk(C.rock))); } };
+    for (let a = -0.75; a <= 0.75; a += bt(0.13, 0.22)) { const r = bt(16, 20), x = Math.sin(a) * r, z = Math.cos(a) * r, k = r0();
+      if (k < 0.5) reeds(x, z, bt(1.6, 2.6)); else if (k < 0.8) { rocks(x, z, bt(0.8, 1.3)); reeds(x + 0.8, z, bt(1.2, 2), 4); }
+      else for (let i = 0; i < 4; i++) B(parent, 'disc', false).add([x + bt(-1.2, 1.2), 0.03, z + bt(-0.8, 0.8)], [bt(0.5, 0.8), 1, bt(0.5, 0.8)], col(C.lily), [0, bt(0, 6.28), 0]); }
+    for (const sd of [-1, 1]) { const x = sd * bt(4.5, 7.5), z = bt(32, 35); reeds(x, z, bt(3.4, 4.4), 10); rocks(x - sd * 1.6, z + 0.6, bt(1.2, 1.6));
+      api.tree(parent, x + sd * 1.6, 0.4, z - 0.4, 0.75, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col }); }
+    reeds(4.2, 12, 2.2); rocks(4.9, 12.4, 0.8); reeds(-1.2, 13.8, 1.8, 5);
 
     el('dock');                                                                // round wooden dock, top at y ≈ 0.8 (characters)
     solid(geo.rcyl, col(C.deck), parent, { pos: [0, -0.2, 0], scale: [5.6, 1, 5.6] });
@@ -146,7 +153,6 @@ const shots = [
 
 startApp({
   id: 'bg4', title: 'BG 4 · Mirrored background — mountain lake', fov: 40, shots, build,
-  frame: (api, shot) => shot !== shots[4],                                       // the 4-box mirrors the frame: no FG there
   layers: api => { const d = api.camera.position.length(); return [Math.max(4, d * 0.35), d * 1.6, d * 6]; },
   eras: ['e1960', 'e1970', 'e1945', 'e1980', 'e1990', 'colour'],
   update(T, api) { if (S.waterMat) S.waterMat.uniforms.uTime.value = T; const { hemi, sun, scene, THREE } = api; hemi.intensity = 2.2; hemi.color.set('#FFFFFF'); hemi.groundColor.set('#D8D2EE'); sun.intensity = 0.9; sun.position.set(-0.6, 1, 0.8);

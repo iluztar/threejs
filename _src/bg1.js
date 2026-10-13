@@ -269,15 +269,25 @@ function build(api) {
     }
   }
 
-  /* ── FG frame (value plane 1, darkest): rocks + log cut by the bottom-left corner, tufts + stump bottom-right,
-     an overhanging branch from the top-right corner. MG = dome, characters, park; BG = city; far = ridges + clouds. ── */
+
+  /* ── FG plane (darkest): real objects close to the orbit, so every frame of the turn shows different ones ──
+     - three big trees planted just outside the orbit (r ≈ 10): their trunks stay behind / beside the lens, their low
+       crowns reach in over the camera path (r 5–9, 2.5–3.6 high) — the turn passes under them, leaves cross the top
+     - a ring of rocks, stumps, bushes, tall grass and logs at r 4.6–6.2, never taller than the line to the characters' feet */
   setEl('foreground');
-  { const K = api.frameKit, leaf = ['#6FAE6A', '#5E9E62', '#7CBF70'], rock = ['#9C97B4', '#A7A2BE'], grass = ['#6FAE6A', '#5E9E62', '#86C27A'];
-    K.rocks(-1.62, -1.08, 0.36, rock, 3); K.log(-1.05, -0.98, 0.9, 0.11, '#9A7258', '#E3C49C'); K.tufts(-1.8, -0.7, -1.04, 0.22, grass, 16);
-    K.tufts(0.9, 1.85, -1.04, 0.3, grass, 18); B(G.FRAME, 'rcyl').add([1.5, -1.05, -0.99], [0.16, 0.14, 0.04], '#9A7258');
-    K.branch(1.95, 1.15, 1.05, 0.78, 0.045, '#8A6450'); K.branch(1.4, 0.95, 1.2, 1.12, 0.025, '#8A6450');
-    K.canopy(1.55, 0.98, 0.42, leaf, 12); K.canopy(1.0, 0.82, 0.2, leaf, 5); }
-  G.FRAME.userData.D = 2.5;
+  { const leaf = ['#7CBF70', '#6FAE6A', '#86C27A'], dark = ['#5E9E62', '#4F8E5A'];
+    for (const a of [0.35, 2.45, 4.35]) {
+      const r = 10.2, x = Math.sin(a) * r, z = Math.cos(a) * r; api.tree(FG, x, domeY(r), z, 1.3, { leaf, trunk: '#B98A6A' });
+      for (let i = 0; i < 4; i++) { const t = 0.25 + i * 0.19, d = r - t * 6, aa = a + between(-0.12, 0.12);          // limb reaching in
+        B(FG, 'capsule').add([Math.sin(aa) * (d + 0.6), 3.0 - t * 0.6, Math.cos(aa) * (d + 0.6)], [0.16, 0.9, 0.16], '#A47A5E', [Math.PI / 2 - 0.25, -aa, 0]); }
+      for (let i = 0; i < 26; i++) { const d = between(4.9, 9.2), aa = a + between(-0.32, 0.32) * (10 / d) * 0.5, y = between(2.55, 3.7), s = between(0.4, 0.75);
+        B(FG, 'sphereLo').add([Math.sin(aa) * d, y, Math.cos(aa) * d], [s, s * 0.78, s], pick(y > 3.2 ? leaf : dark)); } }
+    for (let i = 0; i < 30; i++) { const a = i / 30 * 6.283 + between(0, 0.15), d = between(4.6, 6.2), x = Math.sin(a) * d, z = Math.cos(a) * d, y = domeY(d), kind = rand();
+      if (kind < 0.25) for (let k = 0; k < 3; k++) { const s = between(0.45, 0.85) * (1 - k * 0.2); B(FG, 'sphereLo').add([x + (k - 1) * 0.6 * Math.cos(a), y + s * 0.3, z - (k - 1) * 0.6 * Math.sin(a)], [s, s * 0.65, s * 0.85], pick(['#B4AFC8', '#A7A2BE', '#C1BCD3'])); }
+      else if (kind < 0.5) api.bush(FG, x, y, z, between(0.65, 0.95), { leaf });
+      else if (kind < 0.7) for (let k = -3; k <= 3; k++) B(FG, 'cone').add([x + k * 0.14 * Math.cos(a), y, z - k * 0.14 * Math.sin(a)], [0.1, between(0.6, 1.05), 0.1], pick(dark), [0, -a, k * 0.2]);
+      else if (kind < 0.85) { B(FG, 'rcyl').add([x, y - 0.05, z], [0.42, between(0.5, 0.8), 0.42], '#B98A6A'); B(FG, 'rcyl').add([x, y + 0.6, z], [0.35, 0.05, 0.35], '#E8CDA6'); }
+      else { const ry = a + Math.PI / 2 + between(-0.4, 0.4); B(FG, 'capsule').add([x, y + 0.32, z], [0.62, 1.4, 0.62], '#B98A6A', [Math.PI / 2, ry, 0]); } } }
 
   setLandmark(opts.landmark); setLight(api, opts.light);
 }
@@ -322,7 +332,7 @@ startApp({
   eras: ['e1960', 'e1945', 'base'],                // brief: Sc 3–4 1960s → Sc 5 1945 B&W → Sc 6 colour
   update(T, api) { if (landmarks._clouds) landmarks._clouds.rotation.y = T * 0.004; },
   staging: () => ({ center: [0, 0, 0], size: [2.6, 1.3, 1.4] }),
-  layers: () => [4.5, 60, 240],                    // view distance: FG frame < 4.5 < MG dome & park < 60 < BG city < 240 < far ridges / clouds
+  layers: () => [5, 60, 240],                      // view distance: FG ring + overhang < 5 < MG dome & park < 60 < BG city < 240 < far ridges / clouds
   guiTitle: 'BG 1 · City',
   gui(f, api) {
     f.add(opts, 'landmark', { 'Art Deco spire tower': 'deco', 'Observation needle (1962)': 'needle' }).name('Landmark').onChange(setLandmark);
