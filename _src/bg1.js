@@ -242,12 +242,9 @@ function build(api) {
     const b = a + 0.3, bx = Math.sin(b) * r, bz = Math.cos(b) * r; B(MG, 'rbox').add([bx, GROUND_Y + 0.6, bz], [2.6, 0.35, 0.9], '#B98A6A', [0, -b, 0]); B(MG, 'rbox').add([bx, GROUND_Y + 1.1, bz], [2.6, 0.8, 0.2], '#B98A6A', [0, -b, 0]); }
 
   /* ── horizon: lavender triangle ridges + outlined clouds (whole, inside the camera range) ── */
-  setEl('hills');
-  for (let ring = 0; ring < 2; ring++) {
-    const r = ring ? 330 : 300, n = ring ? 40 : 34, col = ring ? C.ridgeA : C.ridgeB;
-    for (let i = 0; i < n; i++) { const a = i / n * 6.283 + rand() * 0.08, h = (ring ? 30 : 16) + rand() * (ring ? 34 : 20), w = h * (1.3 + rand() * 0.5);
-      B(BG, 'cone').add([Math.sin(a) * r, GROUND_Y - 1, Math.cos(a) * r], [w, h, w * 0.6], col, [0, -a, 0]); }
-  }
+  setEl('hills');   // one far range all around (≈ 14 massifs) + a few low rolling hills in front of it
+  api.range(BG, { arc: [0, 6.283], d: [320, 345], count: 14, h: [26, 62], col: [C.ridgeA, '#C9C6DE'], y0: GROUND_Y - 1, depth: 0.6 });
+  api.range(BG, { arc: [0.3, 6.283], d: [285, 300], count: 10, h: [10, 20], col: [C.ridgeB, '#C4C1DA'], y0: GROUND_Y - 1, hill: true, depth: 0.5 });
   setEl('clouds');
   const clouds = new THREE.Group(); SKY.add(clouds); landmarks._clouds = clouds;
   // camera sees up to ≈16° above the horizon: each cloud gets a random elevation between the ridges (≈7°) and 15°

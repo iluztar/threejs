@@ -45,7 +45,7 @@ function build(api) {
       if (k < 0.5) reeds(x, z, bt(1.6, 2.6)); else if (k < 0.8) { rocks(x, z, bt(0.8, 1.3)); reeds(x + 0.8, z, bt(1.2, 2), 4); }
       else for (let i = 0; i < 4; i++) B(parent, 'disc', false).add([x + bt(-1.2, 1.2), 0.03, z + bt(-0.8, 0.8)], [bt(0.5, 0.8), 1, bt(0.5, 0.8)], col(C.lily), [0, bt(0, 6.28), 0]); }
     for (const sd of [-1, 1]) { const x = sd * bt(4.5, 7.5), z = bt(32, 35); reeds(x, z, bt(3.4, 4.4), 10); rocks(x - sd * 1.6, z + 0.6, bt(1.2, 1.6));
-      api.tree(parent, x + sd * 1.6, 0.4, z - 0.4, 0.75, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col }); }
+      api.tree(parent, x + sd * 1.6, 0.4, z - 0.4, 0.75, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col, seed: 1300 + sd }); }
     reeds(4.2, 12, 2.2); rocks(4.9, 12.4, 0.8); reeds(-1.2, 13.8, 1.8, 5);
 
     el('dock');                                                                // round wooden dock, top at y ≈ 0.8 (characters)
@@ -54,28 +54,19 @@ function build(api) {
     for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283; solid(geo.capsule, col(C.post), parent, { pos: [Math.sin(a) * 5.7, 0.5, Math.cos(a) * 5.7], scale: [0.45, 1.3, 0.45] }); }
     for (let i = 0; i < 4; i++) solid(geo.rbox, col(C.deck), parent, { pos: [0, 0.38, 7.4 + i * 2.1], scale: [2.6, 0.32, 1.8] });   // little walkway toward the camera
 
-    el('mountains');
-    for (let i = 0; i < 26; i++) {                                              // far range: big, soft, snow-capped
-      const a = aroundBack(), d = bt(480, 780), h = Math.min(bt(110, 190), d * 0.22), r = h * bt(1.0, 1.4), x = Math.sin(a) * d, z = Math.cos(a) * d, hex = pk(C.mtnFar);
-      B(parent, 'cone').add([x, -1, z], [r, h, r], col(hex), [0, bt(0, 6.28), 0]);
-      B(parent, 'cone').add([x, h * 0.62 - 1, z], [r * 0.43, h * 0.38, r * 0.43], col(C.snow), [0, bt(0, 6.28), 0]);
-    }
-    for (let i = 0; i < 16; i++) {                                              // nearer range: smaller, bluer, some without snow
-      const a = aroundBack(), d = bt(300, 440), h = Math.min(bt(55, 100), d * 0.2), r = h * bt(1.1, 1.6), x = Math.sin(a) * d, z = Math.cos(a) * d;
-      B(parent, 'cone').add([x, -1, z], [r, h, r], col(pk(C.mtnNear)), [0, bt(0, 6.28), 0]);
-      if (r0() < 0.55) B(parent, 'cone').add([x, h * 0.66 - 1, z], [r * 0.38, h * 0.34, r * 0.38], col(C.snow), [0, bt(0, 6.28), 0]);
-    }
+    el('mountains');   // behind the lake: one far snow range + one nearer, lower range (few massifs each, not a wall of cones)
+    api.range(parent, { arc: [Math.PI, 4.0], d: [520, 700], count: 9, h: [120, 185], col: C.mtnFar, snow: C.snow, snowAbove: 130, y0: -1, map: col, seed: 401 });
+    api.range(parent, { arc: [Math.PI + 0.2, 3.4], d: [330, 420], count: 7, h: [50, 90], col: C.mtnNear, snow: C.snow, snowAbove: 78, y0: -1, map: col, seed: 402 });
 
-    el('hills');
-    for (let i = 0; i < 30; i++) { const a = aroundBack(), d = bt(170, 250), r = bt(22, 42), h = r * bt(0.3, 0.5);
-      B(parent, 'halfSphere').add([Math.sin(a) * d, -0.5, Math.cos(a) * d], [r, h, r * bt(0.8, 1.1)], col(pk(C.hill))); }
+    el('hills');       // a few long, low shore hills (was 30 half-balls)
+    api.range(parent, { arc: [Math.PI, 3.6], d: [175, 235], count: 9, h: [9, 17], col: C.hill, y0: -0.5, hill: true, map: col, seed: 403 });
 
     el('trees');
     for (let i = 0; i < 80; i++) { const a = aroundBack(), d = bt(150, 215), x = Math.sin(a) * d, z = Math.cos(a) * d, s = bt(4, 7.5);
       if (r0() < 0.45) {                                                       // round tree (Chiikawa / Kirby)
-        api.tree(parent, x, 0, z, s * 0.48, { leaf: C.tree, trunk: C.trunk, col, far: 2 });
+        api.tree(parent, x, 0, z, s * 0.48, { leaf: C.tree, trunk: C.trunk, col, far: 2, seed: 1000 + i });
       } else {                                                                  // soft pine: three stacked rounded cones
-        api.tree(parent, x, 0, z, s * 0.48, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col, far: 2 });
+        api.tree(parent, x, 0, z, s * 0.48, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col, far: 2, seed: 1100 + i });
       } }
 
     el('rocks');
