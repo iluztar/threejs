@@ -16,7 +16,7 @@
 - **Panorama:** each shot exports a long strip. The camera does a slow pan across the mirror world (about 150°), stitched into one wide painting in that shot's era. The 4-box shot exports its single source panorama (the split is done in compositing).
 
 ## Depth planes (FG · MG · BG · far)
-- FG (darkest): reed islets, lily clusters and shore rocks in the water at r 16–20 in front of the dock (≤ 2.6 high), two saung (Indonesian pond gazebos: a low deck on stilts just above the water, four corner posts, open sides with a low railing, a low lesehan table, a big steep hipped thatch roof with a thick overhanging fringe) linked by a short boardwalk on the left of the wide shot and tall reeds + shore rocks on the right — no trees standing in the lake, two clumps the platform dolly passes. Built inside the world, so the reflection mirrors them too.
+- FG (darkest): reed islets, lily clusters and shore rocks in the water at r 16–20 in front of the dock (≤ 2.6 high), two saung (Indonesian pond gazebos: a low deck on stilts just above the water, four corner posts, open sides with a low railing, a low lesehan table, a big steep hipped thatch roof with a thick overhanging fringe) linked by a short boardwalk on the left of the wide shot, and reached from the dock: a plank boardwalk on posts curves over the water from the end of the dock walkway to the open front of the first saung and tall reeds + shore rocks on the right — no trees standing in the lake, two clumps the platform dolly passes. Built inside the world, so the reflection mirrors them too.
 - MG (< 1.6 × distance): the dock, lily pads, the near water.
 - BG (< 6 × distance): shore hills and trees; far: mountains, clouds and their reflection, lightest.
 
