@@ -868,8 +868,8 @@ export function startApp(cfg) {
       OrbitControlsP ||= import('three/addons/controls/OrbitControls.js').then(m => m.OrbitControls);
       const OrbitControls = await OrbitControlsP;
       setPlaying(false); applyTime(state.T); camera.updateMatrixWorld();             // start from the shot's own camera
-      const st = cfg.staging && cfg.staging(api, shotAt(state.T)), dir = camera.getWorldDirection(new THREE.Vector3());
-      let dist = st ? camera.position.distanceTo(new THREE.Vector3(...st.center)) : 12; if (!(dist > 0.5 && dist < 2000)) dist = 12;
+      const st = cfg.staging && cfg.staging(api, shotAt(state.T)), dir = camera.getWorldDirection(new THREE.Vector3()), ft = cfg.freeTarget && cfg.freeTarget(api, shotAt(state.T));
+      let dist = ft ? camera.position.distanceTo(new THREE.Vector3(...ft)) : st ? camera.position.distanceTo(new THREE.Vector3(...st.center)) : 12; if (!(dist > 0.5 && dist < (ft ? 1e6 : 2000))) dist = 12;
       if (camera.fov < 10) { camera.fov = 40; camera.position.addScaledVector(dir, camera.position.distanceTo(new THREE.Vector3(...(st ? st.center : [0, 0, 0]))) - 40); dist = 40; }   // near-ortho strip cams
       camera.up.set(0, 1, 0);
       if (!free.ctl) { free.ctl = new OrbitControls(camera, stage); free.ctl.screenSpacePanning = true; free.ctl.zoomSpeed = 0.8; free.ctl.rotateSpeed = 0.6; free.ctl.maxPolarAngle = Math.PI * 0.495;   // never below the ground
@@ -891,6 +891,18 @@ export function startApp(cfg) {
     m.normalize().multiplyScalar(sp * dt); camera.position.add(m); free.ctl.target.add(m); free.ctl.update();
   }
   btnFree && (btnFree.onclick = () => setFree(!free.on));
+  /* scene drag (cfg.drag): e.g. turn the globe by dragging / swiping right on the picture, outside free view.
+     cfg.drag = { active(api, shot), move(dxFrac, dyFrac, api), tick(dt, api) → still moving?, reset(api) } */
+  const drag = { on: false, x: 0, y: 0 }, dragHint = $('#dragHint');
+  const dragActive = () => !!cfg.drag && !free.on && !busy && cfg.drag.active(api, shotAt(state.T));
+  stage.addEventListener('pointerdown', e => { if (e.button !== 0 || !dragActive()) return; drag.on = true; drag.x = e.clientX; drag.y = e.clientY; stage.setPointerCapture?.(e.pointerId); });
+  stage.addEventListener('pointermove', e => { if (!drag.on) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+    cfg.drag.move(dx / stage.clientWidth, dy / stage.clientHeight, api); invalidate(); });
+  const dragEnd = () => { drag.on = false; };
+  stage.addEventListener('pointerup', dragEnd); stage.addEventListener('pointercancel', dragEnd);
+  stage.addEventListener('dblclick', () => { if (dragActive() && cfg.drag.reset) { cfg.drag.reset(api); invalidate(); } });
+  let dragShown = false;
+  const syncDrag = () => { const on = dragActive(); document.body.classList.toggle('can-drag', on); if (dragHint) { dragHint.hidden = !on; if (on && !dragShown) { dragShown = true; dragHint.classList.add('show'); setTimeout(() => dragHint.classList.remove('show'), 4500); } if (!on) dragShown = false; } };
   /** free view from a given position looking at a target (repeatable angles, tests) */
   api.freeLook = async (pos, target) => { await setFree(true); camera.position.set(...pos); free.ctl.target.set(...target); free.ctl.update(); savePose(); invalidate(); };
   window.addEventListener('keyup', e => { free.keys.delete(e.key.toLowerCase()); if (e.key === 'Shift') free.keys.delete('shift'); });
@@ -1343,6 +1355,7 @@ export function startApp(cfg) {
     const dt = Math.max(0, Math.min(0.1, (now - last) / 1000)); last = now;   // first rAF stamp can be older than performance.now()
     if (state.playing && !busy) { state.T += dt; if (state.T >= TOTAL) state.T = 0; setScrub(); }
     freeWalk(dt);
+    if (cfg.drag) { syncDrag(); if (!drag.on && cfg.drag.tick && cfg.drag.tick(dt, api)) invalidate(); }
     if (!busy && (state.playing || dirty || state.manual)) {
       if (needResize) { needResize = false; resize(); slowAcc = slowN = 0; }
       dirty = false;

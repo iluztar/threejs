@@ -249,6 +249,9 @@ function globeCam(api, extraSpin = 0) {
   camera.position.copy(dir.multiplyScalar(GLOBE_DIST)); camera.up.set(0, 1, 0); camera.lookAt(0, 0, 0); camera.fov = 40; camera.near = 10; camera.far = 30000;
 }
 let turn0 = 0;
+/* the viewer can turn the globe by dragging / swiping in the globe shots: yaw (with a little inertia) + tilt, double-click resets */
+const U = { yaw: 0, tilt: 0, vy: 0, last: 0 };
+const isGlobeShot = shot => shot === shots[2] || shot === shots[3];
 const shots = [
   { name: 'Sc 7–8 · jump & fall (base)', dur: 6, era: 'base',
     update(k, ts, api) { S.spin.rotation.y = turn0; S.cloudSpin.rotation.y = turn0;
@@ -291,8 +294,18 @@ function turntableCam(api) {                       // fixed view: camera where t
 startApp({
   id: 'bg2', title: 'BG 2 · Earth zoom out + Globe 360°', fov: 40, shots, build,
   layers: (api, shot, k) => shot === shots[0] ? [6, 40, 160] : null,            // globe shots: depth comes from the planet itself
+  freeTarget: (api, shot) => isGlobeShot(shot) ? [0, 0, 0] : null,             // free view orbits the globe
+  drag: {
+    active: (api, shot) => isGlobeShot(shot),
+    move(dx, dy, api) { const now = performance.now(), d = dx * Math.PI * 1.4, dt = Math.max(0.008, (now - U.last) / 1000); U.last = now;
+      U.yaw += d; U.vy = api.lerp(U.vy, d / dt, 0.5); U.tilt = api.clamp(U.tilt + dy * 2.2, -0.9, 0.9); },
+    tick(dt) { if (performance.now() - U.last < 60 || Math.abs(U.vy) < 0.02) { if (performance.now() - U.last >= 60) U.vy = 0; return false; } U.yaw += U.vy * dt; U.vy *= Math.pow(0.05, dt); return true; },   // glide after release
+    reset() { U.yaw = U.tilt = U.vy = 0; },
+  },
   eras: ['base', 'e1950'],
   update(T, api, shot, k) {
+    if (isGlobeShot(shot)) { S.spin.rotation.y += U.yaw; S.cloudSpin.rotation.y += U.yaw; S.spin.rotation.x = S.cloudSpin.rotation.x = U.tilt; }   // viewer's drag
+    else S.spin.rotation.x = S.cloudSpin.rotation.x = 0;
     const { THREE, camera, hemi, sun, setSky } = api;
     const alt = camera.position.length() - R, t = api.smooth(40, 1400, alt);
     const mix = (a, b) => api.rgbToHex(api.hexToRgb(a).map((v, i) => v + (api.hexToRgb(b)[i] - v) * t));

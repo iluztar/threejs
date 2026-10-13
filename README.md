@@ -42,6 +42,7 @@ The baked .glb of BG 1 is the biggest file: ≈ 93 MB at medium detail, ≈ 51 M
 | `G` | Guides: rule of thirds, title/action safe, horizon, staging box |
 | `H` | Clean view (picture only), `Esc` to leave |
 | `F` | Fullscreen |
+| Drag / swipe | BG 2 globe shots: turn and tilt the globe right on the picture (it glides on a little), double-click / double-tap resets |
 | `C` | Free view: drag to turn, right-drag to move, wheel to zoom, `W` `A` `S` `D` / `Q` `E` to walk, `R` back to the shot camera, `Esc` to leave |
 | `P` | Pixel art (2D game look) on / off |
 | `V` | Value check: black & white view of the FG / MG / BG planes |

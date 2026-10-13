@@ -15,6 +15,9 @@
 - **Space**: deep navy-teal, never pitch black; soft round stars (Points); the **Moon** as a cute cream sphere with a few soft crater discs (Doraemon *Moon Exploration* 2019).
 - Sky colour blends with altitude: Kirby sky blue near the ground → navy in space.
 
+## Turning the globe by hand
+In the two globe shots (red wave → 1950s and the 360° turntable) the viewer can drag / swipe right on the picture to turn the globe (left / right) and tilt it (up / down, ±0.9 rad); it glides on a little after release, double-click / double-tap resets. The turntable keeps playing on top of it. Free view orbits the globe centre in these shots.
+
 ## Depth planes (FG · MG · BG · far)
 - FG (street run of Sc 7, darkest): bushes, rocks, tall grass and lamp posts along both sides of the lane (x ±2.2–3.8) and two tall trees hanging over it, so they sweep past the lens.
 - MG (< 40): the street, the dome top, the characters' lane.
