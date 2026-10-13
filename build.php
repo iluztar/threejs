@@ -177,14 +177,14 @@ fieldset{border:0;margin:0 0 12px;padding:0}legend{font:800 10.5px/1 system-ui;l
 </style></head><body>
 $mascots
 <header><div class="hero"><span class="duo" aria-hidden="true"><svg><use href="#sp-boy"/></svg><svg><use href="#sp-girl"/></svg></span><div><h1>Sirpeltric · BG references</h1>
-<p>Six background scenes in Three.js, drawn flat 2D like Chiikawa and Kirby: flat colour fills, one ink line, banded sky. Background only, no characters. Each scene exports a long panorama (colour · lineart · base colour), a ZIP with one PNG per element, and 3D files for Blender (.glb · .obj · .stl).</p></div></div></header>
+<p>6 background scenes · Kirby / Chiikawa feel · background only</p></div></div></header>
 <main>
 <div class="grid">
 $links</div>
 $batch
 </main>
 <script src="batch.js" defer></script>
-<footer>Single HTML files — open by double-click, internet needed once for the Three.js CDN. In a scene: <kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> frame · <kbd>E</kbd> export · <kbd>S</kbd> settings · <kbd>[</kbd><kbd>]</kbd> scene · <kbd>G</kbd> guides · <kbd>H</kbd> clean view · <kbd>F</kbd> fullscreen.</footer>
+<footer>Single HTML files — open by double-click, internet needed once for the Three.js CDN. In a scene: <kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> frame · <kbd>E</kbd> export · <kbd>S</kbd> settings · <kbd>[</kbd><kbd>]</kbd> scene · <kbd>G</kbd> guides · <kbd>H</kbd> clean view · <kbd>F</kbd> fullscreen · <kbd>P</kbd> pixel art · <kbd>V</kbd> B&amp;W value check.</footer>
 </body></html>
 HTML;
 file_put_contents("$out/index.html", $index);
