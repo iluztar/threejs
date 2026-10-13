@@ -31,6 +31,9 @@ const C = {
   car: ['#E8836B', '#7FB7E0', '#F2D17B', '#9FD39A', '#F3F0E6', '#C8A2D8'],
 };
 const domeY = d => Math.sqrt(Math.max(0, DOME_R * DOME_R - d * d)) - DOME_R;
+// the dome is curved: long / wide pieces are sunk by the slope so their downhill side still touches the ground (no gaps)
+const slope = (x, z) => { const d = Math.hypot(x, z); return d / Math.sqrt(Math.max(1, DOME_R * DOME_R - d * d)); };
+const sink = (x, z, ry, half) => slope(x, z) * half * Math.abs(Math.cos(ry - Math.atan2(x, z)));       // axis (sin ry, cos ry)
 const DOME_FOOT = Math.sqrt(DOME_R * DOME_R - (DOME_R + GROUND_Y) ** 2);   // ≈ 28.6
 
 const opts = { landmark: 'deco', light: 'team' };
@@ -59,7 +62,10 @@ function build(api) {
     for (let i = 0; i <= N; i++) { const p = river.getPointAt(i / N), t = river.getTangentAt(i / N); const n = new THREE.Vector2(-t.z, t.x).multiplyScalar(9); L.push(new THREE.Vector2(p.x + n.x, p.z + n.y)); R.unshift(new THREE.Vector2(p.x - n.x, p.z - n.y)); }
     flat(new THREE.ShapeGeometry(new THREE.Shape([...L, ...R])).rotateX(Math.PI / 2), C.river, 0.07, '#2f5fa0');
     for (const k of [0.32, 0.56, 0.8]) { const p = river.getPointAt(k), t = river.getTangentAt(k);
-      solid(geo.rbox, '#F7F2E6', MG, { pos: [p.x, GROUND_Y + 0.9, p.z], scale: [5, 0.9, 25], rot: [0, Math.atan2(t.x, t.z) + Math.PI / 2, 0] }); } }
+      const ry = Math.atan2(t.x, t.z) + Math.PI / 2, dx = Math.sin(ry), dz = Math.cos(ry);
+      solid(geo.rbox, '#F7F2E6', MG, { pos: [p.x, GROUND_Y + 0.9, p.z], scale: [5, 0.9, 25], rot: [0, ry, 0] });
+      for (const e of [-1, 1]) { solid(geo.rbox, '#E9E2D2', MG, { pos: [p.x + dx * e * 11.5, GROUND_Y + 0.6, p.z + dz * e * 11.5], scale: [5.6, 1.3, 3], rot: [0, ry, 0] });   // abutments on the banks
+        solid(geo.capsule, '#E2DACA', MG, { pos: [p.x + dx * e * 4, GROUND_Y + 0.25, p.z + dz * e * 4], scale: [1.4, 0.5, 1.4] }); } } }   // piers in the water
   const rs = river.getSpacedPoints(300);
   const nearRiver = (x, z, d) => rs.some(p => (p.x - x) ** 2 + (p.z - z) ** 2 < d * d);
   const angDiff = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
@@ -88,21 +94,23 @@ function build(api) {
     const spot = () => { for (;;) { const a = rand() * 6.283, d = 4.5 + Math.sqrt(rand()) * 22.5; const x = Math.sin(a) * d, z = Math.cos(a) * d; return [x, z, domeY(d), a]; } };
     setEl('rocks');
     for (let i = 0; i < 80; i++) { const [x, z, y] = spot(), s = 0.4 + rand() * 0.8, n = 1 + Math.floor(rand() * 3);
-      for (let k = 0; k < n; k++) B(FG, 'sphereLo').add([x + k * s * 0.9, y + s * 0.25, z + (rand() - 0.5) * s], [s * (1 - k * 0.25), s * 0.62 * (1 - k * 0.2), s * 0.85], pick(['#C9C4D6', '#BDB8CC', '#D4CFDC'])); }
+      for (let k = 0; k < n; k++) { const px = x + k * s * 0.9, pz = z + (rand() - 0.5) * s, w = s * (1 - k * 0.25);
+        B(FG, 'sphereLo').add([px, domeY(Math.hypot(px, pz)) + s * 0.2 - slope(px, pz) * w, pz], [w, s * 0.62 * (1 - k * 0.2), s * 0.85], pick(['#C9C4D6', '#BDB8CC', '#D4CFDC'])); } }
     setEl('logs');
     for (let i = 0; i < 18; i++) { const [x, z, y, a] = spot(), L = 1.8 + rand() * 1.8, r = 0.28 + rand() * 0.16, ry = rand() * 3.14;
-      B(FG, 'capsule').add([x, y + r * 0.8, z], [r * 2, L, r * 2], '#B98A6A', [Math.PI / 2, ry, 0]);                              // fallen log
-      const ex = Math.sin(ry) * (L / 2 + r * 0.6), ez = Math.cos(ry) * (L / 2 + r * 0.6);
-      B(FG, 'rcyl').add([x + ex, y + r * 0.8, z + ez], [r * 0.82, 0.08, r * 0.82], '#E8CDA6', [Math.PI / 2, ry, 0]);               // cut end ring
+      const yl = y + r * 0.8 - sink(x, z, 0, L) - slope(x, z) * r;   // (rot [π/2, ry, 0] lays the capsule along z) + the downhill side of the round log
+      B(FG, 'capsule').add([x, yl, z], [r * 2, L, r * 2], '#B98A6A', [Math.PI / 2, ry, 0]);                                       // fallen log
+      for (const e of [-1, 1]) B(FG, 'rcyl').add([x, yl, z + e * L * 0.92], [r * 0.8, 0.06, r * 0.8], '#E8CDA6', [Math.PI / 2, 0, 0]);   // cut end rings at both ends
     }
     for (let i = 0; i < 16; i++) { const [x, z, y] = spot(), r = 0.36 + rand() * 0.24;
-      B(FG, 'rcyl').add([x, y - 0.05, z], [r, 0.5 + rand() * 0.3, r], '#B98A6A'); B(FG, 'rcyl').add([x, y + 0.5, z], [r * 0.82, 0.06, r * 0.82], '#E8CDA6'); }   // stumps
+      const ys = y - 0.05 - slope(x, z) * r; B(FG, 'rcyl').add([x, ys, z], [r, 0.55 + rand() * 0.3, r], '#B98A6A'); B(FG, 'rcyl').add([x, ys + 0.55, z], [r * 0.82, 0.06, r * 0.82], '#E8CDA6'); }   // stumps
     for (let i = 0; i < 26; i++) { const [x, z, y] = spot(), L = 1.0 + rand() * 1.0, ry = rand() * 3.14;                              // dead branches
-      B(FG, 'capsule').add([x, y + 0.08, z], [0.12, L, 0.12], '#A88268', [Math.PI / 2, ry, 0]);
-      B(FG, 'capsule').add([x + Math.sin(ry + 0.6) * L * 0.3, y + 0.1, z + Math.cos(ry + 0.6) * L * 0.3], [0.08, L * 0.45, 0.08], '#A88268', [Math.PI / 2, ry + 0.7, 0]); }
+      B(FG, 'capsule').add([x, y + 0.04 - sink(x, z, 0, L), z], [0.12, L, 0.12], '#A88268', [Math.PI / 2, ry, 0]);
+      const bx = x + 0.12, bz = z + L * 0.3;                                                                              // twig off the branch (also along z)
+      B(FG, 'capsule').add([bx, domeY(Math.hypot(bx, bz)) + 0.03 - sink(bx, bz, 0, L * 0.45), bz], [0.08, L * 0.45, 0.08], '#A88268', [Math.PI / 2, 0, 0.5]); }
     setEl('grass');
     for (let i = 0; i < 280; i++) { const [x, z, y] = spot(), s = 0.35 + rand() * 0.4, col = pick(['#8FCB80', '#7CBF70', '#A3D58F']);
-      for (let k = -2; k <= 2; k++) B(FG, 'cone').add([x + k * s * 0.22, y - 0.02, z], [s * 0.18, s * (1.1 - Math.abs(k) * 0.2), s * 0.18], col, [0, 0, k * 0.28]); }
+      for (let k = -2; k <= 2; k++) { const px = x + k * s * 0.22; B(FG, 'cone').add([px, domeY(Math.hypot(px, z)) - 0.04 - slope(px, z) * s * 0.2, z], [s * 0.18, s * (1.1 - Math.abs(k) * 0.2), s * 0.18], col, [0, 0, k * 0.28]); } }
     setEl('flowers');
     for (let i = 0; i < 160; i++) { const [x, z, y] = spot(), col = pick(['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0']), k = 1 + rand() * 0.8;
       B(FG, 'capsule').add([x, y + 0.2 * k, z], [0.06 * k, 0.4 * k, 0.06 * k], '#7CBF70'); B(FG, 'sphereLo').add([x, y + 0.48 * k, z], [0.18 * k, 0.1 * k, 0.18 * k], col); B(FG, 'sphereLo').add([x, y + 0.52 * k, z], 0.07 * k, '#F2C14E'); }
@@ -111,7 +119,7 @@ function build(api) {
   /* ── kit ── */
   const blob = (g, x, y, z, r, col, sy = 1) => B(g, 'sphere').add([x, y, z], [r, r * sy, r], col);
   const treeAt = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk, far: g === G.FG ? 0 : Math.hypot(x, z) < 45 ? 1 : 2 });   // leafy crown, branches (core); LOD by distance from the dome
-  const bushAt = (g, x, z, s, y0) => api.bush(g, x, y0, z, s, { leaf: C.green });
+  const bushAt = (g, x, z, s, y0) => api.bush(g, x, y0 - (y0 > GROUND_Y + 0.01 ? slope(x, z) * s * 1.1 : 0), z, s, { leaf: C.green });   // on the dome: sink to the downhill side
   const faceTo = (x, z) => Math.atan2(-x, -z);
   /** windows on 4 sides (outlined near the camera) */
   const windows = (g, x, z, w, d, y0, rows, rowH, ry, glass = C.pane, wide = 0.5) => {
@@ -280,11 +288,11 @@ function build(api) {
       for (let i = 0; i < 26; i++) { const d = between(4.9, 9.2), aa = a + between(-0.32, 0.32) * (10 / d) * 0.5, y = between(2.55, 3.7), s = between(0.4, 0.75);
         B(FG, 'sphereLo').add([Math.sin(aa) * d, y, Math.cos(aa) * d], [s, s * 0.78, s], pick(y > 3.2 ? leaf : dark)); } }
     for (let i = 0; i < 30; i++) { const a = i / 30 * 6.283 + between(0, 0.15), d = between(4.6, 6.2), x = Math.sin(a) * d, z = Math.cos(a) * d, y = domeY(d), kind = rand();
-      if (kind < 0.25) for (let k = 0; k < 3; k++) { const s = between(0.45, 0.85) * (1 - k * 0.2); B(FG, 'sphereLo').add([x + (k - 1) * 0.6 * Math.cos(a), y + s * 0.3, z - (k - 1) * 0.6 * Math.sin(a)], [s, s * 0.65, s * 0.85], pick(['#B4AFC8', '#A7A2BE', '#C1BCD3'])); }
-      else if (kind < 0.5) api.bush(FG, x, y, z, between(0.65, 0.95), { leaf });
+      if (kind < 0.25) for (let k = 0; k < 3; k++) { const s = between(0.45, 0.85) * (1 - k * 0.2); const px = x + (k - 1) * 0.6 * Math.cos(a), pz = z - (k - 1) * 0.6 * Math.sin(a); B(FG, 'sphereLo').add([px, domeY(Math.hypot(px, pz)) + s * 0.25 - slope(px, pz) * s, pz], [s, s * 0.65, s * 0.85], pick(['#B4AFC8', '#A7A2BE', '#C1BCD3'])); }
+      else if (kind < 0.5) { const s = between(0.65, 0.95); api.bush(FG, x, y - slope(x, z) * s * 1.1, z, s, { leaf }); }
       else if (kind < 0.7) for (let k = -3; k <= 3; k++) B(FG, 'cone').add([x + k * 0.14 * Math.cos(a), y, z - k * 0.14 * Math.sin(a)], [0.1, between(0.6, 1.05), 0.1], pick(dark), [0, -a, k * 0.2]);
-      else if (kind < 0.85) { B(FG, 'rcyl').add([x, y - 0.05, z], [0.42, between(0.5, 0.8), 0.42], '#B98A6A'); B(FG, 'rcyl').add([x, y + 0.6, z], [0.35, 0.05, 0.35], '#E8CDA6'); }
-      else { const ry = a + Math.PI / 2 + between(-0.4, 0.4); B(FG, 'capsule').add([x, y + 0.32, z], [0.62, 1.4, 0.62], '#B98A6A', [Math.PI / 2, ry, 0]); } } }
+      else if (kind < 0.85) { const ys = y - 0.06 - slope(x, z) * 0.42; B(FG, 'rcyl').add([x, ys, z], [0.42, 0.66, 0.42], '#B98A6A'); B(FG, 'rcyl').add([x, ys + 0.66, z], [0.35, 0.05, 0.35], '#E8CDA6'); }
+      else { const ry = a + Math.PI / 2 + between(-0.4, 0.4); B(FG, 'capsule').add([x, y + 0.31 - sink(x, z, 0, 1.4) - slope(x, z) * 0.31, z], [0.62, 1.4, 0.62], '#B98A6A', [Math.PI / 2, ry, 0]); } } }
 
   setLandmark(opts.landmark); setLight(api, opts.light);
 }

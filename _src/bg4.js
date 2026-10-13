@@ -45,14 +45,15 @@ function build(api) {
       if (k < 0.5) reeds(x, z, bt(1.6, 2.6)); else if (k < 0.8) { rocks(x, z, bt(0.8, 1.3)); reeds(x + 0.8, z, bt(1.2, 2), 4); }
       else for (let i = 0; i < 4; i++) B(parent, 'disc', false).add([x + bt(-1.2, 1.2), 0.03, z + bt(-0.8, 0.8)], [bt(0.5, 0.8), 1, bt(0.5, 0.8)], col(C.lily), [0, bt(0, 6.28), 0]); }
     for (const sd of [-1, 1]) { const x = sd * bt(4.5, 7.5), z = bt(32, 35); reeds(x, z, bt(3.4, 4.4), 10); rocks(x - sd * 1.6, z + 0.6, bt(1.2, 1.6));
-      api.tree(parent, x + sd * 1.6, 0.4, z - 0.4, 0.75, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col, seed: 1300 + sd }); }
+      api.tree(parent, x - sd * 1.6, 0.35, z + 0.6, 0.75, { leaf: C.pine, trunk: C.trunk, kind: 'pine', col, seed: 1300 + sd }); }
     reeds(4.2, 12, 2.2); rocks(4.9, 12.4, 0.8); reeds(-1.2, 13.8, 1.8, 5);
 
     el('dock');                                                                // round wooden dock, top at y ≈ 0.8 (characters)
     solid(geo.rcyl, col(C.deck), parent, { pos: [0, -0.2, 0], scale: [5.6, 1, 5.6] });
     solid(geo.torus, col(C.deckRim), parent, { pos: [0, 0.78, 0], scale: [5.5, 5.5, 2.2], rot: [Math.PI / 2, 0, 0] });
     for (let i = 0; i < 12; i++) { const a = i / 12 * 6.283; solid(geo.capsule, col(C.post), parent, { pos: [Math.sin(a) * 5.7, 0.5, Math.cos(a) * 5.7], scale: [0.45, 1.3, 0.45] }); }
-    for (let i = 0; i < 4; i++) solid(geo.rbox, col(C.deck), parent, { pos: [0, 0.38, 7.4 + i * 2.1], scale: [2.6, 0.32, 1.8] });   // little walkway toward the camera
+    for (let i = 0; i < 4; i++) { const z = 7.4 + i * 2.1; solid(geo.rbox, col(C.deck), parent, { pos: [0, 0.62, z], scale: [2.6, 0.28, 1.8] });   // little walkway toward the camera, level with the deck
+      for (const sx of [-1.05, 1.05]) B(parent, 'capsule').add([sx, 0.15, z], [0.22, 0.65, 0.22], col(C.post)); }                                    // on posts standing in the water
 
     el('mountains');   // behind the lake: one far snow range + one nearer, lower range (few massifs each, not a wall of cones)
     api.range(parent, { arc: [Math.PI, 4.0], d: [520, 700], count: 9, h: [120, 185], col: C.mtnFar, snow: C.snow, snowAbove: 130, y0: -1, map: col, seed: 401 });

@@ -10,7 +10,7 @@
 - Warm window light and a lamp, a cozy afternoon. A locked 2-point perspective guide (screen only).
 - **Panorama:** a slow pan across the room (about 110°), one wide strip.
 
-**B · The run-cycle strip** (Sc 19–20): a horizontally tiling landscape behind the (not modelled) running characters. Segments: a hobby place (a small workshop / studio front), a lake with lavender mountains and pastel snow caps (Kirby pixel scene), and a golden field with round trees. Each segment has its own colour story. Layers at different depths give natural parallax; the strip repeats seamlessly.
+**B · The run-cycle strip** (Sc 19–20): a horizontally tiling landscape behind the (not modelled) running characters. Segments: a hobby place (a small workshop / studio front), a lake with 4 lavender mountain massifs (main summit + shoulders, pastel snow caps only on the high ones) (Kirby pixel scene), and a golden field with round trees. Each segment has its own colour story. Layers at different depths give natural parallax; the strip repeats seamlessly.
 - **Panorama:** the strip is a side view (near-orthographic camera, 5,000 units away), so the export is one flat strip of exactly one loop (180 units ≈ 9,700 px at 2160 px tall) that tiles seamlessly; each element (ground, lake, mountains, trees, field, fences, flowers, clouds, the hobby place) is its own PNG for parallax.
 
 ## Depth planes (FG · MG · BG · far)

@@ -173,7 +173,7 @@ const EDGE_FS = /* glsl */`
       en += length(n.rgb - n0.rgb) * max(n.a, n0.a) + abs(n.a - n0.a) * 2.0; }
     float ed = (abs(iz[0] + iz[1] - 2.0 * i0) + abs(iz[2] + iz[3] - 2.0 * i0)) / i0;   // ≈ 0 on any flat surface, large at silhouettes
     float e = max(smoothstep(0.55, 1.1, en), smoothstep(0.1, 0.2, ed));
-    e *= 1.0 - uFade * 0.7 * smoothstep(uFadeNear, uFadeFar, d0);
+    e *= 1.0 - uFade * 0.25 * smoothstep(uFadeNear, uFadeFar, d0);   // far lines stay visible (only a little lighter)
     if (uMaskOn > 0.5) { float mk = 0.0; for (int i = 0; i < 4; i++) mk = max(mk, texture2D(tMask, uv + o[i] * 1.5).a); mk = max(mk, texture2D(tMask, uv).a); e *= mk; }
     gl_FragColor = vec4(uColor, e);
   }`;
@@ -325,8 +325,8 @@ export function startApp(cfg) {
      - optional single cel shadow (Kirby) on the side away from the sun */
   const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 0 },
     uPix: { value: 0 }, uPixBlock: { value: 6 }, uPixContrast: { value: 1.3 }, uPixDetail: { value: 1 }, uPixDither: { value: 0.5 },
-    uVal: { value: new THREE.Vector4(0, 0, 0, 0) }, uValT: { value: new THREE.Vector4(0.04, 0.36, 0.6, 0.76) }, uHaze: { value: new THREE.Color(1, 1, 1) } };
-  const FLAT_FS_HEAD = 'uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; uniform vec4 uVal; uniform vec4 uValT; uniform vec3 uHaze; varying vec3 vFlatN; varying vec3 vFlatW; varying vec3 vFlatNW; varying float vFlatS; varying float vFlatD;\n' + PIXEL_SHADE;
+    uFogMax: { value: cfg.fogMax ?? 0.55 }, uVal: { value: new THREE.Vector4(0, 0, 0, 0) }, uValT: { value: new THREE.Vector4(0.04, 0.36, 0.5, 0.62) }, uHaze: { value: new THREE.Color(1, 1, 1) } };
+  const FLAT_FS_HEAD = 'uniform float uFogMax; uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; uniform vec4 uVal; uniform vec4 uValT; uniform vec3 uHaze; varying vec3 vFlatN; varying vec3 vFlatW; varying vec3 vFlatNW; varying float vFlatS; varying float vFlatD;\n' + PIXEL_SHADE;
   function flatPatch(mat, perObjectFog) {
     mat.onBeforeCompile = sh => {
       Object.assign(sh.uniforms, flatU);
@@ -358,15 +358,15 @@ export function startApp(cfg) {
           if (uPix > 0.5) diffuseColor.rgb = pixelShade(diffuseColor.rgb);
           diffuseColor.rgb *= uTint;
           if (uVal.w > 0.0) {   // value structure: every plane is pulled to its own value (FG dark → far light), hue + inner shading kept
-            vec3 cv = diffuseColor.rgb; float T = uValT.y, side = 0.0, ex = 0.65;   // side: −1 only darker, 1 only lighter, 0 both
+            vec3 cv = diffuseColor.rgb; float T = uValT.y, side = 0.0, ex = 0.8;   // side: −1 only darker, 1 only lighter, 0 both
             #ifdef FLAT_FOG_STEPS
               bool fgPlane = false;                                     // big ground / road pieces: the floor the characters stand on is never FG
             #else
               bool fgPlane = vFlatD < uVal.x && vFlatS < uVal.x * 0.45;   // big pieces (floors, paths, the dome) stay MG
             #endif
             if (fgPlane) { T = uValT.x; side = -1.0; ex = 0.45; cv *= vec3(0.92, 0.94, 1.08); }   // FG: darkest, a touch cooler
-            else if (vFlatD > uVal.z) { T = uValT.w; side = 1.0; ex = 0.45; cv = mix(cv, uHaze, 0.45); } // far: lightest, mostly haze
-            else if (vFlatD > uVal.y) { T = uValT.z; side = 1.0; ex = 0.5; cv = mix(cv, uHaze, 0.25); }  // BG
+            else if (vFlatD > uVal.z) { T = uValT.w; side = 1.0; ex = 0.7; cv = mix(cv, uHaze, 0.2); }   // far: lightest, a little haze — shapes stay readable
+            else if (vFlatD > uVal.y) { T = uValT.z; side = 1.0; ex = 0.75; cv = mix(cv, uHaze, 0.1); }  // BG
             float Lc = max(dot(cv, vec3(0.2126, 0.7152, 0.0722)), 1e-4), Ln = T * pow(Lc / T, ex);       // squeeze the plane around its value
             Ln = side < -0.5 ? min(Ln, Lc) : side > 0.5 ? max(Ln, Lc) : Ln;
             cv = min(cv * (Ln / Lc), vec3(1.0));
@@ -382,7 +382,7 @@ export function startApp(cfg) {
             #ifdef FLAT_FOG_STEPS
               if (uFogSteps > 0.5) fogF = floor(fogF * uFogSteps + 0.5) / uFogSteps;
             #endif
-            gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogF);
+            gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, min(fogF, uFogMax));   // capped: far shapes never melt away
           #endif`);
     };
     mat.customProgramCacheKey = () => 'flat2d' + (perObjectFog ? 'o' : 'p');
@@ -606,7 +606,8 @@ export function startApp(cfg) {
   }
   function edgesInto(target, iso, colour, wobble, fade) {
     noFog(() => {
-      setPass('normal', state.isoMode !== 'holdout' ? iso : null); renderer.setRenderTarget(rtN);   // whole: lines of this element only, also where others would cover it renderer.clear(); renderer.render(scene, camera);
+      // whole-object export: lines of this element only, also where other elements would cover it
+      setPass('normal', state.isoMode !== 'holdout' ? iso : null); renderer.setRenderTarget(rtN); renderer.clear(); renderer.render(scene, camera);
       if (iso) { setPass('mask', iso); renderer.setRenderTarget(rtM); renderer.clear(); renderer.render(scene, camera); }
     });
     const u = edgeMat.uniforms; u.uMaskOn.value = iso ? 1 : 0; u.uColor.value.copy(colour); u.uThick.value = state.lineW * state.pxScale * 0.5; u.uWobble.value = wobble; u.uNear.value = camera.near; u.uFar.value = camera.far;
@@ -738,8 +739,9 @@ export function startApp(cfg) {
       if (o.seed) sd = o.seed * 7919 % 2147483646 + 1;
       const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], base = pk(leaf);
       for (let i = 0; i < 3; i++) B(g, 'sphereLo', false).add([x + (i - 1) * 0.7 * s, y0 + 0.4 * s, z + bt(-0.2, 0.2) * s], [0.62 * s, 0.5 * s, 0.6 * s], tone(o, base, -0.28));
-      for (let i = 0; i < 9; i++) { const a = fr() * 3.14, u = bt(-1.15, 1.15), r = bt(0.26, 0.4) * s, yy = Math.sin(a) * 0.55;
-        B(g, 'sphereLo').add([x + u * s, y0 + (0.35 + yy) * s, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
+      for (let i = 0; i < 9; i++) { const a = fr() * 3.14, u = bt(-1.0, 1.0), r = bt(0.26, 0.4) * s, yy = Math.sin(a) * 0.55;
+        const cy = yy < 0.2 ? r * 0.7 : (0.35 + yy) * s;                                            // low clumps sit on the ground, high ones on the masses
+        B(g, 'sphereLo').add([x + u * s, y0 + cy, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
     };
   }
   /* free view (C): look around the set from anywhere — OrbitControls on the stage + WASD / Q E to walk. The shot still
@@ -876,6 +878,8 @@ export function startApp(cfg) {
     m.normalize().multiplyScalar(sp * dt); camera.position.add(m); free.ctl.target.add(m); free.ctl.update();
   }
   btnFree && (btnFree.onclick = () => setFree(!free.on));
+  /** free view from a given position looking at a target (repeatable angles, tests) */
+  api.freeLook = async (pos, target) => { await setFree(true); camera.position.set(...pos); free.ctl.target.set(...target); free.ctl.update(); savePose(); invalidate(); };
   window.addEventListener('keyup', e => { free.keys.delete(e.key.toLowerCase()); if (e.key === 'Shift') free.keys.delete('shift'); });
   window.addEventListener('blur', () => free.keys.clear());
   help?.addEventListener('click', e => { if (e.target === help || e.target.closest('[data-close]')) toggleHelp(false); });

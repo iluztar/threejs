@@ -83,6 +83,10 @@ For heavy scenes (BG 1 city), set *3D detail* (Settings → Export options) to `
 
 ---
 
+## Look rules (also in the prompts)
+- **Value planes**: FG darkest → MG → BG → far lightest, but far shapes and lines stay readable (little haze, fog capped at 55 %, far lines at most 25 % lighter). Check with `V`.
+- **Nothing floats**: everything on the ground or water touches it (dome slope, sea floor, the curved sea in BG 2); piers / walkways / bridges stand on posts or abutments, boats sit in the water.
+
 ## Performance
 - Detail shading costs ≈ 10 % of a frame: its cell pattern checks 8 cells (not 27), and far trees (city rings, lake shores, the run strip) use a light LOD with about half the leaf clumps; hidden inner leaf masses draw no outline.
 - Free view loads `OrbitControls` only when it is opened.

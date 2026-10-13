@@ -166,11 +166,15 @@ function build(api) {
   solid(geo.sphere, C.beach, island, { pos: [0, -2.6, 0], scale: [50, 4.6, 50] });
   solid(geo.sphere, C.grass, island, { pos: [0, -1.6, 0], scale: [45.5, 3.5, 45.5] });
   // harbour pier + boats
-  for (let i = 0; i < 3; i++) solid(geo.rbox, '#EDE4D4', island, { pos: [-20 + i * 14, 0.2, 49], scale: [3, 0.8, 12] });
+  // the sea is the globe: its surface drops by d² / 2R away from the island centre, so piers stand on posts down to it
+  // and boats sit on it (half in the water) instead of floating at a flat height
+  const seaY = (x, z) => -(x * x + z * z) / (2 * R);
+  for (let i = 0; i < 3; i++) { const x = -20 + i * 14; solid(geo.rbox, '#EDE4D4', island, { pos: [x, 0.25, 49], scale: [3, 0.5, 12] });
+    for (const zz of [44.5, 48.5, 52.5]) for (const sx of [-1.1, 1.1]) { const yb = seaY(x + sx, zz) - 0.6; B(island, 'capsule').add([x + sx, (yb + 0.1) / 2, zz], [0.36, (0.1 - yb) / 2, 0.36], '#CDBFA5'); } }
   setEl('boats');
-  for (let i = 0; i < 6; i++) { const x = -26 + i * 9.5, z = 58 + rand() * 10; 
-    solid(geo.capsule, pick(['#E8836B', '#7FB7E0', '#F3F0E6']), island, { pos: [x, 0.1, z], scale: [1.6, 4, 1.6], rot: [Math.PI / 2, 0, 0] });
-    solid(geo.rbox, '#F7F2E6', island, { pos: [x, 1.3, z - 0.5], scale: [1.4, 1.2, 2] }); }
+  for (let i = 0; i < 6; i++) { const x = -26 + i * 9.5, z = 58 + rand() * 10, y = seaY(x, z);
+    solid(geo.capsule, pick(['#E8836B', '#7FB7E0', '#F3F0E6']), island, { pos: [x, y + 0.2, z], scale: [1.6, 4, 1.6], rot: [Math.PI / 2, 0, 0] });
+    solid(geo.rbox, '#F7F2E6', island, { pos: [x, y + 1.4, z - 0.5], scale: [1.4, 1.2, 2] }); }
   // dome (characters jump from its top toward +z)
   setEl('dome');
   const DR = 22, capA = Math.acos((DR - (DOME_TOP - LG)) / DR);
