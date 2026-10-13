@@ -6,7 +6,7 @@
 - A calm lake that mirrors everything: the **horizon is the mirror line**. The reflection is a real mirrored copy of the whole world (scale y −1, a little darker and bluer; white clouds reflect light, not grey), so it works in colour, lineart, base colour and element exports. A thin water film adds ink ripple rings in the colour render only.
 - The characters stand on a small **round wooden dock** in the middle (top ≈ 0.8, rim with little posts, calm and empty, staging guide only). A short **walkway** of 4 planks leads toward the camera, level with the deck and standing on posts in the water.
 - **Mountains** behind the lake (few, believable): one far snow range of 9 massifs (d 520–700, 120–185 high, snow only above 130) and one nearer, lower range of 7 massifs (d 330–420, 50–90 high) — each massif a main summit with concave flanks and a rounded top plus 1–2 shoulders. Pastel lavender, soft snow caps.
-- **Shore**: 9 long, low rolling hills (d 175–235), leafy round trees and soft pines on far LOD, shore rocks and reeds, lily pads with small flowers on the water, and one small hut on stilts out in the water (no trees in the lake itself).
+- **Shore**: 9 long, low rolling hills (d 175–235), leafy round trees and soft pines on far LOD, shore rocks and reeds, lily pads with small flowers on the water, and two saung pavilions on the water (no trees in the lake itself).
 - **Clouds**: puffy banks over the mountains and higher puffs, flat bottoms.
 - **Folded-world option** (Inception folding city): the far mirror half lifts up into the sky.
 - **4-box** (Sc 17–18): the same frame mirrored into 4 quadrants (normal / flip X / flip Y / flip XY), each with its own colour story (warm yellow, pink, mint, sky blue from the full-colour palette). The camera tilt matches across all halves.
@@ -16,7 +16,7 @@
 - **Panorama:** each shot exports a long strip. The camera does a slow pan across the mirror world (about 150°), stitched into one wide painting in that shot's era. The 4-box shot exports its single source panorama (the split is done in compositing).
 
 ## Depth planes (FG · MG · BG · far)
-- FG (darkest): reed islets, lily clusters and shore rocks in the water at r 16–20 in front of the dock (≤ 2.6 high), a small wooden hut on stilts (deck, door, round window, round thatch roof, little ladder) on the left of the wide shot and tall reeds + shore rocks on the right — no trees standing in the lake, two clumps the platform dolly passes. Built inside the world, so the reflection mirrors them too.
+- FG (darkest): reed islets, lily clusters and shore rocks in the water at r 16–20 in front of the dock (≤ 2.6 high), two saung (Indonesian pond gazebos: a low deck on stilts just above the water, four corner posts, open sides with a low railing, a low lesehan table, a big steep hipped thatch roof with a thick overhanging fringe) linked by a short boardwalk on the left of the wide shot, and reached from the dock: a plank boardwalk on posts curves over the water from the end of the dock walkway to the open front of the first saung and tall reeds + shore rocks on the right — no trees standing in the lake, two clumps the platform dolly passes. Built inside the world, so the reflection mirrors them too.
 - MG (< 1.6 × distance): the dock, lily pads, the near water.
 - BG (< 6 × distance): shore hills and trees; far: mountains, clouds and their reflection, lightest.
 

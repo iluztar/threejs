@@ -44,19 +44,34 @@ function build(api) {
     for (let a = -0.75; a <= 0.75; a += bt(0.13, 0.22)) { const r = bt(16, 20), x = Math.sin(a) * r, z = Math.cos(a) * r, k = r0();
       if (k < 0.5) reeds(x, z, bt(1.6, 2.6)); else if (k < 0.8) { rocks(x, z, bt(0.8, 1.3)); reeds(x + 0.8, z, bt(1.2, 2), 4); }
       else for (let i = 0; i < 4; i++) B(parent, 'disc', false).add([x + bt(-1.2, 1.2), 0.03, z + bt(-0.8, 0.8)], [bt(0.5, 0.8), 1, bt(0.5, 0.8)], col(C.lily), [0, bt(0, 6.28), 0]); }
-    /** a small wooden hut on stilts standing in the water (instead of trees in the lake): posts, deck, walls, door, round window, thatch, ladder */
-    const hut = (x, z) => {
-      for (const dx of [-1.25, 1.25]) for (const dz of [-1.05, 1.05]) B(parent, 'capsule').add([x + dx, 0.25, z + dz], [0.24, 0.85, 0.24], col(C.post));   // stilts: −0.6 … 1.1
-      solid(geo.rbox, col(C.deck), parent, { pos: [x, 1.1, z], scale: [3.1, 0.24, 2.7] });
-      solid(geo.rbox, col('#EBCFA6'), parent, { pos: [x, 1.9, z - 0.2], scale: [2.6, 1.4, 2.0] });
-      solid(geo.rbox, col('#9A7258'), parent, { pos: [x - 0.4, 1.75, z + 0.81], scale: [0.62, 1.05, 0.08] });                                       // door toward the dock
-      solid(geo.rcyl, col('#CFEFFF'), parent, { pos: [x + 0.6, 2.05, z + 0.81], scale: [0.26, 0.06, 0.26], rot: [Math.PI / 2, 0, 0] });                // round window
-      solid(geo.cone, col('#D9B06A'), parent, { pos: [x, 2.5, z - 0.2], scale: [2.35, 1.0, 2.05] });                                           // round thatch roof
-      solid(geo.rcyl, col('#C99A55'), parent, { pos: [x, 2.48, z - 0.2], scale: [2.4, 0.12, 2.1] });                                            // eave
-      for (const lx of [-0.35, 0.35]) B(parent, 'capsule').add([x + 0.9 + lx, 0.45, z + 1.55], [0.09, 0.62, 0.09], col(C.post), [0.3, 0, 0]);   // little ladder down to the water
-      for (let k = 0; k < 3; k++) B(parent, 'rbox').add([x + 0.9, 0.05 + k * 0.32, z + 1.62 - k * 0.1], [0.75, 0.06, 0.1], col(C.post)); };
+    /** saung / gazebo on the water (Indonesian pond pavilions): a low deck on stilts just above the water, four corner posts,
+        open sides with a low railing, a little low table, and a big steep thatch roof (square, hipped) with a thick fringe */
+    const pyr = geo.roofPyr || (geo.roofPyr = geo.lathe([[0, 0], [1, 0], [0.92, 0.1], [0.62, 0.42], [0.3, 0.78], [0.1, 0.97], [0, 1]], 4).rotateY(Math.PI / 4));
+    const saung = (x, z, w = 2.4, ry = 0) => { const h = w / 2, c = Math.cos(ry), sn = Math.sin(ry), P = (dx, dz) => [x + dx * c + dz * sn, z - dx * sn + dz * c];
+      const wood = col('#B98A6A'), dark = col('#94694E'), straw = col('#D9B98A'), straw2 = col('#C8A06A');
+      for (const dx of [-h, 0, h]) for (const dz of [-h, h]) { const [px, pz] = P(dx, dz); B(parent, 'capsule').add([px, -0.2, pz], [0.18, 0.4, 0.18], dark); }   // short stilts in the water
+      solid(geo.rbox, wood, parent, { pos: [x, 0.28, z], scale: [w + 0.3, 0.18, w + 0.3], rot: [0, ry, 0] });                                        // deck just above the water
+      for (const dx of [-h, h]) for (const dz of [-h, h]) { const [px, pz] = P(dx * 0.92, dz * 0.92); B(parent, 'capsule').add([px, 1.05, pz], [0.15, 0.78, 0.15], wood); }   // corner posts (short: you sit inside)
+      for (const side of [[0, -1], [-1, 0], [1, 0]]) { const [px, pz] = P(side[0] * h * 0.92, side[1] * h * 0.92);                                // low railing on three sides (front open)
+        solid(geo.rbox, wood, parent, { pos: [px, 0.68, pz], scale: side[0] ? [0.1, 0.1, w * 0.92] : [w * 0.92, 0.1, 0.1], rot: [0, ry, 0] });
+        for (const t of [-0.5, 0, 0.5]) { const [bx, bz] = P(side[0] * h * 0.92 + (side[0] ? 0 : t * w * 0.8), side[1] * h * 0.92 + (side[0] ? t * w * 0.8 : 0)); B(parent, 'capsule').add([bx, 0.52, bz], [0.06, 0.16, 0.06], dark); } }
+      solid(geo.rbox, col('#A87A5C'), parent, { pos: [x, 0.52, z - h * 0.2], scale: [w * 0.45, 0.08, w * 0.3], rot: [0, ry, 0] });                     // low lesehan table
+      solid(geo.rbox, dark, parent, { pos: [x, 1.86, z], scale: [w + 0.1, 0.12, w + 0.1], rot: [0, ry, 0] });                                         // roof frame
+      B(parent, 'rboxSoft').add([x, 1.86, z], [w * 1.85, 0.5, w * 1.85], straw2, [0, ry, 0]);                                                     // thick thatch fringe, far overhang
+      B(parent, pyr === geo.roofPyr ? 'roofPyr' : 'cone').add([x, 1.95, z], [w * 1.25, w * 0.85, w * 1.25], straw, [0, ry, 0]);                      // big steep hipped thatch roof
+      B(parent, 'capsule').add([x, 1.95 + w * 0.85, z], [0.12, 0.16, 0.12], dark); };                                                             // little ridge cap
     for (const sd of [-1, 1]) { const x = sd * bt(4.5, 7.5), z = bt(32, 35);
-      if (sd < 0) { hut(x - 1.4, z - 0.5); reeds(x + 1.8, z + 0.6, bt(2.4, 3.2), 7); }                                                       // left: the hut, a few reeds beside it
+      if (sd < 0) { const zx = x - 3.2; saung(zx, z - 1.2, 2.4, 0.15); saung(zx - 3.6, z - 3.4, 2.4, 0.15);                             // left: two saung linked by a boardwalk
+        // boardwalk from the end of the dock walkway (0, 14.6) curving over the water to the open front of the first saung
+        { const A = [0, 14.8], M = [-1.5, 22], E = [zx + 0.25, z - 1.2 + 1.75], q = t => [(1 - t) ** 2 * A[0] + 2 * (1 - t) * t * M[0] + t * t * E[0], (1 - t) ** 2 * A[1] + 2 * (1 - t) * t * M[1] + t * t * E[1]];
+          let L = 0; for (let k = 0; k < 40; k++) { const p0 = q(k / 40), p1 = q((k + 1) / 40); L += Math.hypot(p1[0] - p0[0], p1[1] - p0[1]); }
+          const n = Math.round(L / 0.95);
+          for (let k = 0; k <= n; k++) { const t = k / n, [px, pz] = q(t), [ax, az] = q(Math.min(1, t + 0.01)), [bx, bz] = q(Math.max(0, t - 0.01)), ry = Math.atan2(ax - bx, az - bz);
+            solid(geo.rbox, col('#C9A27A'), parent, { pos: [px, 0.3, pz], scale: [1.25, 0.12, 0.82], rot: [0, ry, 0] });                       // plank
+            if (k % 2 === 0) for (const sx of [-0.62, 0.62]) B(parent, 'capsule').add([px + Math.cos(ry) * sx, -0.12, pz - Math.sin(ry) * sx], [0.13, 0.38, 0.13], col('#94694E')); } }   // posts into the water
+        for (let k = 0; k < 3; k++) solid(geo.rbox, col('#B98A6A'), parent, { pos: [zx - 1.2 - k * 0.9, 0.24, z - 1.9 - k * 0.6], scale: [0.9, 0.14, 0.8], rot: [0, 0.6, 0] });
+        for (let k = 0; k < 3; k++) B(parent, 'capsule').add([zx - 1.2 - k * 0.9, -0.15, z - 1.9 - k * 0.6], [0.14, 0.35, 0.14], col('#94694E'));
+        reeds(x + 1.6, z + 0.6, bt(2.4, 3.2), 7); }
       else { reeds(x, z, bt(3.4, 4.4), 10); rocks(x - 1.6, z + 0.6, bt(1.2, 1.6)); } }                                                       // right: tall reeds + shore rocks
     reeds(4.2, 12, 2.2); rocks(4.9, 12.4, 0.8); reeds(-1.2, 13.8, 1.8, 5);
 
