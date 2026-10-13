@@ -16,7 +16,7 @@
 - Sky colour blends with altitude: Kirby sky blue near the ground → navy in space.
 
 ## Depth planes (FG · MG · BG · far)
-- FG (street run of Sc 7 only, darkest): camera-locked frame — hedge bottom-left, lamp post + bush on the right edge, leaves from the top-left corner. Off for the fall and the globe.
+- FG (street run of Sc 7, darkest): bushes, rocks, tall grass and lamp posts along both sides of the lane (x ±2.2–3.8) and two tall trees hanging over it, so they sweep past the lens.
 - MG (< 40): the street, the dome top, the characters' lane.
 - BG (< 160): houses, coast; far: sea and sky. Globe shots use the planet's own depth (no planes).
 

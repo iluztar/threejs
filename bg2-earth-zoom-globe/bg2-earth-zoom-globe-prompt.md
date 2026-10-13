@@ -22,7 +22,7 @@ Reference images exported from the board sit next to this file: `references/` (o
 - Sky colour blends with altitude: Kirby sky blue near the ground → navy in space.
 
 ## Depth planes (FG · MG · BG · far)
-- FG (street run of Sc 7 only, darkest): camera-locked frame — hedge bottom-left, lamp post + bush on the right edge, leaves from the top-left corner. Off for the fall and the globe.
+- FG (street run of Sc 7, darkest): bushes, rocks, tall grass and lamp posts along both sides of the lane (x ±2.2–3.8) and two tall trees hanging over it, so they sweep past the lens.
 - MG (< 40): the street, the dome top, the characters' lane.
 - BG (< 160): houses, coast; far: sea and sky. Globe shots use the planet's own depth (no planes).
 
@@ -87,7 +87,7 @@ Every frame reads as stacked planes, like a multiplane / 2D game parallax layout
 - **Foreground (FG)**: big, simple, dark shapes right in front of the lens, always cut by a frame edge and never covering the middle (staging / character area). Examples: rocks, a fallen log, stumps and grass tufts on the hill (BG 1); hedge, lamp post and leaves on the street (BG 2); kelp, branch coral and plate rocks on the sea floor (BG 3); a pine bough, reeds and shore rocks (BG 4); a house plant, a stack of books, a hanging plant in the room and a row of bushes / rocks / tall grass on the front edge of the run strip (BG 5); big bushes right at the path edge that sweep past the lens (BG 6).
 - **Midground (MG)**: where the characters stand and the action happens; the most readable, most detailed plane.
 - **Background (BG)** and **far**: city, ridges, mountains, sky; lighter and closer to the haze colour with every step back.
-- Implementation: a camera-locked FG frame rig (children authored in frame units: x −1.78…1.78, y −1…1, z −1 = depth `D`, squashed in depth like cut-out cards, so the framing holds for any lens) for shots where the camera orbits or moves little; world-space FG (rows of bushes / rocks that the camera passes) for tracking, dolly and side-strip shots so they really parallax. Panorama strips leave the camera-locked frame out. FG is its own element (`foreground`) in the element ZIP.
+- Implementation: FG is **real objects in the world, close to the camera path** — never a frame or sticker locked to the camera. As the camera turns or moves, different FG pieces enter and leave the frame and they parallax faster than the MG (BG 1: big trees planted just outside the orbit with low crowns reaching over the camera path + a ring of rocks / stumps / bushes / tall grass / logs; BG 2: bushes, rocks, grass, lamp posts and two trees along both sides of the street run; BG 3: a row of kelp, coral and rocks in front of the descent and the reef track; BG 4: reed islets, shore rocks and a pine in the water close to every camera, mirrored with the world; BG 5: plants, a stool and a hanging plant at the open front of the room + a front row on the run strip; BG 6: big bushes at the path edge). Keep FG low or at the sides where it would cross the line to the characters. FG is its own element (`foreground`) in the element ZIP.
 
 # VALUE STRUCTURE (read it in black & white first)
 - Reference: grey value thumbnails (forest, canyon, alley, ruins). FG darkest, MG mid grey, BG light grey, far + sky lightest; each plane is close to ONE value, so the planes separate at a glance even without colour.

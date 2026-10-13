@@ -17,7 +17,7 @@
 - In the distance, a soft pastel shell-tower coral town silhouette in the haze (One Piece Ryugu / Fish-Man Island is the main style target, simplified).
 
 ## Depth planes (FG · MG · BG · far)
-- FG (< 6, darkest): camera-locked frame under water — kelp + branch coral on the left edge, plate rocks, fan coral and sea grass bottom-right. Off above the water (splash).
+- FG (< 10, darkest): a row of kelp, branch coral and rocks at z 18–23 in front of the descent and the reef track; tall kelp only at |x| ≥ 9, low coral in between so Poki's spot stays clear.
 - MG (< 40): the reef and Poki's calm sand patch.
 - BG (< 110): far ledges, shell towers; far: the fog wall, lightest.
 

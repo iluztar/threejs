@@ -93,13 +93,6 @@ const opts = { light: 'auto' };
 
 function build(api) {
   const { THREE, groups: G, geo, solid, B, fx, setEl, inkLines } = api;
-  /* FG frame for the street run (Sc 7): hedge bottom-left, lamp post + bush on the right edge, leaves from the top-left */
-  setEl('foreground');
-  { const K = api.frameKit, leaf = ['#6FAE6A', '#5E9E62', '#7CBF70'];
-    K.canopy(-1.55, -0.92, 0.5, leaf, 12); K.tufts(-1.85, -0.9, -1.04, 0.2, leaf, 12);
-    K.branch(1.62, -1.1, 1.62, 1.1, 0.03, '#6F7686'); B(G.FRAME, 'sphere').add([1.62, 0.62, -0.97], [0.1, 0.1, 0.03], '#FFF3C2');
-    K.canopy(1.45, -0.95, 0.36, leaf, 9); K.branch(-1.95, 1.1, -1.25, 0.86, 0.035, '#8A6450'); K.canopy(-1.5, 0.98, 0.34, leaf, 10); }
-  G.FRAME.userData.D = 1.2;
   const { SKY, BG, MG, FG } = G;
   geo.box = new THREE.BoxGeometry(1, 1, 1);
   const roofShape = new THREE.Shape([new THREE.Vector2(-0.5, 0), new THREE.Vector2(0.5, 0), new THREE.Vector2(0, 0.5)]);
@@ -194,6 +187,15 @@ function build(api) {
     for (let k = -2; k <= 2; k++) B(island, 'cone').add([x + k * s * 0.22, domeY(d) - 0.02, z], [s * 0.18, s * (1.1 - Math.abs(k) * 0.2), s * 0.18], pick(['#8FCB80', '#7CBF70']), [0, 0, k * 0.28]); }
   setEl('flowers'); for (let i = 0; i < 70; i++) { const a = rand() * 6.283, d = 2.5 + rand() * (footR - 3), x = Math.sin(a) * d, z = Math.cos(a) * d, y = domeY(d);
     B(island, 'capsule').add([x, y + 0.2, z], [0.06, 0.4, 0.06], '#7CBF70'); B(island, 'sphereLo').add([x, y + 0.48, z], [0.18, 0.1, 0.18], pick(['#F6B9CF', '#FFF3B0', '#FFFFFF'])); }
+  // FG plane (darkest): the street run goes from z −6 to 13 at x 0 → bushes, rocks, tall grass and lamp posts line both
+  // sides (x ±2.2…3.8) and two trees hang their crowns over the lane, so they really sweep past the lens
+  setEl('foreground');
+  for (let z = -5; z < 15; z += between(1.8, 2.8)) for (const sd of [-1, 1]) { const x = sd * between(2.2, 3.8), d = Math.hypot(x, z), y = domeY(d), kind = rand();
+    if (kind < 0.4) api.bush(island, x, y, z, between(0.7, 1.05), { leaf: C.green });
+    else if (kind < 0.6) for (let k = 0; k < 2; k++) { const s = between(0.45, 0.8); B(island, 'sphereLo').add([x + k * 0.5, y + s * 0.3, z + k * 0.3], [s, s * 0.65, s * 0.85], pick(['#B4AFC8', '#C1BCD3'])); }
+    else if (kind < 0.82) for (let k = -3; k <= 3; k++) B(island, 'cone').add([x, y, z + k * 0.14], [0.1, between(0.6, 1.0), 0.1], pick(['#6FAE6A', '#7CBF70']), [k * 0.2, 0, 0]);
+    else { B(island, 'capsule').add([x, y + 1.6, z], [0.16, 1.6, 0.16], '#8C93A3'); B(island, 'sphere').add([x, y + 3.3, z], 0.36, '#FFF3C2'); } }
+  for (const [x, z, s] of [[-4.2, 3, 1.15], [4.0, 9.5, 1.25]]) api.tree(island, x, domeY(Math.hypot(x, z)), z, s, { leaf: C.green, trunk: C.trunk, kind: 'tall' });
   // 1950s city ring on the island
   const tree = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk });
   const windows = (g, x, z, w, d, y0, rows, rowH) => { const b = B(g, 'box', false); b.idColor = '#203050'; b.idMaxD = 120;
@@ -284,8 +286,7 @@ function turntableCam(api) {                       // fixed view: camera where t
 
 startApp({
   id: 'bg2', title: 'BG 2 · Earth zoom out + Globe 360°', fov: 40, shots, build,
-  frame: (api, shot, k) => shot === shots[0] && k < 0.4,                         // FG frame only while they run on the street
-  layers: (api, shot, k) => shot === shots[0] ? [3, 40, 160] : null,            // globe shots: depth comes from the planet itself
+  layers: (api, shot, k) => shot === shots[0] ? [6, 40, 160] : null,            // globe shots: depth comes from the planet itself
   eras: ['base', 'e1950'],
   update(T, api, shot, k) {
     const { THREE, camera, hemi, sun, setSky } = api;

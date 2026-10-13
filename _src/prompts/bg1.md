@@ -29,7 +29,7 @@ Two rings of lavender triangle ridges (#B9B6D4 / #D3D0E6). Dynamic, outlined whi
 - 1960s grade: #1F3A68 #3E7CB1 #F2C14E #D94A38 #F4F1E8 (posterised, flat).
 
 ## Depth planes (FG · MG · BG · far)
-- FG (< 4.5 from the lens, darkest): camera-locked frame — rock pile + fallen log cut by the bottom-left corner, grass tufts + stump bottom-right, an overhanging leafy branch from the top-right corner. The centre (characters) stays clear.
+- FG (< 5 from the lens, darkest): real objects near the orbit — three big trees planted just outside it (r ≈ 10) whose low crowns reach in over the camera path (the turn passes under them), and a ring of rocks, stumps, bushes, tall grass and logs at r 4.6–6.2, never taller than the line to the characters' feet. Every frame of the turn shows different FG.
 - MG (< 60): the dome with its rocks, logs, tufts and flowers, the park trees and the characters' spot.
 - BG (< 240): the city rings, landmark tower.
 - far: lavender ridges and clouds, lightest.
