@@ -7,7 +7,7 @@ import { startApp } from './core.js';
    Background only: the path centre stays clear; the dolly zoom keeps an invisible subject point the same size. */
 
 const rand = (s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(2400);
-const L = 12, N = 18, SPAN = L * N, WARP_X = 4000, SIDE_D = 5000;
+const L = 12, N = 18, CHUNK = 3, SPAN = L * N, WARP_X = 4000, SIDE_D = 5000;
 const C = { path: '#F3E3B5', edge: '#E3CFA0', grass: '#A6D68A', green: ['#A6D6A0', '#B8E2A9', '#93CF95', '#8CCB7E'], pine: ['#7FB98A', '#6FAE80', '#8CC496'], trunk: '#E2C1A4',
   fence: '#D9B48A', lamp: '#8C93A3', bulb: '#FFF3C2', flower: ['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0'], rock: ['#C9C4D6', '#BDB8CC'], log: '#B98A6A', mount: '#B9B3E3', snow: '#F4F0FA' };
 const S = { modules: [] };
@@ -20,40 +20,44 @@ function build(api) {
   setEl('ground');
   fx(new THREE.Mesh(new THREE.PlaneGeometry(4000, 4000).rotateX(-Math.PI / 2), new THREE.MeshToonMaterial({ color: C.grass })), BG, { baseHex: C.grass, normalPass: true }).position.y = -0.02;
 
-  /* repeating modules (each its own group so it can wrap around the camera) */
+  /* repeating modules, CHUNK modules per group: the group wraps around the camera, and the modules inside share their
+     instanced batches (one draw per geometry per chunk instead of per module → ≈ 1/3 of the draw calls) */
+  let g, styles;
   for (let m = 0; m < N; m++) {
-    const g = new THREE.Group(); MG.add(g); S.modules.push({ g, z0: -m * L });
+    if (m % CHUNK === 0) { g = new THREE.Group(); MG.add(g); S.modules.push({ g, z0: -m * L });
+      styles = { round: new THREE.Group(), pine: new THREE.Group(), arch: new THREE.Group() }; g.add(styles.round, styles.pine, styles.arch); (S.styles = S.styles || []).push(styles); }
+    const oz = -(m % CHUNK) * L, Bz = (parent, key, ...a) => { const b = B(parent, key, ...a); return { add: (p, ...r) => b.add([p[0], p[1], p[2] + oz], ...r) }; };
     const r = (s => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; })(500 + m);
     const bt = (a, b) => a + r() * (b - a), pk = a => a[Math.floor(r() * a.length)];
     setEl('path');
-    solid(geo.rboxSoft, C.path, g, { pos: [0, 0.05, -L / 2], scale: [4.4, 0.22, L + 0.02] });
-    for (const s of [-1, 1]) B(g, 'capsule').add([s * 2.25, 0.12, -L / 2], [0.36, L * 0.5, 0.36], C.edge, [Math.PI / 2, 0, 0]);
+    solid(geo.rboxSoft, C.path, g, { pos: [0, 0.05, -L / 2 + oz], scale: [4.4, 0.22, L + 0.02] });
+    for (const s of [-1, 1]) Bz(g, 'capsule').add([s * 2.25, 0.12, -L / 2], [0.36, L * 0.5, 0.36], C.edge, [Math.PI / 2, 0, 0]);
     setEl('trees');
     for (const s of [-1, 1]) { const x = s * bt(5.5, 7), z = -bt(2, 10), k = bt(1.1, 1.5);
-      const round = new THREE.Group(), pine = new THREE.Group(), arch = new THREE.Group(); g.add(round, pine, arch); (S.styles = S.styles || []).push({ round, pine, arch });
-      api.tree(round, x, 0, z, 1.27 * k, { leaf: C.green, trunk: C.trunk, kind: r() < 0.3 ? 'tall' : 'round' });
-      api.tree(pine, x, 0, z, 1.35 * k, { leaf: C.pine, trunk: C.trunk, kind: 'pine' });
-      B(arch, 'capsule').add([s * 4.2, 2.6, z], [0.55, 4.6, 0.55], C.trunk, [0, 0, -s * 0.18]); B(arch, 'sphere').add([s * 3.4, 6.4, z], [3, 2.4, 2.6], pk(C.green)); B(arch, 'sphere').add([0, 7.6, z], [3.2, 1.8, 2.6], pk(C.green)); }
+      const { round, pine, arch } = styles;
+      api.tree(round, x, 0, z + oz, 1.27 * k, { leaf: C.green, trunk: C.trunk, kind: r() < 0.3 ? 'tall' : 'round' });
+      api.tree(pine, x, 0, z + oz, 1.35 * k, { leaf: C.pine, trunk: C.trunk, kind: 'pine' });
+      Bz(arch, 'capsule').add([s * 4.2, 2.6, z], [0.55, 4.6, 0.55], C.trunk, [0, 0, -s * 0.18]); Bz(arch, 'sphere').add([s * 3.4, 6.4, z], [3, 2.4, 2.6], pk(C.green)); Bz(arch, 'sphere').add([0, 7.6, z], [3.2, 1.8, 2.6], pk(C.green)); }
     setEl('bushes');
-    for (let i = 0; i < 3; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3.4, 9), z = -bt(0, L); api.bush(g, x, 0, z, bt(0.8, 1.1), { leaf: C.green }); }
+    for (let i = 0; i < 3; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3.4, 9), z = -bt(0, L); api.bush(g, x, 0, z + oz, bt(0.8, 1.1), { leaf: C.green }); }
     setEl('foreground');                                               // FG plane: big bushes right at the path edge — they sweep past the lens
     { const s = m % 2 ? 1 : -1, x = s * bt(2.9, 3.4), z = -bt(1, L - 1), k = bt(1.1, 1.6);
-      for (let j = 0; j < 4; j++) B(g, 'sphere').add([x + s * j * 0.45, 0.45 * k + j * 0.12, z + (j - 1.5) * 0.8], [0.85 * k, 0.75 * k, 0.8 * k], pk(['#6FAE6A', '#5E9E62', '#7CBF70']));
-      for (let j = -2; j <= 2; j++) B(g, 'cone').add([x - s * 0.9, 0, z + j * 0.25], [0.1, bt(0.5, 0.8), 0.1], '#5E9E62', [0, 0, j * 0.25]); }
+      for (let j = 0; j < 4; j++) Bz(g, 'sphere').add([x + s * j * 0.45, 0.45 * k + j * 0.12, z + (j - 1.5) * 0.8], [0.85 * k, 0.75 * k, 0.8 * k], pk(['#6FAE6A', '#5E9E62', '#7CBF70']));
+      for (let j = -2; j <= 2; j++) Bz(g, 'cone').add([x - s * 0.9, 0, z + j * 0.25], [0.1, bt(0.5, 0.8), 0.1], '#5E9E62', [0, 0, j * 0.25]); }
     setEl('lamps');
-    if (m % 2 === 0) { const s = m % 4 === 0 ? 1 : -1; B(g, 'capsule').add([s * 3.1, 1.6, -L / 2], [0.16, 3, 0.16], C.lamp); B(g, 'sphere').add([s * 3.1, 3.4, -L / 2], 0.42, C.bulb); }
+    if (m % 2 === 0) { const s = m % 4 === 0 ? 1 : -1; Bz(g, 'capsule').add([s * 3.1, 1.6, -L / 2], [0.16, 3, 0.16], C.lamp); Bz(g, 'sphere').add([s * 3.1, 3.4, -L / 2], 0.42, C.bulb); }
     setEl('fences');
-    for (let k = 0; k < 4; k++) { const z = -k * 3 - 0.5; B(g, 'capsule').add([-3.9, 0.55, z], [0.16, 0.9, 0.16], C.fence); B(g, 'rbox').add([-3.9, 0.75, z - 1.5], [0.1, 0.14, 3], C.fence); B(g, 'rbox').add([-3.9, 0.4, z - 1.5], [0.1, 0.12, 3], C.fence); }
+    for (let k = 0; k < 4; k++) { const z = -k * 3 - 0.5; Bz(g, 'capsule').add([-3.9, 0.55, z], [0.16, 0.9, 0.16], C.fence); Bz(g, 'rbox').add([-3.9, 0.75, z - 1.5], [0.1, 0.14, 3], C.fence); Bz(g, 'rbox').add([-3.9, 0.4, z - 1.5], [0.1, 0.12, 3], C.fence); }
     setEl('flowers');
-    for (let i = 0; i < 9; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.8, 8), z = -bt(0, L); B(g, 'capsule').add([x, 0.17, z], [0.05, 0.34, 0.05], '#7CBF70'); B(g, 'sphereLo').add([x, 0.4, z], [0.17, 0.1, 0.17], pk(C.flower)); }
+    for (let i = 0; i < 9; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.8, 8), z = -bt(0, L); Bz(g, 'capsule').add([x, 0.17, z], [0.05, 0.34, 0.05], '#7CBF70'); Bz(g, 'sphereLo').add([x, 0.4, z], [0.17, 0.1, 0.17], pk(C.flower)); }
     setEl('grass');
-    for (let i = 0; i < 12; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.7, 9), z = -bt(0, L), k = bt(0.35, 0.6); for (let j = -2; j <= 2; j++) B(g, 'cone').add([x + j * 0.2 * k, 0, z], [0.16 * k, (1.1 - Math.abs(j) * 0.2) * k, 0.16 * k], pk(['#8FCB80', '#7CBF70']), [0, 0, j * 0.28]); }
+    for (let i = 0; i < 12; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.7, 9), z = -bt(0, L), k = bt(0.35, 0.6); for (let j = -2; j <= 2; j++) Bz(g, 'cone').add([x + j * 0.2 * k, 0, z], [0.16 * k, (1.1 - Math.abs(j) * 0.2) * k, 0.16 * k], pk(['#8FCB80', '#7CBF70']), [0, 0, j * 0.28]); }
     setEl('rocks');
-    if (r() < 0.6) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3, 7), z = -bt(1, L - 1), k = bt(0.4, 0.9); B(g, 'sphereLo').add([x, k * 0.25, z], [k, k * 0.6, k * 0.85], pk(C.rock)); }
+    if (r() < 0.6) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3, 7), z = -bt(1, L - 1), k = bt(0.4, 0.9); Bz(g, 'sphereLo').add([x, k * 0.25, z], [k, k * 0.6, k * 0.85], pk(C.rock)); }
     setEl('logs');
-    if (m % 5 === 2) { const s = m % 2 ? 1 : -1; B(g, 'capsule').add([s * 7.5, 0.3, -6], [0.6, 2.4, 0.6], C.log, [Math.PI / 2, 0.6, 0]); }
+    if (m % 5 === 2) { const s = m % 2 ? 1 : -1; Bz(g, 'capsule').add([s * 7.5, 0.3, -6], [0.6, 2.4, 0.6], C.log, [Math.PI / 2, 0.6, 0]); }
     setEl('dashes');
-    { const segs = [], cols = []; for (let i = 0; i < 10; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.8, 9), z = -bt(0, L), Lh = bt(0.3, 0.6); segs.push(x, 0.02, z, x + Lh, 0.02, z); cols.push('#8A6B64'); } inkLines(segs, cols, g); }
+    { const segs = [], cols = []; for (let i = 0; i < 10; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.8, 9), z = -bt(0, L), Lh = bt(0.3, 0.6); segs.push(x, 0.02, z + oz, x + Lh, 0.02, z + oz); cols.push('#8A6B64'); } inkLines(segs, cols, g); }
   }
 
   /* vanishing point: soft mountain with a pastel cap (Fuji at the end of the momiji tunnel) + clouds */
@@ -82,7 +86,8 @@ function build(api) {
 }
 function setStyle(v) { for (const st of S.styles || []) { st.round.visible = v === 'round'; st.pine.visible = v === 'pine'; st.arch.visible = v === 'arch'; } }
 /** wrap the modules around a camera z so the path never ends (seamless loop) */
-function layout(camZ) { for (const md of S.modules) { const z = md.z0; md.g.position.z = camZ + 2 * L - (((camZ + 2 * L - z) % SPAN) + SPAN) % SPAN; } }
+function layout(camZ) { const M = CHUNK * L;   // a chunk only jumps once it is fully behind the camera
+  for (const md of S.modules) { const z = md.z0; md.g.position.z = camZ + M - (((camZ + M - z) % SPAN) + SPAN) % SPAN; } }
 
 const look = (api, p, t, fovDeg, near = 0.1, far = 4000) => { const { camera } = api; camera.position.set(...p); camera.up.set(0, 1, 0); camera.lookAt(...t); camera.fov = fovDeg; camera.near = near; camera.far = far; };
 const mm = v => 2 * Math.atan(12 / v) * 180 / Math.PI;

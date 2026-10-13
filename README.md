@@ -85,6 +85,8 @@ For heavy scenes (BG 1 city), set *3D detail* (Settings → Export options) to `
 ## Performance
 - Detail shading costs ≈ 10 % of a frame: its cell pattern checks 8 cells (not 27), and far trees (city rings, lake shores, the run strip) use a light LOD with about half the leaf clumps; hidden inner leaf masses draw no outline.
 - Free view loads `OrbitControls` only when it is opened.
+- Trees have three levels of detail: full near the camera, light (≈ half the clumps) in the middle distance, and very far (trunk + 7 tiny clumps on a 9×6 sphere) for city yards, avenues and lake shores.
+- BG 6 groups its path modules three at a time, so they share instanced batches (≈ 250 draw calls for the whole frame instead of ≈ 650).
 - Minified Three.js, with all modules fetched in parallel (`modulepreload`). JSZip, `GLTFExporter` and `STLExporter` load only when an export needs them.
 - Frames are drawn only while playing or after something changes, so an idle page costs almost nothing.
 - Preview renders at the screen pixel ratio (up to 2) with 4× MSAA; in `auto` it lowers the resolution once if frames stay below ~25 fps.
