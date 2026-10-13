@@ -58,6 +58,7 @@ Sewing room photo, Vuillard's drawing room, the van Ostade workshop (study) · A
 - Each shot declares its own panorama (`from`, `to`, `axis`, `pxPerUnit`, `setup(s)`). A shot without camera travel falls back to a single 4K frame.
 
 # ELEMENTS (one PNG each)
+- Element PNGs show each element's **whole** shapes by default (the other elements are left out, so nothing is cut), numbered far → near so they stack back to front; a *holdout* option keeps only the visible parts.
 - Every object belongs to a named element (for example: sky, clouds, hills, ground, river, dome, rocks, logs, grass, flowers, trees, houses, city, landmark, poles, cars, street…). The GUI lists them with visibility checkboxes.
 - Element PNGs use a **holdout**: the element is drawn normally and everything else only writes depth (invisible). Each PNG therefore contains only what the camera really sees of that element, and stacking all element PNGs of a pass rebuilds the full image exactly, in any order.
 - Element lineart = the drawn lines that touch that element (mask the edge lines with the element's coverage, slightly dilated).
@@ -103,6 +104,12 @@ Optional look for every BG (Settings → *Pixel art*). Not "plain 3D made blocky
 - Lineart inside objects as well as around them; ink lines stay one art pixel wide; film grain, paper and vignette are off in this mode.
 - Detail never gets smaller than a few art pixels and is anchored to the world (no swimming); the pixel grid is in image space, so 4K tiles and long panoramas line up.
 - Pixel size is given in px at 1080p, so exports match the preview.
+
+# MOUNTAINS AND HILLS: FEW AND BELIEVABLE (shared `api.range`)
+No walls of identical cones or rows of half-balls. A range is a few massifs spread along an arc or a line; each massif is one main summit (concave flanks, rounded top) with 1–2 lower shoulders on the same ridge; heights rise and fall along the range; snow only on the high summits. Hills are low, wide, soft domes. Typical counts: one far range of 7–14 massifs + a nearer, lower range or a few rolling hills.
+
+# FREE VIEW + CAPTURE
+Every scene has a free view (`C`) to look at the set from any angle, and *Capture 4K* (`Enter`, or the pink button) saves exactly that view as a 3840 × 2160 PNG with the current look.
 
 # STORYBOARD (Poki & Poka intro, 00:00–01:13) → which BG covers it
 - Sc 1–2 · text scroll intro, Poki & Poka drop from off screen (BG only "text scroll", not one of these files).

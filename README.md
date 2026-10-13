@@ -72,7 +72,8 @@ One button opens a grouped menu. Pick *Long panorama* or *Single 4K frame* at th
 | **Export 4K Panorama PNG** | The whole camera move as one long painting, 2160 px tall (or a single 3840×2160 frame). |
 | **Panorama Lineart** | Lines only, transparent background (option: white). |
 | **Panorama Base color** | Flat fills only, clean areas for the magic wand. |
-| **ZIP · each element** | One PNG per element for colour, lineart and base colour, plus the full image. Stacking the element PNGs rebuilds the full image. |
+| **ZIP · each element** | One PNG per element for colour, lineart and base colour, plus the full image. By default every element PNG shows its **whole** shapes (nothing cut by other elements), numbered far → near: stack 01 at the bottom to rebuild the full image. *Export options → Element PNGs → Visible parts only* gives the old holdout cut-outs (stack in any order). |
+| **This view · 4K PNG** | Exactly what the stage shows, free view included, at 3840 × 2160 (also the pink *Capture 4K* button / `Enter` in free view). |
 | **3D · .glb (Blender)** | glTF 2.0 with the animated `ShotCamera` (24 fps) and ink lines as edges. Choose *instanced* (small, Blender 3.6+) or *baked*. |
 | **3D · .obj** | ZIP containing `.obj` + `.mtl`: one object per element × colour, with flat colours. Blender: *File › Import › Wavefront (.obj)*. |
 | **3D · .stl** | Binary STL with shapes only (no colour), e.g. for 3D printing or other tools. |

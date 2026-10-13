@@ -128,14 +128,14 @@ function build(api) {
     setEl('strip-lake');
     solid(geo.rbox, C.lake, g, { pos: [92, -0.96, -12], scale: [54, 2, 12] });
     setEl('strip-mountains');
-    for (let i = 0; i < 9; i++) { const x = 60 + i * 7.5 + bt(-2, 2), h = bt(6.5, 11); solid(geo.cone, pk(C.mount), g, { pos: [x, 0, -26 - bt(0, 6)], scale: [h * 0.95, h, 6] }); solid(geo.cone, '#F4F0FA', g, { pos: [x, h * 0.66, -26.5], scale: [h * 0.32, h * 0.34, 2.2] }); }   // side view = no perspective shrink, so model them small
+    api.range(g, { x: [64, 118], z: [-30, -26], count: 4, h: [6.5, 11], col: C.mount, snow: '#F4F0FA', snowAbove: 8.5, depth: 0.35, seed: 501 });   // 4 massifs behind the lake (side view: modelled small)
     setEl('strip-place');                                               // the hobby place: a little studio front
     solid(geo.rbox, '#F7D2C4', g, { pos: [26, 3, -6], scale: [16, 6, 6] }); solid(geo.rbox, '#C9785E', g, { pos: [26, 6.4, -6], scale: [17, 0.8, 6.6] });
     solid(geo.rboxSoft, '#7FB7E0', g, { pos: [26, 5.2, -2.9], scale: [6, 1, 0.3] }); for (const x of [20, 32]) solid(geo.rbox, C.glass, g, { pos: [x, 2.8, -2.95], scale: [3, 2.4, 0.1] });
     solid(geo.rbox, C.woodDark, g, { pos: [26, 1.6, -2.95], scale: [1.6, 3.2, 0.1] }); solid(geo.rbox, C.wood, g, { pos: [37, 0.5, -2], scale: [3, 0.25, 0.9] });
     setEl('strip-trees');
     for (let i = 0; i < 22; i++) { const x = bt(0, LOOP), z = bt(-14, -3), s = bt(1, 1.8); if (x > 60 && x < 122 && z < -6) continue;
-      api.tree(g, x, 0, z, s, { leaf: C.green, trunk: C.trunk, far: true }); }
+      api.tree(g, x, 0, z, s, { leaf: C.green, trunk: C.trunk, far: true, seed: 3000 + i }); }
     setEl('strip-field');
     for (let i = 0; i < 90; i++) { const x = bt(124, 178), z = bt(-12, 6); for (let k = -1; k <= 1; k++) B(g, 'cone').add([x + k * 0.2, 0, z], [0.14, bt(0.7, 1.2), 0.14], pk(C.wheat), [0, 0, k * 0.25]); }
     setEl('strip-fences');

@@ -63,7 +63,8 @@ function build(api) {
   /* vanishing point: soft mountain with a pastel cap (Fuji at the end of the momiji tunnel) + clouds */
   setEl('mountain');
   solid(geo.cone, C.mount, BG, { pos: [0, -1, -900], scale: [420, 260, 200] }); solid(geo.cone, C.snow, BG, { pos: [0, 168, -905], scale: [130, 92, 66] });
-  for (const [x, h] of [[-520, 120], [480, 140], [-300, 90], [330, 80]]) solid(geo.cone, '#C9C3EA', BG, { pos: [x, -1, -820], scale: [h * 1.8, h, 120] });
+  api.range(BG, { x: [-640, -300], z: [-840, -800], count: 2, h: [80, 125], col: ['#C9C3EA', '#C2BCE4'], y0: -1, depth: 0.45 });   // foothills either side of Fuji
+  api.range(BG, { x: [300, 620], z: [-840, -800], count: 2, h: [75, 135], col: ['#C9C3EA', '#C2BCE4'], y0: -1, depth: 0.45 });
   setEl('clouds');
   for (let i = 0; i < 18; i++) { const x = (rand() - 0.5) * 1400, y = 60 + rand() * 180, z = -500 - rand() * 600, s = 18 + rand() * 30, n = 3 + Math.floor(rand() * 4);
     for (let k = 0; k < n; k++) B(SKY, 'sphereLo').add([x + (k - n / 2) * s * 0.9, y + (k % 2) * s * 0.3, z], [s, s * 0.8, s * 0.6], '#FFFFFF'); }
