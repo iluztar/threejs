@@ -1822,14 +1822,14 @@ function build(api) {
       for (const sx of [-1.05, 1.05]) B(parent, 'capsule').add([sx, 0.15, z], [0.22, 0.65, 0.22], col(C.post)); }                                    // on posts standing in the water
 
     el('mountains');   // behind the lake: one far snow range + one nearer, lower range (few massifs each, not a wall of cones)
-    api.range(parent, { arc: [Math.PI, 4.0], d: [520, 700], count: 9, h: [120, 185], col: C.mtnFar, snow: C.snow, snowAbove: 130, y0: -1, map: col, seed: 401 });
-    api.range(parent, { arc: [Math.PI + 0.2, 3.4], d: [330, 420], count: 7, h: [50, 90], col: C.mtnNear, snow: C.snow, snowAbove: 78, y0: -1, map: col, seed: 402 });
+    api.range(parent, { arc: [Math.PI, 4.0], d: [820, 1100], count: 10, h: [190, 290], col: C.mtnFar, snow: C.snow, snowAbove: 205, y0: -1, map: col, seed: 401 });
+    api.range(parent, { arc: [Math.PI + 0.2, 3.4], d: [520, 650], count: 8, h: [78, 140], col: C.mtnNear, snow: C.snow, snowAbove: 120, y0: -1, map: col, seed: 402 });
 
     el('hills');       // a few long, low shore hills (was 30 half-balls)
-    api.range(parent, { arc: [Math.PI, 3.6], d: [175, 235], count: 9, h: [9, 17], col: C.hill, y0: -0.5, hill: true, map: col, seed: 403 });
+    api.range(parent, { arc: [Math.PI, 3.6], d: [270, 360], count: 11, h: [14, 26], col: C.hill, y0: -0.5, hill: true, map: col, seed: 403 });
 
     el('trees');
-    for (let i = 0; i < 80; i++) { const a = aroundBack(), d = bt(150, 215), x = Math.sin(a) * d, z = Math.cos(a) * d, s = bt(4, 7.5);
+    for (let i = 0; i < 110; i++) { const a = aroundBack(), d = bt(240, 330), x = Math.sin(a) * d, z = Math.cos(a) * d, s = bt(5.5, 10);
       if (r0() < 0.45) {                                                       // round tree (Chiikawa / Kirby)
         api.tree(parent, x, 0, z, s * 0.48, { leaf: C.tree, trunk: C.trunk, col, far: 2, seed: 1000 + i });
       } else {                                                                  // soft pine: three stacked rounded cones
@@ -1837,15 +1837,15 @@ function build(api) {
       } }
 
     el('rocks');
-    for (let i = 0; i < 22; i++) { const a = aroundBack(), d = bt(140, 175), r = bt(2, 4.5);             // shore rocks
+    for (let i = 0; i < 28; i++) { const a = aroundBack(), d = bt(225, 270), r = bt(2.6, 5.8);           // shore rocks
       B(parent, 'sphereLo').add([Math.sin(a) * d, r * 0.15, Math.cos(a) * d], [r * 1.3, r * 0.75, r], col(pk(C.rock))); }
     for (let i = 0; i < 6; i++) { const a = Math.PI + bt(-1.2, 1.2), d = bt(28, 60), r = bt(0.8, 1.8);   // a few rocks poking out of the lake
       B(parent, 'sphereLo').add([Math.sin(a) * d, 0, Math.cos(a) * d - 6], [r * 1.4, r * 0.6, r], col(pk(C.rock))); }
 
     el('clouds');
     for (let i = 0; i < 40; i++) {                                            // banks over the mountains + higher puffs, flat bottoms
-      const a = aroundBack(), d = bt(560, 900), high = r0() < 0.4, s = high ? bt(10, 18) : bt(18, 34), n = high ? 3 + Math.floor(r0() * 2) : 5 + Math.floor(r0() * 3);
-      const y = high ? bt(190, 260) : bt(120, 185), x = Math.sin(a) * d, z = Math.cos(a) * d, tx = Math.cos(a), tz = -Math.sin(a);
+      const a = aroundBack(), d = bt(880, 1400), high = r0() < 0.4, s = high ? bt(15, 26) : bt(26, 48), n = high ? 3 + Math.floor(r0() * 2) : 5 + Math.floor(r0() * 3);
+      const y = high ? bt(300, 400) : bt(190, 290), x = Math.sin(a) * d, z = Math.cos(a) * d, tx = Math.cos(a), tz = -Math.sin(a);
       for (let k = 0; k < n; k++) { const u = (k - (n - 1) / 2) / Math.max(1, (n - 1) / 2), rr = s * (1 - Math.abs(u) * 0.4) * bt(0.8, 1.15), off = u * s * n * 0.42;
         B(parent, 'sphereLo').add([x + tx * off, y + rr * 0.55 + bt(0, 0.3) * s, z + tz * off], [rr, rr * 0.8, rr * 0.75], colSoft(pk(C.cloud))); } }
   }
@@ -1875,7 +1875,7 @@ function build(api) {
   S.waterMat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { uTime: { value: 0 } },
     vertexShader: 'varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
     fragmentShader: 'uniform float uTime; varying vec3 vW; void main(){ float r = length(vW.xz); float ring = smoothstep(0.85, 1.0, sin(r * 1.4 - uTime * 2.0)) * smoothstep(40.0, 8.0, r) * 0.22; float a = 0.14 + ring; gl_FragColor = vec4(pow(mix(vec3(0.5, 0.66, 0.84), vec3(1.0), ring * 3.0), vec3(2.2)), a); }' });
-  fx(new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000).rotateX(-Math.PI / 2), S.waterMat), FG, { occluder: false }).renderOrder = 1;
+  fx(new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000).rotateX(-Math.PI / 2), S.waterMat), FG, { occluder: false }).renderOrder = 1;   // a big lake
   { const segs = [], cols = [];
     for (const [cx, cz, rr] of [[0, 0, 7.4], [0, 0, 9.6], [0, 0, 12.4], [14, -18, 2.4], [-18, -8, 2], [22, -26, 3.2], [-26, -22, 2.6]]) for (let k = 0; k < 40; k++) { if (k % 5 === 4) continue; const a0 = k / 40 * 6.283, a1 = (k + 1) / 40 * 6.283;
       segs.push(cx + Math.cos(a0) * rr, 0.02, cz + Math.sin(a0) * rr, cx + Math.cos(a1) * rr, 0.02, cz + Math.sin(a1) * rr); cols.push('#BFD7EA'); }
@@ -1884,7 +1884,7 @@ function build(api) {
 }
 function setFold(v) { if (S.pivot) S.pivot.rotation.x = -v * Math.PI / 2; }
 
-const look = (api, p, t, mm = 28) => { const { camera } = api; camera.position.set(...p); camera.up.set(0, 1, 0); camera.lookAt(...t); camera.fov = 2 * Math.atan(12 / mm) * 180 / Math.PI; camera.near = 0.1; camera.far = 4000; };
+const look = (api, p, t, mm = 28) => { const { camera } = api; camera.position.set(...p); camera.up.set(0, 1, 0); camera.lookAt(...t); camera.fov = 2 * Math.atan(12 / mm) * 180 / Math.PI; camera.near = 0.1; camera.far = 7000; };
 /** long panorama of a shot: the camera turns in place (seamless) ±75° around its view to the platform */
 const panFrom = (p, t, mm, label) => { const yaw0 = Math.atan2(t[0] - p[0], -(t[2] - p[2])), pitch = Math.atan2(t[1] - p[1], Math.hypot(t[0] - p[0], t[2] - p[2]));
   return { label, axis: 'x', from: yaw0 - 1.3, to: yaw0 + 1.3, reverse: false, pxPerUnit: (H, api) => api.focalPx(H),
@@ -1914,7 +1914,7 @@ startApp({
   layers: api => { const d = api.camera.position.length(); return [Math.max(4, d * 0.35), d * 1.6, d * 6]; },
   eras: ['e1960', 'e1970', 'e1945', 'e1980', 'e1990', 'colour'],
   update(T, api) { if (S.waterMat) S.waterMat.uniforms.uTime.value = T; const { hemi, sun, scene, THREE } = api; hemi.intensity = 2.2; hemi.color.set('#FFFFFF'); hemi.groundColor.set('#D8D2EE'); sun.intensity = 0.9; sun.position.set(-0.6, 1, 0.8);
-    if (!scene.fog) scene.fog = new THREE.Fog('#E6F0FA', 260, 1500); },
+    if (!scene.fog) scene.fog = new THREE.Fog('#E6F0FA', 420, 2600); },
   vanishingPoint: api => new api.THREE.Vector3(0, 0, -2000),
   staging: () => ({ center: [0, 0.85, 0], size: [2.6, 1.3, 1.4] }),
   guiTitle: 'BG 4 · Lake',

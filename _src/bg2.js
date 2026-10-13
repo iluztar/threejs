@@ -205,19 +205,22 @@ function build(api) {
   const windows = (g, x, z, w, d, y0, rows, rowH) => { const b = B(g, 'box', false); b.idColor = '#203050'; b.idMaxD = 120;
     for (let r = 0; r < rows; r++) { const y = y0 + rowH * (r + 0.55); for (const [sx, sz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) for (const t of [-0.25, 0.25]) {
       if (sz) b.add([x + t * w, y, z + sz * (d / 2 + 0.02)], [w * 0.22, rowH * 0.42, 0.03], C.pane); else b.add([x + sx * (w / 2 + 0.02), y, z + t * d], [0.03, rowH * 0.42, d * 0.22], C.pane); } } };
+  // the island top is a dome (beach + grass ellipsoids), not flat: every building takes the ground height at its own spot,
+  // its base sunk a little, and its walls run down to it (no gap under any building, house, tank or tree)
+  const landY = d => Math.max(-2.6 + 4.6 * Math.sqrt(Math.max(0, 1 - (d / 50) ** 2)), -1.6 + 3.5 * Math.sqrt(Math.max(0, 1 - (d / 45.5) ** 2)));
   for (let i = 0; i < 70; i++) {
     const a = rand() * 6.283, r = footR + 3 + rand() * (42 - footR - 3), x = Math.sin(a) * r, z = Math.cos(a) * r; if (z > -2 && Math.abs(x) < 10) continue;   // keep the jump lane (dome → sea) open
-    const k = rand();
-    if (k < 0.45) { setEl('city'); const w = between(4.6, 6), d = between(4.6, 6), fl = 2 + Math.floor(rand() * (r > 30 ? 4 : 2)), h = fl * 3.1 + 0.5;
+    const k = rand(), yb = landY(r + 3) - 0.3;                                    // lowest ground under the footprint (outer side)
+    if (k < 0.45) { setEl('city'); const w = between(4.6, 6), d = between(4.6, 6), fl = 2 + Math.floor(rand() * (r > 30 ? 4 : 2)), h = fl * 3.1 + 0.5 + (LG - yb);
 
-      B(island, 'rbox').add([x, LG + h / 2, z], [w, h, d], pick(rand() < 0.5 ? C.brick : C.stone)); windows(island, x, z, w, d, LG + 0.4, fl, 3.1);
-      if (rand() < 0.5) { const y = LG + h; for (const [lx, lz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) B(island, 'capsule').add([x + lx, y + 0.7, z + lz], [0.13, 1.4, 0.13], '#9A8A78'); B(island, 'rcyl').add([x, y + 1.4, z], [1, 1.8, 1], pick(C.tank)); B(island, 'cone').add([x, y + 3.1, z], [1.1, 0.9, 1.1], '#8E7563'); } }
-    else if (k < 0.75) { setEl('city'); const w = between(4, 5), d = between(4, 5), h = 3.4, ry = Math.atan2(x, z);
-      B(island, 'rbox').add([x, LG + h / 2, z], [w, h, d], pick(C.wood), [0, ry, 0]); B(island, 'roof').add([x, LG + h - 0.05, z], [w * 1.16, 2.2, d * 1.12], pick(C.roof), [0, ry, 0]); windows(island, x, z, w, d, LG, 1, 2.8); }
-    else { setEl('trees'); tree(island, x, z, 0.9 + rand() * 0.5, LG); }
+      B(island, 'rbox').add([x, yb + h / 2, z], [w, h, d], pick(rand() < 0.5 ? C.brick : C.stone)); windows(island, x, z, w, d, yb + (LG - yb) + 0.4, fl, 3.1);
+      if (rand() < 0.5) { const y = yb + h; for (const [lx, lz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) B(island, 'capsule').add([x + lx, y + 0.7, z + lz], [0.13, 1.4, 0.13], '#9A8A78'); B(island, 'rcyl').add([x, y + 1.4, z], [1, 1.8, 1], pick(C.tank)); B(island, 'cone').add([x, y + 3.1, z], [1.1, 0.9, 1.1], '#8E7563'); } }
+    else if (k < 0.75) { setEl('city'); const w = between(4, 5), d = between(4, 5), h = 3.4 + (LG - yb), ry = Math.atan2(x, z);
+      B(island, 'rbox').add([x, yb + h / 2, z], [w, h, d], pick(C.wood), [0, ry, 0]); B(island, 'roof').add([x, yb + h - 0.05, z], [w * 1.16, 2.2, d * 1.12], pick(C.roof), [0, ry, 0]); windows(island, x, z, w, d, LG, 1, 2.8); }
+    else { setEl('trees'); tree(island, x, z, 0.9 + rand() * 0.5, landY(r) - 0.1); }
   }
   setEl('city');
-  { let y = LG, w = 6.4; [10, 6, 4].forEach(h => { B(island, 'rbox').add([-24, y + h / 2, -18], [w, h, w], '#F1E4CC'); y += h; w *= 0.74; }); B(island, 'halfSphere').add([-24, y, -18], [w * 0.6, w * 0.9, w * 0.6], '#E3C88E'); }   // one modest 1950s tower
+  { let y = landY(Math.hypot(24, 18) + 3) - 0.3, w = 6.4; [10 + (LG - y), 6, 4].forEach(h => { B(island, 'rbox').add([-24, y + h / 2, -18], [w, h, w], '#F1E4CC'); y += h; w *= 0.74; }); B(island, 'halfSphere').add([-24, y, -18], [w * 0.6, w * 0.9, w * 0.6], '#E3C88E'); }   // one modest 1950s tower
 
   /* small round islands nearby (Kirby Everbay map) */
   setEl('islands');

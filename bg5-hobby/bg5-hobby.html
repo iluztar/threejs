@@ -1886,6 +1886,9 @@ function build(api) {
       if (kind < 0.45) for (let k = 0; k < 3; k++) B(g, 'sphere').add([x + (k - 1) * 0.9, -1.5 + bt(0, 0.3), z], [bt(0.9, 1.3), bt(0.8, 1.1), 0.8], pk(['#5E9E62', '#6FAE6A', '#4F8E5A']));
       else if (kind < 0.65) B(g, 'sphere').add([x, -1.4, z], [bt(0.8, 1.2), bt(0.6, 0.8), 0.8], pk(['#8E89A8', '#9C97B4']));
       else for (let k = -2; k <= 2; k++) B(g, 'cone').add([x + k * 0.22, -0.9, z], [0.12, bt(0.9, 1.5), 0.12], pk(['#5E9E62', '#6FAE6A']), [0, 0, k * 0.22]); }
+    setEl('strip-hills');                                              // the land goes on behind: rolling hills + a far, pale range (same in every loop copy)
+    api.range(g, { x: [6, LOOP - 6], z: [-50, -46], count: 7, h: [3.5, 6], col: ['#B9DCA4', '#C6E2B2'], hill: true, depth: 0.3, seed: 551 });
+    api.range(g, { x: [8, LOOP - 8], z: [-80, -74], count: 6, h: [8, 13], col: ['#CFCBEA', '#D8D4EE'], snow: '#F4F0FA', snowAbove: 11, depth: 0.3, seed: 552 });
     setEl('strip-clouds');
     for (let i = 0; i < 9; i++) { const x = bt(0, LOOP), y = bt(11.5, 14), s = bt(0.8, 1.6), n = 3 + Math.floor(r() * 4); for (let k = 0; k < n; k++) B(g, 'sphereLo').add([x + (k - n / 2) * s * 0.9, y + (k % 2) * s * 0.3, -40], [s, s * 0.8, s * 0.6], '#FFFFFF'); }
   }

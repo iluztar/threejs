@@ -65,6 +65,23 @@ function build(api) {
   solid(geo.cone, C.mount, BG, { pos: [0, -1, -900], scale: [420, 260, 200] }); solid(geo.cone, C.snow, BG, { pos: [0, 168, -905], scale: [130, 92, 66] });
   api.range(BG, { x: [-640, -300], z: [-840, -800], count: 2, h: [80, 125], col: ['#C9C3EA', '#C2BCE4'], y0: -1, depth: 0.45 });   // foothills either side of Fuji
   api.range(BG, { x: [300, 620], z: [-840, -800], count: 2, h: [75, 135], col: ['#C9C3EA', '#C2BCE4'], y0: -1, depth: 0.45 });
+  /* open country beyond the tree rows (the world goes on to the horizon, like BG 1): rolling hills both sides, far tree lines,
+     a small village on the right, a far snowy range behind Fuji */
+  setEl('hills');
+  api.range(BG, { arc: [Math.PI + 0.8, 1.0], d: [170, 260], count: 6, h: [16, 30], col: ['#A6D68A', '#9BCF86', '#B3DC98'], y0: -1, hill: true, depth: 0.6, seed: 601 });
+  api.range(BG, { arc: [Math.PI - 0.8, 1.0], d: [170, 260], count: 6, h: [16, 30], col: ['#A6D68A', '#9BCF86', '#B3DC98'], y0: -1, hill: true, depth: 0.6, seed: 602 });
+  api.range(BG, { arc: [Math.PI, 2.6], d: [420, 520], count: 9, h: [28, 50], col: ['#B9D9A8', '#C5DFB4'], y0: -1, hill: true, depth: 0.5, seed: 603 });
+  setEl('mountain');
+  api.range(BG, { x: [-1700, 1700], z: [-1450, -1300], count: 9, h: [150, 240], col: ['#C9C3EA', '#D3CEEE'], snow: C.snow, snowAbove: 200, y0: -1, depth: 0.5, seed: 604 });
+  setEl('trees');
+  { let sd = 61; const rr = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+    for (let i = 0; i < 140; i++) { const side = rr() < 0.5 ? -1 : 1, x = side < 0 ? -(22 + rr() * 70) : 34 + rr() * 60, z = 40 - rr() * 520;   // right side ≥ 34: clipped by the side-strip camera, never in front of the path rows
+      api.tree(BG, x, 0, z, 1.0 + rr() * 0.8, { leaf: C.green, trunk: C.trunk, kind: rr() < 0.3 ? 'pine' : 'round', far: 2, seed: 6000 + i }); } }
+  setEl('village');
+  { let sd = 67; const rr = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+    for (let i = 0; i < 9; i++) { const x = 46 + rr() * 40, z = -70 - rr() * 120, w = 3 + rr() * 2, d = 3 + rr() * 2, h = 2.4 + rr() * 1.4, ry = rr() * 0.6 - 0.3;
+      solid(geo.rbox, ['#F7E7D2', '#FBEAB0', '#F4D7CF', '#E8EFE0'][i % 4], BG, { pos: [x, h / 2 - 0.1, z], scale: [w, h, d], rot: [0, ry, 0] });
+      solid(geo.cone, ['#C9785E', '#7F8DA6', '#B07A6A'][i % 3], BG, { pos: [x, h - 0.15, z], scale: [w * 0.82, 2.0, d * 0.82], rot: [0, ry + Math.PI / 4, 0] }); } }
   setEl('clouds');
   for (let i = 0; i < 18; i++) { const x = (rand() - 0.5) * 1400, y = 60 + rand() * 180, z = -500 - rand() * 600, s = 18 + rand() * 30, n = 3 + Math.floor(rand() * 4);
     for (let k = 0; k < n; k++) B(SKY, 'sphereLo').add([x + (k - n / 2) * s * 0.9, y + (k % 2) * s * 0.3, z], [s, s * 0.8, s * 0.6], '#FFFFFF'); }

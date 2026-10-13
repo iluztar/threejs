@@ -63,7 +63,8 @@ function build(api) {
         float c = smoothstep(0.045, 0.0, cells(vW.xz * 0.16, t)) * 0.32 + smoothstep(0.035, 0.0, cells(vW.xz * 0.31 + 3.7, t)) * 0.2;
         vec3 col = uSand * (0.92 + 0.08 * sin(vW.x * 0.3) * sin(vW.z * 0.25)) + vec3(1.0, 1.0, 0.92) * c * uCaus;
         col = mix(col, uFog, smoothstep(uNear, uFar, vD)); gl_FragColor = vec4(col, 1.0); }` });
-  const fg = new THREE.PlaneGeometry(520, 520, 160, 160).rotateX(-Math.PI / 2); { const p = fg.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, floorY(p.getX(i), p.getZ(i))); fg.computeVertexNormals(); }
+  // wide floor (900 × 900), shaped by floorY
+  const fg = new THREE.PlaneGeometry(900, 900, 220, 220).rotateX(-Math.PI / 2); { const p = fg.attributes.position; for (let i = 0; i < p.count; i++) p.setY(i, floorY(p.getX(i), p.getZ(i))); fg.computeVertexNormals(); }
   S.floorMat = floorMat; fx(new THREE.Mesh(fg, floorMat), BG, { baseHex: C.sand, normalPass: true });
   // sand ripples drawn as ink dashes
   { const segs = [], cols = [];
@@ -73,7 +74,7 @@ function build(api) {
 
   /* ── surface (light ceiling from below) ── */
   setEl('surface');
-  fx(new THREE.Mesh(new THREE.PlaneGeometry(900, 900).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#C8F3F7', side: THREE.DoubleSide, fog: false, transparent: true, opacity: 0.45, depthWrite: false })), BG, { baseHex: '#C8F3F7', occluder: false });   // see-through water surface
+  fx(new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600).rotateX(Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#C8F3F7', side: THREE.DoubleSide, fog: false, transparent: true, opacity: 0.45, depthWrite: false })), BG, { baseHex: '#C8F3F7', occluder: false });   // see-through water surface
   { const segs = [], cols = [];                                   // ripple rings on the surface (ink)
     for (let i = 0; i < 60; i++) { const cx = between(-140, 140), cz = between(-200, 80), r = between(2, 7); for (let k = 0; k < 16; k++) { const a0 = k / 16 * 6.283, a1 = (k + 1) / 16 * 6.283; if (k % 4 === 3) continue;
       segs.push(cx + Math.cos(a0) * r, -0.05, cz + Math.sin(a0) * r * 0.6, cx + Math.cos(a1) * r, -0.05, cz + Math.sin(a1) * r * 0.6); cols.push('#8ED6E3'); } }
@@ -91,7 +92,7 @@ function build(api) {
   /* ── reef ── */
   const yAt = (x, z) => floorY(x, z);
   const clear = (x, z, d = 8) => Math.hypot(x - SPOT[0], z - SPOT[1]) > d;
-  const pts = n => { const out = []; let guard = 0; while (out.length < n && guard++ < n * 20) { const x = between(-70, 70) * (rand() < 0.5 ? 1 : 0.6), z = between(-110, 30); if (clear(x, z)) out.push([x, z]); } return out; };
+  const pts = n => { const out = []; let guard = 0; while (out.length < n && guard++ < n * 20) { const x = between(-120, 120) * (rand() < 0.5 ? 1 : 0.6), z = between(-190, 30); if (clear(x, z)) out.push([x, z]); } return out; };
   setEl('ledges');                                                  // Doraemon blue plate-rock ledges
   for (const [x, z] of pts(14)) { const w = between(6, 12), y = floorMin(x, z, w * 0.5, w * 0.35) - 0.3; for (let k = 0; k < 3; k++) B(MG, 'rboxSoft').add([x + k * 0.8, y + 0.6 + k * 1.3, z - k * 0.6], [w * (1 - k * 0.22), 1.3, w * 0.7 * (1 - k * 0.22)], pick(C.ledge)); }
   setEl('plate-coral');
@@ -157,10 +158,13 @@ function build(api) {
     fx(new THREE.Points(g, new THREE.PointsMaterial({ color: '#E8FBFF', size: 2, sizeAttenuation: false, transparent: true, opacity: 0.7 })), MG, { occluder: false }); }
 
   /* ── far pastel shell-tower town (Ryugu, simplified, in the haze) ── */
+  setEl('ledges');   // distant reef ridges all around the back: the sea floor goes on to the fog (few, soft, believable)
+  api.range(BG, { arc: [Math.PI, 3.2], d: [230, 300], count: 9, h: [14, 30], col: ['#7FAAD8', '#8FB8DD', '#6E9BD0'], y0: FLOOR - 2, hill: true, depth: 0.7, seed: 301 });
+  api.range(BG, { arc: [Math.PI + 0.3, 2.6], d: [360, 420], count: 7, h: [30, 55], col: ['#A9C9E6', '#B6D3EA'], y0: FLOOR - 3, depth: 0.6, seed: 302 });
   setEl('far-town');
-  for (let i = 0; i < 16; i++) { const x = between(-130, 130), z = between(-230, -170), y = floorY(x, z), h = between(14, 34), r = between(3, 6), col = pick(C.town);
+  for (let i = 0; i < 22; i++) { const x = between(-200, 200), z = between(-330, -250), y = floorY(x, z), h = between(14, 34), r = between(3, 6), col = pick(C.town);
     B(BG, 'rcyl').add([x, y - 1, z], [r, h, r], col); for (let k = 0; k < 3; k++) B(BG, 'cone').add([x, y + h * (0.55 + k * 0.17), z], [r * (1.25 - k * 0.25), r * 0.9, r * (1.25 - k * 0.25)], pick(C.town)); B(BG, 'sphere').add([x, y + h + 2.5, z], r * 0.35, '#FFF3C2'); }
-  for (let i = 0; i < 5; i++) B(BG, 'halfSphere').add([between(-120, 120), FLOOR - 3, between(-260, -200)], [between(18, 30), between(12, 20), between(18, 30)], '#D9F2F6');
+  for (let i = 0; i < 5; i++) B(BG, 'halfSphere').add([between(-200, 200), FLOOR - 3, between(-380, -320)], [between(26, 44), between(16, 28), between(26, 44)], '#D9F2F6');
 
   S.api = api;
 }
@@ -185,9 +189,9 @@ function water(api) {                                 // colour of the water aro
   const t = api.clamp(-y / 38, 0, 1), mix = (a, b) => api.rgbToHex(api.hexToRgb(a).map((v, i) => v + (api.hexToRgb(b)[i] - v) * t));
   const fogC = mix('#5FCFE0', '#2F6FB0');
   setSky(mix('#BFF3F5', '#7FD3E8'), fogC, fogC, { baseHex: fogC });            // below the horizon = fog colour (no dark band)
-  scene.fog = S.fog ||= new THREE.Fog(fogC, 12, 170);   // one Fog object, updated in place (a new one every frame re-checks every material)
-  scene.fog.color.set(fogC); scene.fog.near = 12; scene.fog.far = api.lerp(170, 120, t);
-  if (S.floorMat) { S.floorMat.uniforms.uFog.value.set(fogC); S.floorMat.uniforms.uNear.value = 12; S.floorMat.uniforms.uFar.value = api.lerp(170, 120, t); }
+  scene.fog = S.fog ||= new THREE.Fog(fogC, 22, 300);   // one Fog object, updated in place (a new one every frame re-checks every material)
+  scene.fog.color.set(fogC); scene.fog.near = 22; scene.fog.far = api.lerp(300, 220, t);   // see farther: a wide sea
+  if (S.floorMat) { S.floorMat.uniforms.uFog.value.set(fogC); S.floorMat.uniforms.uNear.value = 22; S.floorMat.uniforms.uFar.value = api.lerp(300, 220, t); }
   fxU.depthWarm = t * 0.75; hemi.intensity = api.lerp(2.2, 1.6, t); hemi.color.set('#E9FBFF'); hemi.groundColor.set('#3A7FA8'); sun.intensity = 1.1; sun.position.set(0.2, 1, 0.3);
 }
 /** near-orthographic version of a view (same framing, very far, narrow lens) for track panoramas: no smear, true flat strip.
@@ -198,8 +202,8 @@ function farCam(api, p, t, mm) {
   camera.position.copy(Tt).add(dir.multiplyScalar(FAR_D)); camera.up.set(0, 1, 0); camera.lookAt(Tt);
   camera.fov = 2 * Math.atan(d0 * Math.tan(Math.atan(12 / mm)) / FAR_D) * 180 / Math.PI; camera.near = FAR_D - d0 - 60; camera.far = FAR_D + 400;
   const shift = FAR_D - d0;
-  if (scene.fog) { scene.fog.near = 12 + shift; scene.fog.far = 150 + shift; }
-  if (S.floorMat) { S.floorMat.uniforms.uNear.value = 12 + shift; S.floorMat.uniforms.uFar.value = 150 + shift; }
+  if (scene.fog) { scene.fog.near = 22 + shift; scene.fog.far = 260 + shift; }
+  if (S.floorMat) { S.floorMat.uniforms.uNear.value = 22 + shift; S.floorMat.uniforms.uFar.value = 260 + shift; }
 }
 const cam = (api, p, t, mm = 28) => { const { camera } = api; camera.position.set(...p); camera.up.set(0, 1, 0); camera.lookAt(...t); camera.fov = 2 * Math.atan(12 / mm) * 180 / Math.PI; camera.near = 0.1; camera.far = 2000; };
 
