@@ -16,8 +16,13 @@
 - **Light shafts** from the surface (own element, transparent), **caustics** (an animated Voronoi network) on the floor and coral tops, with an 8–12 frame loop.
 - In the distance, a soft pastel shell-tower coral town silhouette in the haze (One Piece Ryugu / Fish-Man Island is the main style target, simplified).
 
+## Depth planes (FG · MG · BG · far)
+- FG (< 6, darkest): camera-locked frame under water — kelp + branch coral on the left edge, plate rocks, fan coral and sea grass bottom-right. Off above the water (splash).
+- MG (< 40): the reef and Poki's calm sand patch.
+- BG (< 110): far ledges, shell towers; far: the fog wall, lightest.
+
 ## Elements in the ZIP
-sky (water) · floor · surface · rays · ledges · plate-coral · branch-coral · brain-coral · tube-coral · fan-coral · rocks · kelp · seagrass · creatures · fish · bubbles · marine-snow · far-town
+foreground · sky (water) · floor · surface · rays · ledges · plate-coral · branch-coral · brain-coral · tube-coral · fan-coral · rocks · kelp · seagrass · creatures · fish · bubbles · marine-snow · far-town
 
 ## Palettes
 - 1960s sea: #1F3A68 #3E7CB1 #F2C14E #D94A38 #F4F1E8.

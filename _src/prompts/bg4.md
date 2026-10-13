@@ -21,8 +21,13 @@
 1. Sc 11 wide → 1970s (linear red wave). 2. Sc 12–14 platform, ending in a B&W close-up. 3. Sc 15 rotating red wave → 1980s. 4. Sc 16 high wide → 1990s. 5. Sc 17–18 4-box, colour per side.
 - **Panorama:** each shot exports a long strip. The camera does a slow pan across the mirror world (about 150°), stitched into one wide painting in that shot's era. The 4-box shot exports its single source panorama (the split is done in compositing).
 
+## Depth planes (FG · MG · BG · far)
+- FG (< 0.35 × camera distance, darkest): camera-locked frame — a pine bough over the top-left corner, reeds bottom-left, shore rocks + reeds bottom-right. Every FG piece is cut by the frame edge, so it needs no mirrored copy. Off in the 4-box (it would be mirrored into the middle).
+- MG (< 1.6 × distance): the dock, lily pads, the near water.
+- BG (< 6 × distance): shore hills and trees; far: mountains, clouds and their reflection, lightest.
+
 ## Elements in the ZIP
-sky · platform · pillars · mirror-ring · arches · clouds · cloud-islands · reflection · water · sparkles
+foreground · sky · platform · pillars · mirror-ring · arches · clouds · cloud-islands · reflection · water · sparkles
 
 ## Palettes
 - 1970s #4B3B2A #7A8B3C #C98B3A #D9B98A #5B8DB8 · 1980s #1B1446 #5B2A86 #E94F8A #F29E4C #7ED3E6 · 1990s #1E2A30 #3F6E73 #8FB3A8 #D8C9A3 #B04A3A · colour #2E5E3A #6BA368 #F2D17B #4F8FC0 #F6EFE0.

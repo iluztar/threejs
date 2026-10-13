@@ -13,8 +13,12 @@
 **B · The run-cycle strip** (Sc 19–20): a horizontally tiling landscape behind the (not modelled) running characters. Segments: a hobby place (a small workshop / studio front), a lake with lavender mountains and pastel snow caps (Kirby pixel scene), and a golden field with round trees. Each segment has its own colour story. Layers at different depths give natural parallax; the strip repeats seamlessly.
 - **Panorama:** the strip is a side view (near-orthographic camera, 5,000 units away), so the export is one flat strip of exactly one loop (180 units ≈ 9,700 px at 2160 px tall) that tiles seamlessly; each element (ground, lake, mountains, trees, field, fences, flowers, clouds, the hobby place) is its own PNG for parallax.
 
+## Depth planes (FG · MG · BG · far)
+- Room (FG < 1.6, darkest): camera-locked frame — a big house plant bottom-left, a stack of books + cushion bottom-right, a hanging plant top-right. MG < 9: the hobby spot and furniture; BG: walls, window, beams.
+- Run strip: a world-space FG row on the front edge (bushes, rocks, tall grass, cut by the frame bottom, loops with the strip), MG: the run lane, fences, flowers, the studio front; BG: trees, lake; far: mountains and clouds.
+
 ## Elements in the ZIP
-room: walls · floor · beams · window · furniture · plants · wall-decor · props-drawing / props-music / props-games / props-plants / props-crafts (only the chosen hobby is exported) | strip: strip-ground · strip-lake · strip-mountains · strip-place · strip-trees · strip-field · strip-fences · strip-flowers · strip-clouds
+foreground · room: walls · floor · beams · window · furniture · plants · wall-decor · props-drawing / props-music / props-games / props-plants / props-crafts (only the chosen hobby is exported) | strip: strip-ground · strip-lake · strip-mountains · strip-place · strip-trees · strip-field · strip-fences · strip-flowers · strip-clouds
 
 ## Palettes
 - Full colour #2E5E3A #6BA368 #F2D17B #4F8FC0 #F6EFE0 · interior reference #32332B #4B6752 #8A6E36 #8E8974 #D8C9B3 #F8ECCC · WBB rooms #463B33 #9D9788 #362C2F #595D56 #715444 #C4B28A.

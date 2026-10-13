@@ -28,8 +28,14 @@ Two rings of lavender triangle ridges (#B9B6D4 / #D3D0E6). Dynamic, outlined whi
 - Team test pastels: #F4E3C1 #F7D2C4 #CFE8D5 #D9D3EE #CDE4F2 #FBEAB0 · greens #A6D6A0 #B8E2A9 #93CF95 · dome #F6EFD4 · ground #EBE5C9 · ink #8A6B64.
 - 1960s grade: #1F3A68 #3E7CB1 #F2C14E #D94A38 #F4F1E8 (posterised, flat).
 
+## Depth planes (FG · MG · BG · far)
+- FG (< 4.5 from the lens, darkest): camera-locked frame — rock pile + fallen log cut by the bottom-left corner, grass tufts + stump bottom-right, an overhanging leafy branch from the top-right corner. The centre (characters) stays clear.
+- MG (< 60): the dome with its rocks, logs, tufts and flowers, the park trees and the characters' spot.
+- BG (< 240): the city rings, landmark tower.
+- far: lavender ridges and clouds, lightest.
+
 ## Elements in the ZIP
-sky · ground · river · dome · rocks · logs · grass · flowers · city · houses · trees · landmark · poles · cars · street · hills · clouds
+foreground · sky · ground · river · dome · rocks · logs · grass · flowers · city · houses · trees · landmark · poles · cars · street · hills · clouds
 
 ## References read on the board
 Snow's 360° diagram and quick 3D mockup (dome layout only; ignore the 2 spheres) · the team's city test · Kirby Cappy Town / Waddle Dee Town / Downtown Grassland · Doraemon city views (Tamagawa riverbank, Nobita's town from above) · We Bare Bears SF plates (simple blocks, muted colour) · aerial photos of Osaka, Hong Kong, Singapore and Venice (how a city stacks into depth, rivers, waterfronts) · Chiikawa field and Kirby pixel scenes (simple style).

@@ -23,8 +23,13 @@ Reference images exported from the board sit next to this file: `references/` (o
 - In the default *long panorama* format the colour / lineart / base buttons export the side strip below. Switch *PNG format* to *Single 4K frame* to export forward frames of the push / dolly zoom (and the per-element ZIP as multiplane layers).
 - **Panorama:** a long strip of the **path module rows seen from the side** (near-orthographic side camera tracking along the path, one full loop of 18 modules), so the tree, fence and flower rows can be painted once and reused for the loop. The warp tunnel exports as 4K frames (a push-in has no sideways travel).
 
+## Depth planes (FG · MG · BG · far)
+- FG (< 7, darkest): big bushes right at the path edge in every module, so they sweep past the lens during the truck-out and the dolly zoom (world space, real parallax).
+- MG (< 40): the path, lamps, fences, near trees.
+- BG (< 200): the tree tunnel; far: Fuji and clouds, lightest. The warp hole has no planes.
+
 ## Elements in the ZIP
-sky · ground · path · trees · bushes · lamps · fences · flowers · grass · rocks · logs · dashes · mountain · clouds · warp
+foreground · sky · ground · path · trees · bushes · lamps · fences · flowers · grass · rocks · logs · dashes · mountain · clouds · warp
 
 ## Palettes
 - Full colour #2E5E3A #6BA368 #F2D17B #4F8FC0 #F6EFE0 · WBB pathways #454F4C #859395 #434F38 #A1A971 #4D443B #9FA368 · grey warp / 1945 #111111 #3A3A3A #6E6E6E #A8A8A8 #E8E4DA.
@@ -76,6 +81,36 @@ Kawaguchiko momiji tunnel with Fuji, the Blatherwycke and Riversdown tree tunnel
 - Clouds are never generic: mix big cumulus, medium clusters and small puffs (4–8 puffs each, bigger in the middle, flat bottoms like Chiikawa clouds) at varied distances and heights, each one placed so it stays whole inside the frame.
 - Any camera move must have a clear lane: the camera never passes through a building or tree.
 - Nothing is plain or empty. Even simple surfaces carry small, simple details: hills get rocks, fallen logs, stumps and dead branches, grass clumps, flowers and Chiikawa-style dashes; cities get windows, rooftop props, street furniture, cars; walls and floors get props.
+
+# DEPTH STRUCTURE: FOREGROUND · MIDGROUND · BACKGROUND (required in every BG)
+Every frame reads as stacked planes, like a multiplane / 2D game parallax layout:
+- **Foreground (FG)**: big, simple, dark shapes right in front of the lens, always cut by a frame edge and never covering the middle (staging / character area). Examples: rocks, a fallen log, stumps and grass tufts on the hill (BG 1); hedge, lamp post and leaves on the street (BG 2); kelp, branch coral and plate rocks on the sea floor (BG 3); a pine bough, reeds and shore rocks (BG 4); a house plant, a stack of books, a hanging plant in the room and a row of bushes / rocks / tall grass on the front edge of the run strip (BG 5); big bushes right at the path edge that sweep past the lens (BG 6).
+- **Midground (MG)**: where the characters stand and the action happens; the most readable, most detailed plane.
+- **Background (BG)** and **far**: city, ridges, mountains, sky; lighter and closer to the haze colour with every step back.
+- Implementation: a camera-locked FG frame rig (children authored in frame units: x −1.78…1.78, y −1…1, z −1 = depth `D`, squashed in depth like cut-out cards, so the framing holds for any lens) for shots where the camera orbits or moves little; world-space FG (rows of bushes / rocks that the camera passes) for tracking, dolly and side-strip shots so they really parallax. Panorama strips leave the camera-locked frame out. FG is its own element (`foreground`) in the element ZIP.
+
+# VALUE STRUCTURE (read it in black & white first)
+- Reference: grey value thumbnails (forest, canyon, alley, ruins). FG darkest, MG mid grey, BG light grey, far + sky lightest; each plane is close to ONE value, so the planes separate at a glance even without colour.
+- Each scene defines its plane distances (`layers(api, shot)` → [FG end, MG end, BG end] in view distance). The colour version is pulled to the same values: every plane keeps its hues and inner shading but is squeezed around its value (FG only darker, a touch cooler; MG mid; BG / far only lighter and mixed with the haze / fog colour).
+- Settings → *Depth / value structure*: planes on/off, plane contrast, **Value check (B&W, key `V`)** to see the frame in black & white. The colour picture must read exactly like that grey picture.
+
+# PIXEL ART MODE (2D game look, key `P`)
+Optional look for every BG (Settings → *Pixel art*). Not "plain 3D made blocky": each fill gets real pixel-art shading and detail before the picture is snapped to the pixel grid.
+- Light ramp of 5 values per colour (cool deep shadow → shadow → base → warm light → highlight), lit by the scene sun, adjustable light / shadow contrast; ordered dither only at the steps between tones.
+- **Clouds and mountains: like the calm Kirby pixel scene** (blue sky, puffy layered cumulus with pale-blue shade and no dark lines, blue-grey mountains with soft broken bands and streaks).
+- **Leaves, trees, bushes and grass: like the SNES Kirby forest, more contrast**: leaf clumps each lit on their own, dark inner lines between clumps on the shadow side (soft lines on the lit side), grass tufts and light / dark patches on the ground.
+- Lineart inside objects as well as around them; ink lines stay one art pixel wide; film grain, paper and vignette are off in this mode.
+- Detail never gets smaller than a few art pixels and is anchored to the world (no swimming); the pixel grid is in image space, so 4K tiles and long panoramas line up.
+- Pixel size is given in px at 1080p, so exports match the preview.
+
+# STORYBOARD (Poki & Poka intro, 00:00–01:13) → which BG covers it
+- Sc 1–2 · text scroll intro, Poki & Poka drop from off screen (BG only "text scroll", not one of these files).
+- Sc 3–4 · **BG 1** world reveal: camera rotates fast → slow 180° around them, then the full 360° reveals the 1960s style. Sc 5 truck out, the scene turns 1945 black & white as they wander; Sc 6 pan track, colour slowly comes back.
+- Sc 7–9 · **BG 2**: camera goes behind, they jump over the edge, fall (separating, reaching for each other), a red wave line turns everything 1950s.
+- Sc 10 · **BG 3**: still falling into the sea (1960s); Poki spins, a crack opens to the next era.
+- Sc 11–18 · **BG 4**: keeps falling, red wave → 1970s until they drop on the mirrored platform (Sc 12 medium), Sc 13 B&W close-up (confused, scared), Sc 14 medium, they run looking for each other, Sc 15 the wave rotates 360° → 1980s, Sc 16 wide → 1990s, Sc 17–18 four-box mirrored BG with a colour per side, BG in both spaces, they jump off screen.
+- Sc 19–20 · **BG 5**: run / walk cycle in front of coloured backgrounds showing their hobbies / places (four-box comps).
+- Sc 21–24 · **BG 6**: slow truck out into BG fade, dolly zoom on the path, they jump toward the screen, last warp hole, black at 01:13.
 
 # PROJECT CONTEXT: "Sirpeltric" (SirPeltric Studio)
 One continuous camera journey through anime history. Each background carries the scene into the next era:
