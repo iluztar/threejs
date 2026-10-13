@@ -89,7 +89,7 @@ const FRAME_FS = /* glsl */`
   uniform vec3 uPalA[5]; uniform vec4 uA1; uniform vec4 uA2; uniform vec4 uA3; uniform vec4 uA4;
   uniform vec3 uPalB[5]; uniform vec4 uB1; uniform vec4 uB2; uniform vec4 uB3; uniform vec4 uB4;
   uniform int uTrType; uniform float uTr; uniform float uFour; uniform vec3 uQuad[4];
-  uniform float uDepthWarm; uniform float uWash; uniform float uBlack; uniform float uNoVig;
+  uniform float uDepthWarm; uniform float uWash; uniform float uBlack; uniform float uNoVig; uniform float uClean;
   varying vec2 vUv;
   float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
@@ -109,9 +109,9 @@ const FRAME_FS = /* glsl */`
     }
     c = mix(c, p4.rgb, p4.a);
     float asp = uRes.x / uRes.y;
-    if (p3.a > 0.0) { float pn = vnoise(uv * vec2(asp, 1.0) * 220.0) * 0.6 + vnoise(uv * vec2(asp, 1.0) * 37.0) * 0.4; c *= 1.0 - p3.a * 0.09 * (pn - 0.5) * 2.0; }
-    c += (hash(uv * uRes + fract(uTime) * 91.0) - 0.5) * p1.z;
-    vec2 q = uv - 0.5; q.x *= asp * 0.75; c *= 1.0 - p1.w * dot(q, q) * 1.5 * (1.0 - uNoVig);
+    if (p3.a > 0.0 && uClean < 0.5) { float pn = vnoise(uv * vec2(asp, 1.0) * 220.0) * 0.6 + vnoise(uv * vec2(asp, 1.0) * 37.0) * 0.4; c *= 1.0 - p3.a * 0.09 * (pn - 0.5) * 2.0; }
+    c += (hash(uv * uRes + fract(uTime) * 91.0) - 0.5) * p1.z * (1.0 - uClean);
+    vec2 q = uv - 0.5; q.x *= asp * 0.75; c *= 1.0 - p1.w * dot(q, q) * 1.5 * (1.0 - max(uNoVig, uClean));
     c *= 1.0 + p2.w * (hash(vec2(floor(uTime * 12.0), 3.1)) - 0.5);
     return c;
   }
@@ -177,6 +177,92 @@ const EDGE_FS = /* glsl */`
     gl_FragColor = vec4(uColor, e);
   }`;
 
+/* pixel art shading, inside every flat fill (uPix = 1): the base colour becomes a 5-step ramp (cool deep shadow →
+   shadow → base → warm light → highlight) lit by the scene sun, with world-anchored detail so it does not swim:
+   - greens (leaves, bushes, grass): clumps of leaves, each lit on its own + dark lines between clumps (Kirby / SNES look)
+     · upward ground: scattered grass tufts instead
+   - near-white (clouds, snow): soft billows with pale blue shade, no lines (calm sky look)
+   - everything else (mountains, walls, wood…): painterly broken bands
+   Detail cells never get smaller than ~4 art pixels (fwidth), and snap to powers of 2. */
+const PIXEL_SHADE = /* glsl */`
+  uniform float uPix; uniform float uPixBlock; uniform float uPixContrast; uniform float uPixDetail; uniform float uPixDither;
+  vec3 pxH3(vec3 p){ p = fract(p * vec3(0.1031, 0.1030, 0.0973)); p += dot(p, p.yxz + 33.33); return fract((p.xxy + p.yxx) * p.zyx); }
+  float pxN3(vec3 p){ vec3 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(mix(pxH3(i).x, pxH3(i + vec3(1,0,0)).x, f.x), mix(pxH3(i + vec3(0,1,0)).x, pxH3(i + vec3(1,1,0)).x, f.x), f.y),
+               mix(mix(pxH3(i + vec3(0,0,1)).x, pxH3(i + vec3(1,0,1)).x, f.x), mix(pxH3(i + vec3(0,1,1)).x, pxH3(i + vec3(1,1,1)).x, f.x), f.y), f.z); }
+  // voronoi: x = F1, y = F2 (distances), c = nearest cell centre
+  vec2 pxVor(vec3 p, out vec3 c){ vec3 i = floor(p), f = fract(p); float f1 = 9.0, f2 = 9.0; c = i;
+    for (int z = -1; z <= 1; z++) for (int y = -1; y <= 1; y++) for (int x = -1; x <= 1; x++) {
+      vec3 g = vec3(x, y, z), o = pxH3(i + g) * 0.8 + 0.1, r = g + o - f; float d = dot(r, r);
+      if (d < f1) { f2 = f1; f1 = d; c = i + g + o; } else if (d < f2) f2 = d; }
+    return vec2(sqrt(f1), sqrt(f2)); }
+  float pxBayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
+  float pxBayer(vec2 p){ return pxBayer2(0.5 * p) * 0.25 + pxBayer2(p) - 0.5; }
+  float pxCell(float want, float minC){ return max(want, exp2(ceil(log2(max(minC, 1e-6))))); }
+  vec3 pxRamp(vec3 b, float s){
+    float k = floor(clamp(s, 0.0, 0.999) * 5.0);
+    vec3 deep = b * vec3(0.40, 0.45, 0.66), sh = b * vec3(0.66, 0.71, 0.88);
+    vec3 lt = min(mix(b, vec3(1.0, 0.95, 0.72), 0.2) * 1.16, vec3(1.0)), hi = min(mix(b, vec3(1.0, 1.0, 0.86), 0.5) * 1.22, vec3(1.0));
+    return k < 0.5 ? deep : k < 1.5 ? sh : k < 2.5 ? b : k < 3.5 ? lt : hi; }
+  vec3 pixelShade(vec3 b){
+    vec3 n = normalize(vFlatN), nw = normalize(vFlatNW); if (!gl_FrontFacing) { n = -n; nw = -nw; }
+    vec3 sb = pow(max(b, 0.0), vec3(1.0 / 2.2));
+    float mx = max(sb.r, max(sb.g, sb.b)), mn = min(sb.r, min(sb.g, sb.b)), sat = mx > 0.0 ? (mx - mn) / mx : 0.0;
+    bool green = sb.g >= sb.r && sb.g >= sb.b * 0.92 && sat > 0.22 && mx > 0.12, white = sat < 0.16 && mx > 0.8;
+    float minC = length(fwidth(vFlatW)) * uPixBlock;                 // one art pixel, in world units
+    float lit = dot(n, uSunV) * 0.5 + 0.5, s = lit, line = 0.0;
+    vec2 ap = floor(gl_FragCoord.xy / uPixBlock);                     // art-pixel grid (dither)
+    if (green && nw.y > 0.8 && vFlatS > 0.0 && minC * 6.0 > vFlatS * 0.04) {
+      // ground: grass tufts — small dark strokes + a few light ones
+      float cs = pxCell(0.0, minC * 6.0); vec3 q = vFlatW / cs * vec3(1.0, 0.0, 1.0), c; vec2 v = pxVor(q + vec3(0.0, 0.5, 0.0), c);
+      vec3 d = q - c; float r = pxH3(c * 1.7).y;
+      float tuft = step(abs(d.x) * 1.6 + max(d.z, 0.0) * 0.6, 0.22) * step(-0.26, d.z) * step(0.62, r);   // little upright tuft
+      s = 0.5 + (step(0.55, pxN3(vFlatW / (cs * 9.0))) - 0.5) * 0.22 * uPixDetail;                     // light / dark grass patches
+      s -= tuft * 0.45 * uPixDetail; s += step(v.x, 0.16) * step(r, 0.1) * 0.3 * uPixDetail;
+    } else if (green) {
+      // leaves: clumps lit on their own, dark line between clumps
+      float cs = pxCell(vFlatS * 0.26, minC * 4.0); vec3 c; vec2 v = pxVor(vFlatW / cs, c);
+      vec3 bump = normalize(vFlatW / cs - c), bv = normalize(mat3(viewMatrix) * bump), nn = normalize(mix(n, bv, 0.7 * uPixDetail));
+      s = mix(lit, dot(nn, uSunV) * 0.5 + 0.5, 0.65) + (pxH3(c).z - 0.5) * 0.12 * uPixDetail;
+      line = (1.0 - smoothstep(0.05, 0.11, v.y - v.x)) * uPixDetail;
+    } else if (white) {
+      // clouds / snow: soft billows, pale blue shade, never dark
+      float cs = pxCell(vFlatS * 0.5, minC * 7.0); vec3 c; vec2 v = pxVor(vFlatW / cs, c);
+      vec3 bv = normalize(mat3(viewMatrix) * normalize(vFlatW / cs - c)), nn = normalize(mix(n, bv, 0.45 * uPixDetail));
+      float cl = mix(lit, dot(nn, uSunV) * 0.5 + 0.5, 0.6) + pxBayer(ap) * 0.12 * uPixDither;
+      cl = 0.5 + (cl - 0.5) * uPixContrast;
+      return cl < 0.38 ? b * vec3(0.74, 0.83, 0.97) : cl < 0.6 ? b * vec3(0.87, 0.93, 1.0) : b;
+    } else {
+      // mountains, walls, wood…: broken bands + streaks
+      float cs = pxCell(vFlatS * 0.18, minC * 5.0);
+      s += (pxN3(vFlatW / cs) - 0.5) * 0.22 * uPixDetail + (pxN3(vFlatW / (cs * 0.35) * vec3(1.0, 3.0, 1.0)) - 0.5) * 0.08 * uPixDetail;
+    }
+    s = 0.5 + (s - 0.5) * uPixContrast + pxBayer(ap) * 0.09 * uPixDither;
+    vec3 col = pxRamp(b, s);
+    return mix(col, s > 0.6 ? pxRamp(b, 0.3) : b * vec3(0.22, 0.26, 0.42), line);   // lit side: soft inner line, shadow side: dark
+  }`;
+
+/* pixel art (2D game look): snap the finished picture to a block grid in image space (global coords, so tiles and
+   panorama slices line up), keep thin ink lines as one block (darkest of 4×4 taps), posterize colours, hard alpha. Input is already sRGB. */
+const PIXEL_FS = /* glsl */`
+  uniform sampler2D tSrc; uniform vec2 uRes; uniform vec4 uTile; uniform float uSize; uniform float uLevels; uniform float uDither;
+  varying vec2 vUv;
+  float luma(vec3 c){ return dot(c, vec3(0.299, 0.587, 0.114)); }
+  float ink(vec4 s){ return luma(s.rgb) * s.a + (1.0 - s.a); }   // darkness over white: works for colour and transparent lineart
+  float bayer2(vec2 a){ a = floor(a); return fract(dot(a, vec2(0.5, a.y * 0.75))); }
+  float bayer(vec2 p){ return bayer2(0.5 * p) * 0.25 + bayer2(p) - 0.5; }   // 4×4 ordered dither, −0.5…0.5
+  vec4 at(vec2 g){ return texture2D(tSrc, clamp((g / uRes - uTile.xy) / uTile.zw, 0.0, 1.0)); }
+  void main(){
+    vec2 g = (uTile.xy + vUv * uTile.zw) * uRes, b = floor(g / uSize), o = b * uSize;
+    vec4 c = at(o + 0.5 * uSize), best = c; float ci = ink(c), bi = ci, nd = 0.0;
+    for (int y = 0; y < 4; y++) for (int x = 0; x < 4; x++) { vec4 s = at(o + (vec2(x, y) + 0.5) * 0.25 * uSize); float si = ink(s);
+      if (si < bi) { bi = si; best = s; } nd += step(si, ci - 0.18); }
+    if (ci - bi > 0.18 && nd >= 3.0) c = best;                     // a line crosses this block → the block becomes the line
+    vec3 rgb = c.rgb;
+    if (uLevels > 1.5) { float n = uLevels - 1.0; rgb = floor(clamp(rgb, 0.0, 1.0) * n + 0.5 + bayer(b) * uDither) / n; }
+    gl_FragColor = vec4(clamp(rgb, 0.0, 1.0), step(0.5, c.a));
+  }`;
+
 const SKY_VS = /* glsl */`varying vec3 vDir; void main(){ vDir = normalize((modelMatrix * vec4(position, 0.0)).xyz); gl_Position = projectionMatrix * viewMatrix * vec4((modelMatrix * vec4(position,1.0)).xyz, 1.0); gl_Position.z = gl_Position.w; }`;
 const SKY_FS = /* glsl */`
   uniform vec3 uTop; uniform vec3 uHorizon; uniform vec3 uBottom; uniform vec3 uSunDir; uniform vec3 uSunCol; uniform float uSun; uniform float uBands; varying vec3 vDir;
@@ -235,18 +321,21 @@ export function startApp(cfg) {
      - big flat fx pieces (ground, roads) keep per-pixel fog, but quantised into a few painted steps
      - light colour / strength of the scene (hemi + sun) becomes one flat tint, so mood presets still work
      - optional single cel shadow (Kirby) on the side away from the sun */
-  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 0 } };
-  const FLAT_FS_HEAD = 'uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; varying vec3 vFlatN;\n';
+  const flatU = { uTint: { value: new THREE.Color(1, 1, 1) }, uSunV: { value: new THREE.Vector3(0, 1, 0) }, uCel: { value: 0 }, uShade: { value: new THREE.Color('#DCD6EA') }, uFogSteps: { value: 0 },
+    uPix: { value: 0 }, uPixBlock: { value: 6 }, uPixContrast: { value: 1.3 }, uPixDetail: { value: 1 }, uPixDither: { value: 0.5 } };
+  const FLAT_FS_HEAD = 'uniform vec3 uTint; uniform vec3 uSunV; uniform float uCel; uniform vec3 uShade; uniform float uFogSteps; varying vec3 vFlatN; varying vec3 vFlatW; varying vec3 vFlatNW; varying float vFlatS;\n' + PIXEL_SHADE;
   function flatPatch(mat, perObjectFog) {
     mat.onBeforeCompile = sh => {
       Object.assign(sh.uniforms, flatU);
-      sh.vertexShader = 'varying vec3 vFlatN;\n' + sh.vertexShader
+      sh.vertexShader = 'varying vec3 vFlatN; varying vec3 vFlatW; varying vec3 vFlatNW; varying float vFlatS;\n' + sh.vertexShader
         .replace('#include <begin_vertex>', `#include <begin_vertex>
-          { vec3 fn = normal;
+          { vec3 fn = normal; vec4 fw = vec4(transformed, 1.0); mat3 wm = mat3(modelMatrix);
             #ifdef USE_INSTANCING
-              fn = mat3(instanceMatrix) * fn;
+              fn = mat3(instanceMatrix) * fn; fw = instanceMatrix * fw; wm = wm * mat3(instanceMatrix);
             #endif
-            vFlatN = normalize(normalMatrix * fn); }`)
+            vFlatN = normalize(normalMatrix * fn);
+            vFlatW = (modelMatrix * fw).xyz; vFlatNW = normalize(mat3(modelMatrix) * fn);       // pixel art: world-anchored detail
+            vFlatS = (length(wm[0]) + length(wm[1]) + length(wm[2])) / 3.0; }`)
         .replace('#include <fog_vertex>', perObjectFog ? `#ifdef USE_FOG
             vec4 fogO = vec4(0.0, 0.0, 0.0, 1.0);
             #ifdef USE_INSTANCING
@@ -256,8 +345,9 @@ export function startApp(cfg) {
           #endif` : '#include <fog_vertex>');
       sh.fragmentShader = (perObjectFog ? '' : '#define FLAT_FOG_STEPS\n') + FLAT_FS_HEAD + sh.fragmentShader
         .replace('#include <color_fragment>', `#include <color_fragment>
+          if (uPix > 0.5) diffuseColor.rgb = pixelShade(diffuseColor.rgb);
           diffuseColor.rgb *= uTint;
-          if (uCel > 0.5) { vec3 n = normalize(vFlatN); n = gl_FrontFacing ? n : -n; diffuseColor.rgb *= mix(uShade, vec3(1.0), step(0.05, dot(n, uSunV))); }`)
+          if (uCel > 0.5 && uPix < 0.5) { vec3 n = normalize(vFlatN); n = gl_FrontFacing ? n : -n; diffuseColor.rgb *= mix(uShade, vec3(1.0), step(0.05, dot(n, uSunV))); }`)
         .replace('#include <fog_fragment>', `#ifdef USE_FOG
             #ifdef FOG_EXP2
               float fogF = 1.0 - exp(-fogDensity * fogDensity * vFogDepth * vFogDepth);
@@ -283,6 +373,7 @@ export function startApp(cfg) {
   }
   /** shading: 'flat' (default) | 'cel' (flat + one shadow) | 'toon' (the old soft 3D look) */
   function setShading(mode) {
+    if (state.pixel && mode === 'toon') mode = 'flat';   // pixel art shades the unlit flat twins itself
     flatU.uCel.value = mode === 'cel' ? 1 : 0;
     for (const m of reg.fills) { const t = m.userData.toonMat || (m.userData.toonMat = m.userData.fillMat); if (t && t.isMeshToonMaterial) m.userData.fillMat = mode === 'toon' ? t : flatOf(t, true); }
     for (const f of reg.fx) { const t = f.userData.toonMat || (f.userData.toonMat = f.userData.fillMat); if (t && t.isMeshToonMaterial) f.userData.fillMat = mode === 'toon' ? t : flatOf(t, false); }
@@ -389,7 +480,7 @@ export function startApp(cfg) {
   /* render targets + full-screen passes */
   // colour stays half float (linear light); normals / ids, lines and masks are fine in 8 bit (half the memory + bandwidth)
   const mkRT = (depthTex = false, half = false) => { const t = new THREE.WebGLRenderTarget(4, 4, { type: half ? THREE.HalfFloatType : THREE.UnsignedByteType }); if (depthTex) t.depthTexture = new THREE.DepthTexture(4, 4); return t; };
-  const rt = mkRT(false, true), rtN = mkRT(true), rtL = mkRT(), rtM = mkRT();
+  const rt = mkRT(false, true), rtN = mkRT(true), rtL = mkRT(), rtM = mkRT(), rtP = mkRT();
   const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const pal5 = () => Array.from({ length: 5 }, () => new THREE.Vector3());
   const v4 = () => new THREE.Vector4();
@@ -398,13 +489,17 @@ export function startApp(cfg) {
       uPalA: { value: pal5() }, uA1: { value: v4() }, uA2: { value: v4() }, uA3: { value: v4() }, uA4: { value: v4() },
       uPalB: { value: pal5() }, uB1: { value: v4() }, uB2: { value: v4() }, uB3: { value: v4() }, uB4: { value: v4() },
       uTrType: { value: 0 }, uTr: { value: 0 }, uFour: { value: 0 }, uQuad: { value: [0, 1, 2, 3].map(() => new THREE.Vector3(1, 1, 1)) },
-      uDepthWarm: { value: 0 }, uWash: { value: 0 }, uBlack: { value: 0 }, uNoVig: { value: 0 } },
+      uDepthWarm: { value: 0 }, uWash: { value: 0 }, uBlack: { value: 0 }, uNoVig: { value: 0 }, uClean: { value: 0 } },
     vertexShader: QUAD_VS, fragmentShader: FRAME_FS, depthTest: false, depthWrite: false });
   const edgeMat = new THREE.ShaderMaterial({
     uniforms: { tNormal: { value: rtN.texture }, tDepth: { value: rtN.depthTexture }, tMask: { value: rtM.texture }, uMaskOn: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) }, uThick: { value: 1.1 }, uColor: { value: new THREE.Color(INK) }, uWobble: { value: 0.6 }, uNear: { value: 0.1 }, uFar: { value: 1000 }, uFade: { value: 0 }, uFadeNear: { value: 100 }, uFadeFar: { value: 600 } },
     vertexShader: QUAD_VS, fragmentShader: EDGE_FS, depthTest: false, depthWrite: false, transparent: true });
   const quadScene = new THREE.Scene(); const q1 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), frameMat); q1.frustumCulled = false; quadScene.add(q1);
   const edgeScene = new THREE.Scene(); const q2 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), edgeMat); q2.frustumCulled = false; edgeScene.add(q2);
+  const pixelMat = new THREE.ShaderMaterial({
+    uniforms: { tSrc: { value: rtP.texture }, uRes: { value: new THREE.Vector2(1, 1) }, uTile: { value: new THREE.Vector4(0, 0, 1, 1) }, uSize: { value: 6 }, uLevels: { value: 12 }, uDither: { value: 0 } },
+    vertexShader: QUAD_VS, fragmentShader: PIXEL_FS, depthTest: false, depthWrite: false });
+  const pixelScene = new THREE.Scene(); const q3 = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), pixelMat); q3.frustumCulled = false; pixelScene.add(q3);
 
   function setGrade(slot, key) {
     const e = ERAS[key] || ERAS.base, u = frameMat.uniforms, P = u['uPal' + slot].value;
@@ -418,6 +513,7 @@ export function startApp(cfg) {
     playing: true, T: 0, eraMode: 'auto', nextEra: 'e1945', waveType: 'wave', manual: null,
     outlines: false, edges: true, lineW: 2.4, pxScale: 1, lineColour: 'ink', lineWobble: 0.25, glbMode: 'instanced', whiteBg: false,
     shading: 'flat', skyBands: 4, fogSteps: 0, quality: 'auto', meshDetail: 'medium',
+    pixel: false, pixelSize: 5, pixelLevels: 0, pixelDither: 0.5, pixelContrast: 1.2, pixelDetail: 1,   // pixel art (2D game look) — size in px at 1080p, so exports match the preview
     ov: { thirds: false, safe: false, horizon: false, vp: false, staging: false }, exportMode: 'pano', elVis: {}, eraShown: 'base', eraNow: 'base',
   };
   const fxU = { four: 0, quad: [[1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1, 1]], depthWarm: 0, wash: 0, black: 0 };
@@ -462,7 +558,7 @@ export function startApp(cfg) {
   function sizeTargets(w, h, exporting = false) {
     const samples = exporting || MOBILE || !renderer.capabilities.isWebGL2 ? 0 : 4;
     if (rt.samples !== samples) { rt.dispose(); rt.samples = samples; }
-    for (const t of [rt, rtN, rtL, rtM]) t.setSize(w, h);
+    for (const t of [rt, rtN, rtL, rtM, rtP]) t.setSize(w, h);
     rtN.depthTexture.image.width = w; rtN.depthTexture.image.height = h;
     frameMat.uniforms.uRes.value.set(w, h); edgeMat.uniforms.uRes.value.set(w, h);
   }
@@ -484,10 +580,12 @@ export function startApp(cfg) {
     u.uFade.value = fade ? 1 : 0; if (scene.fog) { u.uFadeNear.value = scene.fog.near; u.uFadeFar.value = scene.fog.far; }
     renderer.setRenderTarget(target); renderer.clear(); renderer.render(edgeScene, quadCam);
   }
+  const pixelBlock = () => Math.max(1, Math.round(state.pixelSize * state.pxScale));   // one art pixel, in output pixels
   /** Render one pass of the current frame into the canvas. iso = one element (holdout export). */
   function renderPass(pass, iso = null) {
     const lc = lineColour();
     renderer.setClearColor(0x000000, 0); lineSizes();
+    flatU.uPix.value = state.pixel && pass === 'final' ? 1 : 0; flatU.uPixBlock.value = pixelBlock(); flatU.uPixContrast.value = state.pixelContrast; flatU.uPixDetail.value = state.pixelDetail; flatU.uPixDither.value = state.pixelDither;   // pixel art: no film grain / paper / vignette (they turn into noisy blocks)
     if (pass === 'final') {
       for (const k of reg.ink) k.userData.lineMat.color.copy(lc);
       if (state.edges) edgesInto(rtL, iso, new THREE.Color(INK), 0, true);
@@ -505,7 +603,13 @@ export function startApp(cfg) {
       noFog(() => { setPass('linefill', iso); renderer.autoClear = false; renderer.clearDepth(); renderer.render(scene, camera); renderer.autoClear = true; });
       frameMat.uniforms.uMode.value = 1;
     }
-    renderer.setRenderTarget(null); renderer.clear(); renderer.render(quadScene, quadCam);
+    frameMat.uniforms.uClean.value = state.pixel ? 1 : 0;
+    if (state.pixel) {   // graded picture → rtP, then snapped to the pixel grid on the way to the canvas
+      renderer.setRenderTarget(rtP); renderer.clear(); renderer.render(quadScene, quadCam);
+      const u = pixelMat.uniforms; u.uRes.value.copy(frameMat.uniforms.uRes.value); u.uTile.value.copy(frameMat.uniforms.uTile.value);
+      u.uSize.value = pixelBlock(); u.uLevels.value = state.pixelLevels; u.uDither.value = state.pixelDither;
+      renderer.setRenderTarget(null); renderer.clear(); renderer.render(pixelScene, quadCam);
+    } else { renderer.setRenderTarget(null); renderer.clear(); renderer.render(quadScene, quadCam); }
     setPass('final');
   }
 
@@ -626,6 +730,7 @@ export function startApp(cfg) {
     else if (k === 'g' || k === 'G') toggleGuides();
     else if (k === 'h' || k === 'H') toggleClean();
     else if (k === 'f' || k === 'F') toggleFull();
+    else if (k === 'p' || k === 'P') { state.pixel = !state.pixel; setShading(state.shading); refreshGui(); }
     else if (k === '?' || k === '/') toggleHelp();
     else if (k === 'e' || k === 'E') toggleMenu();
     else if (k === 's' || k === 'S') toggleSettings();
@@ -680,7 +785,7 @@ export function startApp(cfg) {
     const ppu = spec.pxPerUnit(frameH, api);
     let total = Math.abs(spec.to - spec.from) * ppu, scale = 1;
     if (total > MAX_SIDE) { scale = MAX_SIDE / total; total = MAX_SIDE; }
-    const slice = Math.max(16, Math.min(256, Math.floor(frameW / 8))), M = 12, n = Math.ceil(total / slice);
+    const slice = Math.max(16, Math.min(256, Math.floor(frameW / 8))), M = state.pixel ? Math.max(12, Math.ceil(state.pixelSize * H / 1080)) : 12, n = Math.ceil(total / slice);
     const PW = along ? frameW : n * slice, PH = along ? n * slice : frameH;
     const out = document.createElement('canvas'); out.width = PW; out.height = PH; const c2 = out.getContext('2d');
     if (pass === 'lineart' && state.whiteBg) { c2.fillStyle = '#fff'; c2.fillRect(0, 0, PW, PH); }
@@ -984,6 +1089,13 @@ export function startApp(cfg) {
   fLook.add(state, 'skyBands', 0, 8, 1).name('Sky bands').onChange(v => { if (state.shading !== 'toon') skyMat.uniforms.uBands.value = v; });
   fLook.add(state, 'fogSteps', 0, 8, 1).name('Ground tint steps').onChange(v => flatU.uFogSteps.value = v);
   fLook.add(state, 'edges').name('Ink lines'); fLook.add(state, 'lineW', 1, 6, 0.1).name('Line width (px at 1080p)'); fLook.add(state, 'outlines').name('Extra outline');
+  const fPix = gui.addFolder('Pixel art (2D game)', true);
+  fPix.add(state, 'pixel').name('Pixel art (P)').onChange(() => setShading(state.shading));
+  fPix.add(state, 'pixelSize', 2, 16, 1).name('Pixel size (px at 1080p)');
+  fPix.add(state, 'pixelContrast', 0.6, 2, 0.05).name('Light / shadow contrast');
+  fPix.add(state, 'pixelDetail', 0, 1, 0.05).name('Leaf / cloud detail');
+  fPix.add(state, 'pixelDither', 0, 1, 0.05).name('Dither between tones');
+  fPix.add(state, 'pixelLevels', 0, 32, 1).name('Posterize (0 = off)');
   fLook.add(state, 'quality', { 'Auto (sharp, lowers if slow)': 'auto', 'High (always sharp)': 'high', 'Low (fastest)': 'low' }).name('Preview quality').onChange(() => { autoScale = 1; resize(); });
   const fEra = gui.addFolder('Era');
   const briefEras = cfg.eras || ERA_KEYS;                      // only the eras in this BG's brief
