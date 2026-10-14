@@ -772,7 +772,10 @@ function startApp(cfg) {
   };
   geo.lathe = lathe;
   geo.rockLo = new THREE.DodecahedronGeometry(1, 0);   // chunky faceted rocks (Kawaii low-poly): same batches, flat facets
-  geo.leafLo = geo.sphereLo; geo.leafXlo = geo.sphereXlo;   // leaf clumps: same spheres, own batches (one flat id in the edge pass → one outline per crown)
+  /* faceted crowns + pine tiers (reference: low-poly trees with flat planes): leaf clumps are flat-faced polyhedra, pine tiers 6-sided cones */
+  geo.leafLo = new THREE.IcosahedronGeometry(1, 0); geo.leafXlo = geo.leafLo;
+  geo.coneFacet = new THREE.ConeGeometry(1, 1, 6, 1).translate(0, 0.5, 0);
+  // leaf clumps: own batches (one flat id in the edge pass → one outline per crown)
 
   function register(mesh, hex, outline = true) {
     mesh.userData.baseHex = hex; mesh.userData.el = curEl; mesh.userData.fillMat = mesh.material; reg.fills.push(mesh);
@@ -1046,9 +1049,9 @@ function startApp(cfg) {
         B(g, 'capsule').add([x, y0 + 1.1 * s, z], [0.32 * s, 1.1 * s, 0.32 * s], tone(o, trunk, -0.15));
         const hex = pk(leaf), tiers = 4;
         for (let t = 0; t < tiers; t++) { const k = t / (tiers - 1), y = y0 + (1.0 + t * 0.95) * s, r = (1.55 - k * 0.95) * s, f = -0.32 + k * 0.42;
-          B(g, 'cone').add([x, y, z], [r, 1.35 * s, r], tone(o, hex, f));
+          B(g, 'coneFacet').add([x, y, z], [r, 1.35 * s, r], tone(o, hex, f));
           const n = far ? 0 : 7 - t; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + bt(0, 0.6), rr = r * 0.92;          // drooping needle tips = jagged skirt
-            B(g, 'cone').add([x + Math.sin(a) * rr, y + 0.12 * s, z + Math.cos(a) * rr], [0.32 * s, 0.6 * s, 0.32 * s], tone(o, hex, f - 0.12), [Math.cos(a) * 2.3, 0, -Math.sin(a) * 2.3]); } }
+            B(g, 'coneFacet').add([x + Math.sin(a) * rr, y + 0.12 * s, z + Math.cos(a) * rr], [0.32 * s, 0.6 * s, 0.32 * s], tone(o, hex, f - 0.12), [Math.cos(a) * 2.3, 0, -Math.sin(a) * 2.3]); } }
         return;
       }
       const tall = kind === 'tall', H = tall ? 1.35 : 1, tw = tall ? 0.24 : 0.34;   // tall: slimmer trunk (no baobab)
