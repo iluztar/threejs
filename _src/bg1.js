@@ -118,7 +118,7 @@ function build(api) {
 
   /* ── kit ── */
   const blob = (g, x, y, z, r, col, sy = 1) => B(g, 'sphere').add([x, y, z], [r, r * sy, r], col);
-  const treeAt = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk, far: g === G.FG ? 0 : Math.hypot(x, z) < 45 ? 1 : 2 });   // leafy crown, branches (core); LOD by distance from the dome
+  const treeAt = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk, kind: api.h01(x, z) < 0.22 ? 'tall' : api.h01(x, z) > 0.9 ? 'pine' : 'round', far: g === G.FG ? 0 : Math.hypot(x, z) < 45 ? 1 : 2 });   // leafy crown, branches (core); LOD by distance from the dome
   const bushAt = (g, x, z, s, y0) => api.bush(g, x, y0 - (y0 > GROUND_Y + 0.01 ? slope(x, z) * s * 1.1 : 0), z, s, { leaf: C.green });   // on the dome: sink to the downhill side
   const faceTo = (x, z) => Math.atan2(-x, -z);
   /** windows on 4 sides (outlined near the camera) */

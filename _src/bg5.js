@@ -135,7 +135,7 @@ function build(api) {
     solid(geo.rbox, C.woodDark, g, { pos: [26, 1.6, -2.95], scale: [1.6, 3.2, 0.1] }); solid(geo.rbox, C.wood, g, { pos: [37, 0.5, -2], scale: [3, 0.25, 0.9] });
     setEl('strip-trees');
     for (let i = 0; i < 22; i++) { const x = bt(0, LOOP), z = bt(-14, -3), s = bt(1, 1.8); if (x > 60 && x < 122 && z < -6) continue;
-      api.tree(g, x, 0, z, s, { leaf: C.green, trunk: C.trunk, far: true, seed: 3000 + i }); }
+      api.tree(g, x, 0, z, s, { leaf: C.green, trunk: C.trunk, far: true, seed: 3000 + i, kind: api.h01(x, z) < 0.25 ? 'pine' : api.h01(x, z) > 0.8 ? 'tall' : 'round' }); }
     setEl('strip-field');
     for (let i = 0; i < 90; i++) { const x = bt(124, 178), z = bt(-12, 6); for (let k = -1; k <= 1; k++) B(g, 'cone').add([x + k * 0.2, 0, z], [0.14, bt(0.7, 1.2), 0.14], pk(C.wheat), [0, 0, k * 0.25]); }
     setEl('strip-fences');
