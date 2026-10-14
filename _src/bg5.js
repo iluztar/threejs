@@ -141,7 +141,7 @@ function build(api) {
     setEl('strip-fences');
     for (let x = 2; x < LOOP; x += 3) { if (x > 64 && x < 120) continue; B(g, 'capsule').add([x, 0.6, 3], [0.18, 1, 0.18], C.wood); B(g, 'rbox').add([x + 1.5, 0.75, 3], [3, 0.16, 0.1], C.wood); }
     setEl('strip-flowers');
-    for (let i = 0; i < 70; i++) { const x = bt(0, LOOP), z = bt(-2, 8); if (x > 124) continue; B(g, 'sphereLo').add([x, 0.3, z], [0.22, 0.12, 0.22], pk(['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0'])); B(g, 'capsule').add([x, 0.12, z], [0.05, 0.24, 0.05], '#7CBF70'); }
+    for (let i = 0; i < 70; i++) { const x = bt(0, LOOP), z = bt(-2, 8); if (x > 124) continue; api.flower(g, x, 0, z, 1.1, pk(['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0'])); }
     setEl('strip-foreground');                                         // FG plane: bushes, rocks and tall grass on the front edge, cut by the frame bottom
     for (let x = 1; x < LOOP; x += bt(3, 6)) { const z = bt(16, 18), kind = r();   // in front of the ground edge (z 15)
       if (kind < 0.45) for (let k = 0; k < 3; k++) B(g, 'sphere').add([x + (k - 1) * 0.9, -1.5 + bt(0, 0.3), z], [bt(0.9, 1.3), bt(0.8, 1.1), 0.8], pk(['#5E9E62', '#6FAE6A', '#4F8E5A']));

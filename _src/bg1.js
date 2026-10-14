@@ -110,10 +110,10 @@ function build(api) {
       B(FG, 'capsule').add([bx, domeY(Math.hypot(bx, bz)) + 0.03 - sink(bx, bz, 0, L * 0.45), bz], [0.08, L * 0.45, 0.08], '#A88268', [Math.PI / 2, 0, 0.5]); }
     setEl('grass');
     for (let i = 0; i < 280; i++) { const [x, z, y] = spot(), s = 0.35 + rand() * 0.4, col = pick(['#8FCB80', '#7CBF70', '#A3D58F']);
-      for (let k = -2; k <= 2; k++) { const px = x + k * s * 0.22; B(FG, 'cone').add([px, domeY(Math.hypot(px, z)) - 0.04 - slope(px, z) * s * 0.2, z], [s * 0.18, s * (1.1 - Math.abs(k) * 0.2), s * 0.18], col, [0, 0, k * 0.28]); } }
+      api.tuft(FG, x, domeY(Math.hypot(x, z)) - 0.04 - slope(x, z) * s * 0.2, z, s, col); }
     setEl('flowers');
     for (let i = 0; i < 160; i++) { const [x, z, y] = spot(), col = pick(['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0']), k = 1 + rand() * 0.8;
-      B(FG, 'capsule').add([x, y + 0.2 * k, z], [0.06 * k, 0.4 * k, 0.06 * k], '#7CBF70'); B(FG, 'sphereLo').add([x, y + 0.48 * k, z], [0.18 * k, 0.1 * k, 0.18 * k], col); B(FG, 'sphereLo').add([x, y + 0.52 * k, z], 0.07 * k, '#F2C14E'); }
+      api.flower(FG, x, y, z, k, col); }
   }
 
   /* ── kit ── */

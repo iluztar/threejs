@@ -715,9 +715,9 @@ export function startApp(cfg) {
             B(g, 'cone').add([x + Math.sin(a) * rr, y + 0.12 * s, z + Math.cos(a) * rr], [0.32 * s, 0.6 * s, 0.32 * s], tone(o, hex, f - 0.12), [Math.cos(a) * 2.3, 0, -Math.sin(a) * 2.3]); } }
         return;
       }
-      const tall = kind === 'tall', H = tall ? 1.35 : 1;
+      const tall = kind === 'tall', H = tall ? 1.35 : 1, tw = tall ? 0.24 : 0.34;   // tall: slimmer trunk (no baobab)
       if (xfar) {   // very far: trunk + 1 dark mass + 6 lit clumps on the cheapest sphere
-        B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [0.42 * s, 0.95 * s * H, 0.42 * s], tone(o, trunk, -0.08));
+        B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [tw * s, 0.95 * s * H, tw * s], tone(o, trunk, -0.08));
         const cy = y0 + (2.85 * H + 0.1) * s, rx = (tall ? 1.35 : 1.7) * s, ry = (tall ? 1.7 : 1.25) * s, base = pk(leaf);
         Lf(g, true, false).add([x, cy - ry * 0.12, z], [rx * 0.8, ry * 0.75, rx * 0.8], tone(o, base, -0.3));
         for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283 + bt(0, 0.5), e = i < 2 ? 0.75 : bt(-0.2, 0.4), r = bt(0.55, 0.75) * s;
@@ -725,7 +725,7 @@ export function startApp(cfg) {
         return;
       }
       // trunk (wider at the root), root flare, 3 branches reaching into the crown
-      B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [0.42 * s, 0.95 * s * H, 0.42 * s], tone(o, trunk, -0.08));
+      B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [tw * s, 0.95 * s * H, tw * s], tone(o, trunk, -0.08));
       B(g, 'sphereLo').add([x, y0 + 0.08 * s, z], [0.5 * s, 0.22 * s, 0.5 * s], tone(o, trunk, -0.2));
       for (let i = 0; i < (far ? 1 : 3); i++) { const a = i / 3 * 6.283 + bt(0, 1), lean = 0.75;
         B(g, 'capsule').add([x + Math.sin(a) * 0.45 * s, y0 + (1.85 * H + 0.25) * s, z + Math.cos(a) * 0.45 * s], [0.15 * s, 0.6 * s, 0.15 * s], tone(o, trunk, -0.12), [Math.cos(a) * lean, 0, -Math.sin(a) * lean]); }
@@ -752,6 +752,19 @@ export function startApp(cfg) {
         Lf(g).add([x + u * s, y0 + cy, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
     };
   }
+  /* small props, shared by every BG (kawaii, read at distance): tuft = 3 thin leaning blades (not cones) · flower = stem + five
+     petals around a yellow centre · lamp = slim pole, flared foot, warm glass lantern under a round cap */
+  api.tuft = (g, x, y, z, s, col) => { for (let k = -1; k <= 1; k++) B(g, 'capsule').add([x + k * 0.07 * s, y + 0.2 * s, z], [0.03 * s, 0.24 * s, 0.03 * s], col, [0, 0, k * 0.55]); };
+  api.flower = (g, x, y, z, k, petal) => {
+    B(g, 'capsule').add([x, y + 0.2 * k, z], [0.025 * k, 0.2 * k, 0.025 * k], '#7CBF70');
+    const hy = y + 0.42 * k; for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; B(g, 'sphereXlo').add([x + Math.cos(a) * 0.075 * k, hy, z + Math.sin(a) * 0.075 * k], 0.06 * k, petal); }
+    B(g, 'sphereXlo').add([x, hy + 0.01 * k, z], 0.045 * k, '#F2C14E'); };
+  api.lamp = (g, x, y, z, h, o = {}) => {
+    B(g, 'rcyl').add([x, y, z], [0.3, 0.1, 0.3], o.post || '#8C93A3');
+    B(g, 'capsule').add([x, y + h / 2, z], [0.06, h / 2, 0.06], o.post || '#8C93A3');
+    B(g, 'rbox').add([x, y + h, z], [0.36, 0.42, 0.36], o.glow || '#FFF3C2');
+    B(g, 'halfSphere').add([x, y + h + 0.3, z], [0.44, 0.26, 0.44], o.cap || '#8C93A3');
+    B(g, 'sphereXlo').add([x, y + h + 0.6, z], 0.07, o.cap || '#8C93A3'); };
   /* free view (C): look around the set from anywhere — OrbitControls on the stage + WASD / Q E to walk. The shot still
      animates (eras, water, props); only the camera pose is ours. Single-frame exports use this view; panoramas keep the shot. */
   const free = { on: false, ctl: null, pos: new THREE.Vector3(), quat: new THREE.Quaternion(), fov: 40, keys: new Set() };
