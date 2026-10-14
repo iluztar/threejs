@@ -45,15 +45,15 @@ function build(api) {
       for (let j = 0; j < 4; j++) Bz(g, 'sphere').add([x + s * j * 0.45, 0.45 * k + j * 0.12, z + (j - 1.5) * 0.8], [0.85 * k, 0.75 * k, 0.8 * k], pk(['#6FAE6A', '#5E9E62', '#7CBF70']));
       for (let j = -2; j <= 2; j++) Bz(g, 'cone').add([x - s * 0.9, 0, z + j * 0.25], [0.1, bt(0.5, 0.8), 0.1], '#5E9E62', [0, 0, j * 0.25]); }
     setEl('lamps');
-    if (m % 2 === 0) { const s = m % 4 === 0 ? 1 : -1; Bz(g, 'capsule').add([s * 3.1, 1.6, -L / 2], [0.16, 3, 0.16], C.lamp); Bz(g, 'sphere').add([s * 3.1, 3.4, -L / 2], 0.42, C.bulb); }
+    if (m % 2 === 0) { const s = m % 4 === 0 ? 1 : -1; api.lamp(g, s * 3.1, 0, -L / 2 + oz, 3.2, { post: C.lamp, glow: C.bulb, cap: C.lamp }); }
     setEl('fences');
     for (let k = 0; k < 4; k++) { const z = -k * 3 - 0.5; Bz(g, 'capsule').add([-3.9, 0.55, z], [0.16, 0.9, 0.16], C.fence); Bz(g, 'rbox').add([-3.9, 0.75, z - 1.5], [0.1, 0.14, 3], C.fence); Bz(g, 'rbox').add([-3.9, 0.4, z - 1.5], [0.1, 0.12, 3], C.fence); }
     setEl('flowers');
-    for (let i = 0; i < 9; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.8, 8), z = -bt(0, L); Bz(g, 'capsule').add([x, 0.17, z], [0.05, 0.34, 0.05], '#7CBF70'); Bz(g, 'sphereLo').add([x, 0.4, z], [0.17, 0.1, 0.17], pk(C.flower)); }
+    for (let i = 0; i < 9; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.8, 8), z = -bt(0, L); api.flower(g, x, 0, z + oz, 1, pk(C.flower)); }
     setEl('grass');
-    for (let i = 0; i < 12; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.7, 9), z = -bt(0, L), k = bt(0.35, 0.6); for (let j = -2; j <= 2; j++) Bz(g, 'cone').add([x + j * 0.2 * k, 0, z], [0.16 * k, (1.1 - Math.abs(j) * 0.2) * k, 0.16 * k], pk(['#8FCB80', '#7CBF70']), [0, 0, j * 0.28]); }
+    for (let i = 0; i < 12; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.7, 9), z = -bt(0, L), k = bt(0.35, 0.6); api.tuft(g, x, 0, z + oz, 1.6 * k, pk(['#8FCB80', '#7CBF70'])); }
     setEl('rocks');
-    if (r() < 0.6) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3, 7), z = -bt(1, L - 1), k = bt(0.4, 0.9); Bz(g, 'sphereLo').add([x, k * 0.25, z], [k, k * 0.6, k * 0.85], pk(C.rock)); }
+    if (r() < 0.6) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3, 7), z = -bt(1, L - 1), k = bt(0.4, 0.9); Bz(g, 'rockLo').add([x, k * 0.25, z], [k, k * 0.6, k * 0.85], pk(C.rock)); }
     setEl('logs');
     if (m % 5 === 2) { const s = m % 2 ? 1 : -1; Bz(g, 'capsule').add([s * 7.5, 0.3, -6], [0.6, 2.4, 0.6], C.log, [Math.PI / 2, 0.6, 0]); }
     setEl('dashes');

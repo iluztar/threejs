@@ -135,13 +135,13 @@ function build(api) {
     solid(geo.rbox, C.woodDark, g, { pos: [26, 1.6, -2.95], scale: [1.6, 3.2, 0.1] }); solid(geo.rbox, C.wood, g, { pos: [37, 0.5, -2], scale: [3, 0.25, 0.9] });
     setEl('strip-trees');
     for (let i = 0; i < 22; i++) { const x = bt(0, LOOP), z = bt(-14, -3), s = bt(1, 1.8); if (x > 60 && x < 122 && z < -6) continue;
-      api.tree(g, x, 0, z, s, { leaf: C.green, trunk: C.trunk, far: true, seed: 3000 + i }); }
+      api.tree(g, x, 0, z, s, { leaf: C.green, trunk: C.trunk, far: true, seed: 3000 + i, kind: api.h01(x, z) < 0.25 ? 'pine' : api.h01(x, z) > 0.8 ? 'tall' : 'round' }); }
     setEl('strip-field');
     for (let i = 0; i < 90; i++) { const x = bt(124, 178), z = bt(-12, 6); for (let k = -1; k <= 1; k++) B(g, 'cone').add([x + k * 0.2, 0, z], [0.14, bt(0.7, 1.2), 0.14], pk(C.wheat), [0, 0, k * 0.25]); }
     setEl('strip-fences');
     for (let x = 2; x < LOOP; x += 3) { if (x > 64 && x < 120) continue; B(g, 'capsule').add([x, 0.6, 3], [0.18, 1, 0.18], C.wood); B(g, 'rbox').add([x + 1.5, 0.75, 3], [3, 0.16, 0.1], C.wood); }
     setEl('strip-flowers');
-    for (let i = 0; i < 70; i++) { const x = bt(0, LOOP), z = bt(-2, 8); if (x > 124) continue; B(g, 'sphereLo').add([x, 0.3, z], [0.22, 0.12, 0.22], pk(['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0'])); B(g, 'capsule').add([x, 0.12, z], [0.05, 0.24, 0.05], '#7CBF70'); }
+    for (let i = 0; i < 70; i++) { const x = bt(0, LOOP), z = bt(-2, 8); if (x > 124) continue; api.flower(g, x, 0, z, 1.1, pk(['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0'])); }
     setEl('strip-foreground');                                         // FG plane: bushes, rocks and tall grass on the front edge, cut by the frame bottom
     for (let x = 1; x < LOOP; x += bt(3, 6)) { const z = bt(16, 18), kind = r();   // in front of the ground edge (z 15)
       if (kind < 0.45) for (let k = 0; k < 3; k++) B(g, 'sphere').add([x + (k - 1) * 0.9, -1.5 + bt(0, 0.3), z], [bt(0.9, 1.3), bt(0.8, 1.1), 0.8], pk(['#5E9E62', '#6FAE6A', '#4F8E5A']));

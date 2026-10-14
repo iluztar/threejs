@@ -40,7 +40,7 @@ function build(api) {
     const reeds = (x, z, h, n = 7) => { for (let i = 0; i < n; i++) { const px = x + bt(-0.7, 0.7), pz = z + bt(-0.5, 0.5), k = bt(0.6, 1);
       B(parent, 'capsule').add([px, h * k * 0.5 - 0.3, pz], [0.07, h * k * 0.5, 0.07], col('#6FAE6A'), [bt(-0.1, 0.1), 0, bt(-0.12, 0.12)]);
       if (r0() < 0.5) B(parent, 'capsule').add([px, h * k - 0.25, pz], [0.13, 0.28, 0.13], col('#9A7258')); } };
-    const rocks = (x, z, s) => { for (let i = 0; i < 3; i++) { const w = s * bt(0.6, 1) * (1 - i * 0.2); B(parent, 'sphereLo').add([x + (i - 1) * s * 0.7, w * 0.15, z + bt(-0.3, 0.3)], [w, w * 0.55, w * 0.8], col(pk(C.rock))); } };
+    const rocks = (x, z, s) => { for (let i = 0; i < 3; i++) { const w = s * bt(0.6, 1) * (1 - i * 0.2); B(parent, 'rockLo').add([x + (i - 1) * s * 0.7, w * 0.15, z + bt(-0.3, 0.3)], [w, w * 0.55, w * 0.8], col(pk(C.rock))); } };
     for (let a = -0.75; a <= 0.75; a += bt(0.13, 0.22)) { const r = bt(16, 20), x = Math.sin(a) * r, z = Math.cos(a) * r, k = r0();
       if (k < 0.5) reeds(x, z, bt(1.6, 2.6)); else if (k < 0.8) { rocks(x, z, bt(0.8, 1.3)); reeds(x + 0.8, z, bt(1.2, 2), 4); }
       else for (let i = 0; i < 4; i++) B(parent, 'disc', false).add([x + bt(-1.2, 1.2), 0.03, z + bt(-0.8, 0.8)], [bt(0.5, 0.8), 1, bt(0.5, 0.8)], col(C.lily), [0, bt(0, 6.28), 0]); }
@@ -99,9 +99,9 @@ function build(api) {
 
     el('rocks');
     for (let i = 0; i < 28; i++) { const a = aroundBack(), d = bt(225, 270), r = bt(2.6, 5.8);           // shore rocks
-      B(parent, 'sphereLo').add([Math.sin(a) * d, r * 0.15, Math.cos(a) * d], [r * 1.3, r * 0.75, r], col(pk(C.rock))); }
+      B(parent, 'rockLo').add([Math.sin(a) * d, r * 0.15, Math.cos(a) * d], [r * 1.3, r * 0.75, r], col(pk(C.rock))); }
     for (let i = 0; i < 6; i++) { const a = Math.PI + bt(-1.2, 1.2), d = bt(28, 60), r = bt(0.8, 1.8);   // a few rocks poking out of the lake
-      B(parent, 'sphereLo').add([Math.sin(a) * d, 0, Math.cos(a) * d - 6], [r * 1.4, r * 0.6, r], col(pk(C.rock))); }
+      B(parent, 'rockLo').add([Math.sin(a) * d, 0, Math.cos(a) * d - 6], [r * 1.4, r * 0.6, r], col(pk(C.rock))); }
 
     el('clouds');
     for (let i = 0; i < 40; i++) {                                            // banks over the mountains + higher puffs, flat bottoms

@@ -435,7 +435,16 @@ export function startApp(cfg) {
     inkBar: new THREE.BoxGeometry(1, 1, 1),
   };
   geo.lathe = lathe;
-  geo.leafLo = geo.sphereLo; geo.leafXlo = geo.sphereXlo;   // leaf clumps: same spheres, own batches (one flat id in the edge pass → one outline per crown)
+  geo.rockLo = new THREE.DodecahedronGeometry(1, 0);   // chunky faceted rocks (Kawaii low-poly): same batches, flat facets
+  /* faceted crowns + pine tiers (reference: low-poly trees with flat planes): leaf clumps are flat-faced polyhedra, pine tiers 6-sided cones */
+  // crumpled facets: each face corner is pushed a little in/out, so a clump reads as a folded leaf mass, not a perfect polyhedron
+  const crumple = (g, amt, seed) => { let q = seed; const rnd = () => { q = (q * 16807) % 2147483647; return q / 2147483647 - 0.5; }, p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) { const k = 1 + rnd() * amt; p.setXYZ(i, p.getX(i) * k, p.getY(i) * k, p.getZ(i) * k); } g.computeVertexNormals(); return g; };
+  geo.leafLo = crumple(new THREE.IcosahedronGeometry(1, 0), 0.26, 4242); geo.leafXlo = geo.leafLo;
+  // tapered trunk (6 sides, wider at the root, same height as the capsule it replaces so the scales stay the same) + thin faceted limbs
+  geo.trunk = new THREE.CylinderGeometry(0.36, 0.5, 2, 6, 1); geo.limb = new THREE.CylinderGeometry(0.2, 0.3, 2, 5, 1);
+  geo.coneFacet = new THREE.ConeGeometry(1, 1, 6, 1).translate(0, 0.5, 0);
+  // leaf clumps: own batches (one flat id in the edge pass → one outline per crown)
 
   function register(mesh, hex, outline = true) {
     mesh.userData.baseHex = hex; mesh.userData.el = curEl; mesh.userData.fillMat = mesh.material; reg.fills.push(mesh);
@@ -662,7 +671,8 @@ export function startApp(cfg) {
   const shots = cfg.shots; let acc = 0; for (const s of shots) { s.t0 = acc; acc += s.dur; } const TOTAL = acc;
   const shotAt = T => { for (const s of shots) if (T < s.t0 + s.dur) return s; return shots[shots.length - 1]; };
   const ease = k => k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-  const api = { MOBILE, THREE, scene, camera, groups, renderer, geo, toon, solid, Batch, B, buildBatches, fx, setSky, sun, hemi, ease, state, fxU, mapColour, hexToRgb, rgbToHex, register, mergeGeometries, setEl, inkLines, idMat, INK,
+  const h01 = (x, z) => { const v = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453; return v - Math.floor(v); };   // stable 0..1 per spot: variety that never changes between builds
+  const api = { h01, MOBILE, THREE, scene, camera, groups, renderer, geo, toon, solid, Batch, B, buildBatches, fx, setSky, sun, hemi, ease, state, fxU, mapColour, hexToRgb, rgbToHex, register, mergeGeometries, setEl, inkLines, idMat, INK,
     lerp: (a, b, k) => a + (b - a) * k, clamp: (v, a, b) => Math.min(b, Math.max(a, v)), smooth: (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); } };
   /* mountain ranges + rolling hills (shared by every BG): few massifs, evenly spread along an arc or a line, each one a main
      summit + 1–2 lower shoulders on the same ridge; heights rise and fall along the range (no rows of equal cones); snow only
@@ -708,14 +718,14 @@ export function startApp(cfg) {
         B(g, 'capsule').add([x, y0 + 1.1 * s, z], [0.32 * s, 1.1 * s, 0.32 * s], tone(o, trunk, -0.15));
         const hex = pk(leaf), tiers = 4;
         for (let t = 0; t < tiers; t++) { const k = t / (tiers - 1), y = y0 + (1.0 + t * 0.95) * s, r = (1.55 - k * 0.95) * s, f = -0.32 + k * 0.42;
-          B(g, 'cone').add([x, y, z], [r, 1.35 * s, r], tone(o, hex, f));
+          B(g, 'coneFacet').add([x, y, z], [r, 1.35 * s, r], tone(o, hex, f));
           const n = far ? 0 : 7 - t; for (let i = 0; i < n; i++) { const a = i / n * 6.283 + bt(0, 0.6), rr = r * 0.92;          // drooping needle tips = jagged skirt
-            B(g, 'cone').add([x + Math.sin(a) * rr, y + 0.12 * s, z + Math.cos(a) * rr], [0.32 * s, 0.6 * s, 0.32 * s], tone(o, hex, f - 0.12), [Math.cos(a) * 2.3, 0, -Math.sin(a) * 2.3]); } }
+            B(g, 'coneFacet').add([x + Math.sin(a) * rr, y + 0.12 * s, z + Math.cos(a) * rr], [0.32 * s, 0.6 * s, 0.32 * s], tone(o, hex, f - 0.12), [Math.cos(a) * 2.3, 0, -Math.sin(a) * 2.3]); } }
         return;
       }
-      const tall = kind === 'tall', H = tall ? 1.35 : 1;
+      const tall = kind === 'tall', H = tall ? 1.35 : 1, tw = tall ? 0.24 : 0.34;   // tall: slimmer trunk (no baobab)
       if (xfar) {   // very far: trunk + 1 dark mass + 6 lit clumps on the cheapest sphere
-        B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [0.42 * s, 0.95 * s * H, 0.42 * s], tone(o, trunk, -0.08));
+        B(g, 'trunk').add([x, y0 + 0.95 * s * H, z], [tw * s, 0.95 * s * H, tw * s], tone(o, trunk, -0.08));
         const cy = y0 + (2.85 * H + 0.1) * s, rx = (tall ? 1.35 : 1.7) * s, ry = (tall ? 1.7 : 1.25) * s, base = pk(leaf);
         Lf(g, true, false).add([x, cy - ry * 0.12, z], [rx * 0.8, ry * 0.75, rx * 0.8], tone(o, base, -0.3));
         for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283 + bt(0, 0.5), e = i < 2 ? 0.75 : bt(-0.2, 0.4), r = bt(0.55, 0.75) * s;
@@ -723,10 +733,10 @@ export function startApp(cfg) {
         return;
       }
       // trunk (wider at the root), root flare, 3 branches reaching into the crown
-      B(g, 'capsule').add([x, y0 + 0.95 * s * H, z], [0.42 * s, 0.95 * s * H, 0.42 * s], tone(o, trunk, -0.08));
+      B(g, 'trunk').add([x, y0 + 0.95 * s * H, z], [tw * s, 0.95 * s * H, tw * s], tone(o, trunk, -0.08));
       B(g, 'sphereLo').add([x, y0 + 0.08 * s, z], [0.5 * s, 0.22 * s, 0.5 * s], tone(o, trunk, -0.2));
       for (let i = 0; i < (far ? 1 : 3); i++) { const a = i / 3 * 6.283 + bt(0, 1), lean = 0.75;
-        B(g, 'capsule').add([x + Math.sin(a) * 0.45 * s, y0 + (1.85 * H + 0.25) * s, z + Math.cos(a) * 0.45 * s], [0.15 * s, 0.6 * s, 0.15 * s], tone(o, trunk, -0.12), [Math.cos(a) * lean, 0, -Math.sin(a) * lean]); }
+        B(g, 'limb').add([x + Math.sin(a) * 0.45 * s, y0 + (1.85 * H + 0.25) * s, z + Math.cos(a) * 0.45 * s], [0.15 * s, 0.6 * s, 0.15 * s], tone(o, trunk, -0.12), [Math.cos(a) * lean, 0, -Math.sin(a) * lean]); }
       // crown: ellipsoid of clumps
       const cy = y0 + (2.85 * H + 0.1) * s, rx = (tall ? 1.35 : 1.7) * s, ry = (tall ? 1.7 : 1.25) * s, base = pk(leaf);
       for (let i = 0; i < (far ? 2 : 4); i++) { const a = i / (far ? 2 : 4) * 6.283 + 0.4;                            // dark inner masses (hidden edges: no outline)
@@ -741,15 +751,32 @@ export function startApp(cfg) {
         const a = i / nr * 6.283 + bt(-0.2, 0.2), e = bt(-0.55, 0.75), r = bt(0.24, 0.36) * s;
         Lf(g).add([x + Math.sin(a) * rx * Math.cos(e), cy + Math.sin(e) * ry, z + Math.cos(a) * rx * Math.cos(e)], [r, r * 0.85, r], tone(o, base, e > 0.3 ? 0.3 : e < -0.2 ? -0.24 : 0.04)); }
     };
-    api.bush = (g, x, y0, z, s, o = {}) => {
+    api.bush = (g, x, y0, z, s, o = {}) => {                                                              // kawaii bush: a dome of clumps (light top → dark sides), a dark ragged skirt, grass at the foot
       if (o.seed) sd = o.seed * 7919 % 2147483646 + 1;
-      const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], base = pk(leaf);
-      for (let i = 0; i < 3; i++) Lf(g, false, false).add([x + (i - 1) * 0.7 * s, y0 + 0.4 * s, z + bt(-0.2, 0.2) * s], [0.62 * s, 0.5 * s, 0.6 * s], tone(o, base, -0.28));
-      for (let i = 0; i < 9; i++) { const a = fr() * 3.14, u = bt(-1.0, 1.0), r = bt(0.26, 0.4) * s, yy = Math.sin(a) * 0.55;
-        const cy = yy < 0.2 ? r * 0.7 : (0.35 + yy) * s;                                            // low clumps sit on the ground, high ones on the masses
-        Lf(g).add([x + u * s, y0 + cy, z + Math.cos(a) * 0.45 * s], [r, r * 0.85, r], tone(o, pk(leaf), yy > 0.3 ? 0.26 : yy > 0.1 ? 0.08 : -0.12)); }
+      const leaf = o.leaf || ['#93CF95', '#A6D6A0', '#86C984'], base = pk(leaf), R = 0.78 * s;
+      for (let i = 0; i < 3; i++) Lf(g, false, false).add([x + (i - 1) * 0.6 * s, y0 + 0.32 * s, z + bt(-0.15, 0.15) * s], [0.6 * s, 0.42 * s, 0.6 * s], tone(o, base, -0.3));   // dark core
+      for (let i = 0; i < 12; i++) { const th = bt(0.25, 1.2), ph = i / 12 * 6.283 + bt(-0.2, 0.2), top = Math.cos(th);                 // dome shell
+        Lf(g).add([x + Math.cos(ph) * Math.sin(th) * R, y0 + 0.32 * s + top * R * 0.8, z + Math.sin(ph) * Math.sin(th) * R * 0.75], [0.3 * s, 0.26 * s, 0.3 * s],
+          tone(o, pk(leaf), top > 0.7 ? 0.3 : top > 0.35 ? 0.1 : -0.15)); }
+      for (let i = 0; i < 9; i++) { const ph = i / 9 * 6.283 + bt(-0.1, 0.1);                                                               // ragged skirt at the foot
+        Lf(g, false, false).add([x + Math.cos(ph) * 0.86 * s, y0 + 0.14 * s, z + Math.sin(ph) * 0.7 * s], [0.2 * s, 0.16 * s, 0.2 * s], tone(o, base, -0.25)); }
+      for (let i = 0; i < 4; i++) api.tuft(g, x + bt(-0.7, 0.7) * s, y0, z + bt(-0.5, 0.5) * s, 0.45 * s, '#7CBF70');               // grass at the foot
+      if (o.flowers) for (let i = 0; i < 4; i++) api.flower(g, x + bt(-0.5, 0.5) * s, y0 + bt(0.5, 0.8) * s, z + bt(-0.3, 0.3) * s, 0.4, pk(['#F6B9CF', '#FFF3B0', '#FFFFFF']));
     };
   }
+  /* small props, shared by every BG (kawaii, read at distance): tuft = 3 thin leaning blades (not cones) · flower = stem + five
+     petals around a yellow centre · lamp = slim pole, flared foot, warm glass lantern under a round cap */
+  api.tuft = (g, x, y, z, s, col) => { for (let k = -1; k <= 1; k++) B(g, 'capsule').add([x + k * 0.07 * s, y + 0.2 * s, z], [0.03 * s, 0.24 * s, 0.03 * s], col, [0, 0, k * 0.55]); };
+  api.flower = (g, x, y, z, k, petal) => {
+    B(g, 'capsule').add([x, y + 0.2 * k, z], [0.025 * k, 0.2 * k, 0.025 * k], '#7CBF70');
+    const hy = y + 0.42 * k; for (let i = 0; i < 5; i++) { const a = i / 5 * 6.283; B(g, 'sphereXlo').add([x + Math.cos(a) * 0.075 * k, hy, z + Math.sin(a) * 0.075 * k], 0.06 * k, petal); }
+    B(g, 'sphereXlo').add([x, hy + 0.01 * k, z], 0.045 * k, '#F2C14E'); };
+  api.lamp = (g, x, y, z, h, o = {}) => {
+    B(g, 'rcyl').add([x, y, z], [0.3, 0.1, 0.3], o.post || '#8C93A3');
+    B(g, 'capsule').add([x, y + h / 2, z], [0.06, h / 2, 0.06], o.post || '#8C93A3');
+    B(g, 'rbox').add([x, y + h, z], [0.36, 0.42, 0.36], o.glow || '#FFF3C2');
+    B(g, 'halfSphere').add([x, y + h + 0.3, z], [0.44, 0.26, 0.44], o.cap || '#8C93A3');
+    B(g, 'sphereXlo').add([x, y + h + 0.6, z], 0.07, o.cap || '#8C93A3'); };
   /* free view (C): look around the set from anywhere — OrbitControls on the stage + WASD / Q E to walk. The shot still
      animates (eras, water, props); only the camera pose is ours. Single-frame exports use this view; panoramas keep the shot. */
   const free = { on: false, ctl: null, pos: new THREE.Vector3(), quat: new THREE.Quaternion(), fov: 40, keys: new Set() };

@@ -95,7 +95,7 @@ function build(api) {
     setEl('rocks');
     for (let i = 0; i < 80; i++) { const [x, z, y] = spot(), s = 0.4 + rand() * 0.8, n = 1 + Math.floor(rand() * 3);
       for (let k = 0; k < n; k++) { const px = x + k * s * 0.9, pz = z + (rand() - 0.5) * s, w = s * (1 - k * 0.25);
-        B(FG, 'sphereLo').add([px, domeY(Math.hypot(px, pz)) + s * 0.2 - slope(px, pz) * w, pz], [w, s * 0.62 * (1 - k * 0.2), s * 0.85], pick(['#C9C4D6', '#BDB8CC', '#D4CFDC'])); } }
+        B(FG, 'rockLo').add([px, domeY(Math.hypot(px, pz)) + s * 0.2 - slope(px, pz) * w, pz], [w, s * 0.62 * (1 - k * 0.2), s * 0.85], pick(['#C9C4D6', '#BDB8CC', '#D4CFDC'])); } }
     setEl('logs');
     for (let i = 0; i < 18; i++) { const [x, z, y, a] = spot(), L = 1.8 + rand() * 1.8, r = 0.28 + rand() * 0.16, ry = rand() * 3.14;
       const yl = y + r * 0.8 - sink(x, z, 0, L) - slope(x, z) * r;   // (rot [π/2, ry, 0] lays the capsule along z) + the downhill side of the round log
@@ -110,15 +110,15 @@ function build(api) {
       B(FG, 'capsule').add([bx, domeY(Math.hypot(bx, bz)) + 0.03 - sink(bx, bz, 0, L * 0.45), bz], [0.08, L * 0.45, 0.08], '#A88268', [Math.PI / 2, 0, 0.5]); }
     setEl('grass');
     for (let i = 0; i < 280; i++) { const [x, z, y] = spot(), s = 0.35 + rand() * 0.4, col = pick(['#8FCB80', '#7CBF70', '#A3D58F']);
-      for (let k = -2; k <= 2; k++) { const px = x + k * s * 0.22; B(FG, 'cone').add([px, domeY(Math.hypot(px, z)) - 0.04 - slope(px, z) * s * 0.2, z], [s * 0.18, s * (1.1 - Math.abs(k) * 0.2), s * 0.18], col, [0, 0, k * 0.28]); } }
+      api.tuft(FG, x, domeY(Math.hypot(x, z)) - 0.04 - slope(x, z) * s * 0.2, z, s, col); }
     setEl('flowers');
     for (let i = 0; i < 160; i++) { const [x, z, y] = spot(), col = pick(['#F6B9CF', '#FFF3B0', '#FFFFFF', '#C9B8F0']), k = 1 + rand() * 0.8;
-      B(FG, 'capsule').add([x, y + 0.2 * k, z], [0.06 * k, 0.4 * k, 0.06 * k], '#7CBF70'); B(FG, 'sphereLo').add([x, y + 0.48 * k, z], [0.18 * k, 0.1 * k, 0.18 * k], col); B(FG, 'sphereLo').add([x, y + 0.52 * k, z], 0.07 * k, '#F2C14E'); }
+      api.flower(FG, x, y, z, k, col); }
   }
 
   /* ── kit ── */
   const blob = (g, x, y, z, r, col, sy = 1) => B(g, 'sphere').add([x, y, z], [r, r * sy, r], col);
-  const treeAt = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk, far: g === G.FG ? 0 : Math.hypot(x, z) < 45 ? 1 : 2 });   // leafy crown, branches (core); LOD by distance from the dome
+  const treeAt = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk, kind: api.h01(x, z) < 0.22 ? 'tall' : api.h01(x, z) > 0.9 ? 'pine' : 'round', far: g === G.FG ? 0 : Math.hypot(x, z) < 45 ? 1 : 2 });   // leafy crown, branches (core); LOD by distance from the dome
   const bushAt = (g, x, z, s, y0) => api.bush(g, x, y0 - (y0 > GROUND_Y + 0.01 ? slope(x, z) * s * 1.1 : 0), z, s, { leaf: C.green });   // on the dome: sink to the downhill side
   const faceTo = (x, z) => Math.atan2(-x, -z);
   /** windows on 4 sides (outlined near the camera) */

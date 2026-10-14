@@ -171,10 +171,13 @@ function build(api) {
   const seaY = (x, z) => -(x * x + z * z) / (2 * R);
   for (let i = 0; i < 3; i++) { const x = -20 + i * 14; solid(geo.rbox, '#EDE4D4', island, { pos: [x, 0.25, 49], scale: [3, 0.5, 12] });
     for (const zz of [44.5, 48.5, 52.5]) for (const sx of [-1.1, 1.1]) { const yb = seaY(x + sx, zz) - 0.6; B(island, 'capsule').add([x + sx, (yb + 0.1) / 2, zz], [0.36, (0.1 - yb) / 2, 0.36], '#CDBFA5'); } }
-  setEl('boats');
-  for (let i = 0; i < 6; i++) { const x = -26 + i * 9.5, z = 58 + rand() * 10, y = seaY(x, z);
-    solid(geo.capsule, pick(['#E8836B', '#7FB7E0', '#F3F0E6']), island, { pos: [x, y + 0.2, z], scale: [1.6, 4, 1.6], rot: [Math.PI / 2, 0, 0] });
-    solid(geo.rbox, '#F7F2E6', island, { pos: [x, y + 1.4, z - 0.5], scale: [1.4, 1.2, 2] }); }
+  setEl('boats');   // wooden boats, sized to the pier: hull half in the water, stripe, cabin with a roof, a small mast
+  for (let i = 0; i < 6; i++) { const x = -26 + i * 9.5, z = 58 + rand() * 10, y = seaY(x, z), roof = pick(['#E8836B', '#7FB7E0', '#F3F0E6']);
+    solid(geo.rboxSoft, '#C99B72', island, { pos: [x, y + 0.1, z], scale: [3.4, 1.4, 9] });
+    solid(geo.rboxSoft, '#E8836B', island, { pos: [x, y + 0.62, z], scale: [3.5, 0.22, 9.1] });
+    solid(geo.rbox, '#F7F2E6', island, { pos: [x, y + 1.7, z - 1.2], scale: [2.2, 1.6, 3] });
+    solid(geo.rbox, roof, island, { pos: [x, y + 2.7, z - 1.2], scale: [2.5, 0.35, 3.4] });
+    solid(geo.capsule, '#B98A6A', island, { pos: [x, y + 3.6, z + 1.8], scale: [0.14, 2.2, 0.14] }); }
   // dome (characters jump from its top toward +z)
   setEl('dome');
   const DR = 22, capA = Math.acos((DR - (DOME_TOP - LG)) / DR);
@@ -186,11 +189,11 @@ function build(api) {
       if (rand() < 0.6) { segs.push(x, domeY(d) + 0.03, z, x + L, domeY(Math.hypot(x + L, z)) + 0.03, z); cols.push('#8A6B64'); }
       else for (const t of [[-0.1, -0.18, 0.28], [0, 0, 0.36], [0.1, 0.18, 0.28]]) { segs.push(x + t[0], domeY(d) + 0.03, z, x + t[1], domeY(d) + 0.03 + t[2], z); cols.push('#6FBF73'); } }
     inkLines(segs, cols, island); }
-  setEl('rocks'); for (let i = 0; i < 26; i++) { const a = rand() * 6.283, d = 3 + rand() * (footR - 4), s = 0.35 + rand() * 0.5; B(island, 'sphereLo').add([Math.sin(a) * d, domeY(d) + s * 0.25, Math.cos(a) * d], [s, s * 0.6, s * 0.85], pick(['#C9C4D6', '#BDB8CC'])); }
+  setEl('rocks'); for (let i = 0; i < 26; i++) { const a = rand() * 6.283, d = 3 + rand() * (footR - 4), s = 0.35 + rand() * 0.5; B(island, 'rockLo').add([Math.sin(a) * d, domeY(d) + s * 0.25, Math.cos(a) * d], [s, s * 0.6, s * 0.85], pick(['#C9C4D6', '#BDB8CC'])); }
   setEl('grass'); for (let i = 0; i < 120; i++) { const a = rand() * 6.283, d = 2.5 + rand() * (footR - 3), x = Math.sin(a) * d, z = Math.cos(a) * d, s = 0.3 + rand() * 0.3;
-    for (let k = -2; k <= 2; k++) B(island, 'cone').add([x + k * s * 0.22, domeY(d) - 0.02, z], [s * 0.18, s * (1.1 - Math.abs(k) * 0.2), s * 0.18], pick(['#8FCB80', '#7CBF70']), [0, 0, k * 0.28]); }
+    api.tuft(island, x, domeY(d) - 0.02, z, s, pick(['#8FCB80', '#7CBF70'])); }
   setEl('flowers'); for (let i = 0; i < 70; i++) { const a = rand() * 6.283, d = 2.5 + rand() * (footR - 3), x = Math.sin(a) * d, z = Math.cos(a) * d, y = domeY(d);
-    B(island, 'capsule').add([x, y + 0.2, z], [0.06, 0.4, 0.06], '#7CBF70'); B(island, 'sphereLo').add([x, y + 0.48, z], [0.18, 0.1, 0.18], pick(['#F6B9CF', '#FFF3B0', '#FFFFFF'])); }
+    api.flower(island, x, y, z, 1, pick(['#F6B9CF', '#FFF3B0', '#FFFFFF'])); }
   // FG plane (darkest): the street run goes from z −6 to 13 at x 0 → bushes, rocks, tall grass and lamp posts line both
   // sides (x ±2.2…3.8) and two trees hang their crowns over the lane, so they really sweep past the lens
   setEl('foreground');
@@ -201,7 +204,7 @@ function build(api) {
     else { B(island, 'capsule').add([x, y + 1.6, z], [0.16, 1.6, 0.16], '#8C93A3'); B(island, 'sphere').add([x, y + 3.3, z], 0.36, '#FFF3C2'); } }
   for (const [x, z, s] of [[-4.2, 3, 1.15], [4.0, 9.5, 1.25]]) api.tree(island, x, domeY(Math.hypot(x, z)), z, s, { leaf: C.green, trunk: C.trunk, kind: 'tall' });
   // 1950s city ring on the island
-  const tree = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk, far: true });   // city / islands: light LOD
+  const tree = (g, x, z, s, y0) => api.tree(g, x, y0, z, s, { leaf: C.green, trunk: C.trunk, far: true, kind: api.h01(x, z) < 0.3 ? 'tall' : 'round' });   // city / islands: light LOD
   const windows = (g, x, z, w, d, y0, rows, rowH) => { const b = B(g, 'box', false); b.idColor = '#203050'; b.idMaxD = 120;
     for (let r = 0; r < rows; r++) { const y = y0 + rowH * (r + 0.55); for (const [sx, sz] of [[0, 1], [0, -1], [1, 0], [-1, 0]]) for (const t of [-0.25, 0.25]) {
       if (sz) b.add([x + t * w, y, z + sz * (d / 2 + 0.02)], [w * 0.22, rowH * 0.42, 0.03], C.pane); else b.add([x + sx * (w / 2 + 0.02), y, z + t * d], [0.03, rowH * 0.42, d * 0.22], C.pane); } } };
