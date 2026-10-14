@@ -771,6 +771,7 @@ function startApp(cfg) {
     inkBar: new THREE.BoxGeometry(1, 1, 1),
   };
   geo.lathe = lathe;
+  geo.rockLo = new THREE.DodecahedronGeometry(1, 0);   // chunky faceted rocks (Kawaii low-poly): same batches, flat facets
   geo.leafLo = geo.sphereLo; geo.leafXlo = geo.sphereXlo;   // leaf clumps: same spheres, own batches (one flat id in the edge pass → one outline per crown)
 
   function register(mesh, hex, outline = true) {
@@ -1851,7 +1852,7 @@ function build(api) {
   setEl('fan-coral');
   for (const [x, z] of pts(12)) { const s = between(1.6, 2.8), y = floorMin(x, z, s * 0.8) - 0.15; B(MG, 'sphere').add([x, y + s, z], [s, s, 0.16], pick(C.fan), [0, between(-0.6, 0.6), 0]); B(MG, 'capsule').add([x, yAt(x, z) + 0.5, z], [0.2, 1.1, 0.2], '#C98B6A'); }
   setEl('rocks');
-  for (const [x, z] of pts(40)) { const s = between(0.6, 2.2); B(MG, 'sphereLo').add([x, floorMin(x, z, s * 0.9) + s * 0.25, z], [s, s * 0.6, s * 0.85], pick(C.rock)); }
+  for (const [x, z] of pts(40)) { const s = between(0.6, 2.2); B(MG, 'rockLo').add([x, floorMin(x, z, s * 0.9) + s * 0.25, z], [s, s * 0.6, s * 0.85], pick(C.rock)); }
   setEl('kelp');
   for (const [x, z] of pts(22)) { const y0 = yAt(x, z), n = 7 + Math.floor(rand() * 6), ph = rand() * 6, col = pick(C.kelp); let px = x, py = y0, pz = z;
     for (let k = 0; k < n; k++) { const ang = Math.sin(ph + k * 0.6) * 0.35, L = 1.6; const nx = px + Math.sin(ang) * L, ny = py + Math.cos(ang) * L;

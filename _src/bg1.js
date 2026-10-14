@@ -95,7 +95,7 @@ function build(api) {
     setEl('rocks');
     for (let i = 0; i < 80; i++) { const [x, z, y] = spot(), s = 0.4 + rand() * 0.8, n = 1 + Math.floor(rand() * 3);
       for (let k = 0; k < n; k++) { const px = x + k * s * 0.9, pz = z + (rand() - 0.5) * s, w = s * (1 - k * 0.25);
-        B(FG, 'sphereLo').add([px, domeY(Math.hypot(px, pz)) + s * 0.2 - slope(px, pz) * w, pz], [w, s * 0.62 * (1 - k * 0.2), s * 0.85], pick(['#C9C4D6', '#BDB8CC', '#D4CFDC'])); } }
+        B(FG, 'rockLo').add([px, domeY(Math.hypot(px, pz)) + s * 0.2 - slope(px, pz) * w, pz], [w, s * 0.62 * (1 - k * 0.2), s * 0.85], pick(['#C9C4D6', '#BDB8CC', '#D4CFDC'])); } }
     setEl('logs');
     for (let i = 0; i < 18; i++) { const [x, z, y, a] = spot(), L = 1.8 + rand() * 1.8, r = 0.28 + rand() * 0.16, ry = rand() * 3.14;
       const yl = y + r * 0.8 - sink(x, z, 0, L) - slope(x, z) * r;   // (rot [π/2, ry, 0] lays the capsule along z) + the downhill side of the round log

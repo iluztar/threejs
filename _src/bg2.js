@@ -186,7 +186,7 @@ function build(api) {
       if (rand() < 0.6) { segs.push(x, domeY(d) + 0.03, z, x + L, domeY(Math.hypot(x + L, z)) + 0.03, z); cols.push('#8A6B64'); }
       else for (const t of [[-0.1, -0.18, 0.28], [0, 0, 0.36], [0.1, 0.18, 0.28]]) { segs.push(x + t[0], domeY(d) + 0.03, z, x + t[1], domeY(d) + 0.03 + t[2], z); cols.push('#6FBF73'); } }
     inkLines(segs, cols, island); }
-  setEl('rocks'); for (let i = 0; i < 26; i++) { const a = rand() * 6.283, d = 3 + rand() * (footR - 4), s = 0.35 + rand() * 0.5; B(island, 'sphereLo').add([Math.sin(a) * d, domeY(d) + s * 0.25, Math.cos(a) * d], [s, s * 0.6, s * 0.85], pick(['#C9C4D6', '#BDB8CC'])); }
+  setEl('rocks'); for (let i = 0; i < 26; i++) { const a = rand() * 6.283, d = 3 + rand() * (footR - 4), s = 0.35 + rand() * 0.5; B(island, 'rockLo').add([Math.sin(a) * d, domeY(d) + s * 0.25, Math.cos(a) * d], [s, s * 0.6, s * 0.85], pick(['#C9C4D6', '#BDB8CC'])); }
   setEl('grass'); for (let i = 0; i < 120; i++) { const a = rand() * 6.283, d = 2.5 + rand() * (footR - 3), x = Math.sin(a) * d, z = Math.cos(a) * d, s = 0.3 + rand() * 0.3;
     for (let k = -2; k <= 2; k++) B(island, 'cone').add([x + k * s * 0.22, domeY(d) - 0.02, z], [s * 0.18, s * (1.1 - Math.abs(k) * 0.2), s * 0.18], pick(['#8FCB80', '#7CBF70']), [0, 0, k * 0.28]); }
   setEl('flowers'); for (let i = 0; i < 70; i++) { const a = rand() * 6.283, d = 2.5 + rand() * (footR - 3), x = Math.sin(a) * d, z = Math.cos(a) * d, y = domeY(d);

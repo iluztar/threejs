@@ -771,6 +771,7 @@ function startApp(cfg) {
     inkBar: new THREE.BoxGeometry(1, 1, 1),
   };
   geo.lathe = lathe;
+  geo.rockLo = new THREE.DodecahedronGeometry(1, 0);   // chunky faceted rocks (Kawaii low-poly): same batches, flat facets
   geo.leafLo = geo.sphereLo; geo.leafXlo = geo.sphereXlo;   // leaf clumps: same spheres, own batches (one flat id in the edge pass → one outline per crown)
 
   function register(mesh, hex, outline = true) {

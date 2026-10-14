@@ -771,6 +771,7 @@ function startApp(cfg) {
     inkBar: new THREE.BoxGeometry(1, 1, 1),
   };
   geo.lathe = lathe;
+  geo.rockLo = new THREE.DodecahedronGeometry(1, 0);   // chunky faceted rocks (Kawaii low-poly): same batches, flat facets
   geo.leafLo = geo.sphereLo; geo.leafXlo = geo.sphereXlo;   // leaf clumps: same spheres, own batches (one flat id in the edge pass → one outline per crown)
 
   function register(mesh, hex, outline = true) {
@@ -1792,7 +1793,7 @@ function build(api) {
     setEl('grass');
     for (let i = 0; i < 12; i++) { const s = r() < 0.5 ? -1 : 1, x = s * bt(2.7, 9), z = -bt(0, L), k = bt(0.35, 0.6); for (let j = -2; j <= 2; j++) Bz(g, 'cone').add([x + j * 0.2 * k, 0, z], [0.16 * k, (1.1 - Math.abs(j) * 0.2) * k, 0.16 * k], pk(['#8FCB80', '#7CBF70']), [0, 0, j * 0.28]); }
     setEl('rocks');
-    if (r() < 0.6) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3, 7), z = -bt(1, L - 1), k = bt(0.4, 0.9); Bz(g, 'sphereLo').add([x, k * 0.25, z], [k, k * 0.6, k * 0.85], pk(C.rock)); }
+    if (r() < 0.6) { const s = r() < 0.5 ? -1 : 1, x = s * bt(3, 7), z = -bt(1, L - 1), k = bt(0.4, 0.9); Bz(g, 'rockLo').add([x, k * 0.25, z], [k, k * 0.6, k * 0.85], pk(C.rock)); }
     setEl('logs');
     if (m % 5 === 2) { const s = m % 2 ? 1 : -1; Bz(g, 'capsule').add([s * 7.5, 0.3, -6], [0.6, 2.4, 0.6], C.log, [Math.PI / 2, 0.6, 0]); }
     setEl('dashes');
